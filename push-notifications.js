@@ -402,7 +402,7 @@ function createNotificationPromptUI() {
             }
             
             .btn-allow {
-                background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                background: linear-gradient(135deg, #10B981, #0EA371);
                 color: white;
             }
             
