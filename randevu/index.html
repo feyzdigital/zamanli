@@ -4,30 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Randevu Detayı - Zamanli</title>
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#0B2B26">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <!-- Fonts: Satoshi + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #e0e7ff;
-            --success: #10b981; --success-light: #d1fae5; --success-dark: #059669;
+            /* Brand Core */
+            --brand-deep-forest: #0B2B26;
+            --brand-emerald: #10B981;
+            --brand-emerald-hover: #0EA371;
+            --brand-gold: #C5A065;
+            
+            --primary: #10B981; --primary-dark: #0EA371; --primary-light: #ECFDF5;
+            --success: #10b981; --success-light: #ECFDF5; --success-dark: #059669;
             --warning: #f59e0b; --warning-light: #fef3c7;
             --danger: #ef4444; --danger-light: #fee2e2; --danger-dark: #dc2626;
             --whatsapp: #25D366; --whatsapp-dark: #128C7E;
             --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
             --slate-400: #94a3b8; --slate-500: #64748b; --slate-600: #475569; --slate-800: #1e293b;
             --radius: 16px; --radius-sm: 12px;
+            
+            /* Typography */
+            --font-heading: 'Satoshi', 'Inter', system-ui, sans-serif;
+            --font-body: 'Inter', system-ui, sans-serif;
         }
         
         body { 
-            font-family: 'Inter', sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-body); 
+            background: linear-gradient(135deg, var(--brand-deep-forest) 0%, #0F3A33 100%);
             color: var(--slate-800); 
             line-height: 1.6; 
             min-height: 100vh; 
             display: flex; 
             flex-direction: column;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
         }
         
         .header { 
@@ -41,6 +59,7 @@
             z-index: 100;
         }
         .logo { 
+            font-family: var(--font-heading);
             font-size: 1.5rem; 
             font-weight: 700; 
             color: var(--slate-800); 
