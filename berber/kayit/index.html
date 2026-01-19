@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salon Kayıt - Zamanlı</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5; --success: #10b981;
+            --warning: #f59e0b; --danger: #ef4444;
+            --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+            --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+            --slate-900: #0f172a; --radius: 0.75rem; --radius-lg: 1rem;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--slate-100); color: var(--slate-800); line-height: 1.6; min-height: 100vh; }
+        .header { background: white; border-bottom: 1px solid var(--slate-200); position: sticky; top: 0; z-index: 100; }
+        .header-container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; height: 60px; }
+        .logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; font-weight: 700; font-size: 1.25rem; color: var(--slate-900); }
+        .back-link { color: var(--slate-600); text-decoration: none; font-weight: 500; }
+        .back-link:hover { color: var(--primary); }
+        .main { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+        .page-header { text-align: center; margin-bottom: 1.5rem; }
+        .page-header h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .page-header p { color: var(--slate-600); }
+        .steps-indicator { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .step-item { display: flex; align-items: center; gap: 0.5rem; }
+        .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--slate-200); color: var(--slate-500); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .step-item.active .step-num { background: var(--primary); color: white; }
+        .step-item.completed .step-num { background: var(--success); color: white; }
+        .step-label { font-size: 0.85rem; color: var(--slate-500); }
+        .step-item.active .step-label { color: var(--primary); font-weight: 600; }
+        .step-line { width: 40px; height: 2px; background: var(--slate-200); }
+        .step-line.completed { background: var(--success); }
+        .form-card { background: white; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; }
+        .form-section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+        @media (max-width: 500px) { 
+            .form-row { grid-template-columns: 1fr; } 
+            .step-label { display: none; }
+            .main { padding: 1rem 0.75rem 3rem; }
+            .page-header h1 { font-size: 1.25rem; }
+            .form-card { padding: 1rem; border-radius: var(--radius); }
+            .staff-item { flex-wrap: wrap; }
+            .staff-item input { min-width: 120px; }
+            .service-item-edit { flex-direction: column; align-items: stretch; }
+            .service-checkbox { width: 100%; }
+            .service-price-edit { justify-content: flex-end; }
+        }
+        .form-group { margin-bottom: 0.75rem; }
+        .form-label { display: block; font-weight: 600; font-size: 0.85rem; color: var(--slate-700); margin-bottom: 0.35rem; }
+        .required { color: var(--danger); }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 0.75rem 1rem; border: 2px solid var(--slate-200); border-radius: var(--radius); font-size: 1rem; font-family: inherit; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); }
+        .form-textarea { resize: vertical; min-height: 80px; }
+        .form-hint { font-size: 0.75rem; color: var(--slate-500); margin-top: 0.25rem; }
+        .staff-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .staff-item { display: flex; gap: 0.5rem; align-items: center; }
+        .staff-item input { flex: 1; }
+        .remove-btn { width: 36px; height: 36px; border: none; background: var(--slate-100); color: var(--slate-500); border-radius: var(--radius); cursor: pointer; }
+        .remove-btn:hover { background: #fee2e2; color: var(--danger); }
+        .add-btn { background: var(--slate-100); border: 2px dashed var(--slate-300); color: var(--slate-600); padding: 0.625rem; border-radius: var(--radius); cursor: pointer; font-weight: 500; width: 100%; }
+        .add-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .services-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+        .service-item-edit { display: flex; align-items: center; gap: 0.5rem; }
+        .service-checkbox { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; border: 2px solid var(--slate-200); border-radius: var(--radius); cursor: pointer; flex: 1; transition: all 0.2s; }
+        .service-checkbox:hover { border-color: var(--slate-300); }
+        .service-checkbox.selected { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+        .service-checkbox input { display: none; }
+        .checkbox-mark { width: 22px; height: 22px; border: 2px solid var(--slate-300); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 0.75rem; flex-shrink: 0; transition: all 0.2s; }
+        .service-checkbox.selected .checkbox-mark { background: var(--primary); border-color: var(--primary); color: white; }
+        .service-info { flex: 1; }
+        .service-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.1rem; }
+        .service-meta { font-size: 0.75rem; color: var(--slate-500); }
+        .service-price-edit { display: flex; align-items: center; background: var(--slate-50); border-radius: var(--radius); padding: 0.25rem; }
+        .price-input { width: 70px; padding: 0.5rem; border: 2px solid transparent; border-radius: 6px; font-size: 0.95rem; font-weight: 600; text-align: right; font-family: inherit; background: white; }
+        .price-input:focus { outline: none; border-color: var(--primary); }
+        .price-currency { padding: 0 0.5rem; color: var(--slate-500); font-weight: 600; }
+        .pin-section { background: var(--slate-50); border-radius: var(--radius); padding: 1rem; margin-top: 1rem; }
+        .pin-input { font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center; font-weight: 700; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.875rem 1.5rem; border-radius: var(--radius); font-weight: 600; font-size: 1rem; cursor: pointer; border: none; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-primary:disabled { background: var(--slate-300); cursor: not-allowed; }
+        .btn-outline { background: white; color: var(--slate-700); border: 2px solid var(--slate-200); }
+        .btn-group { display: flex; gap: 0.75rem; margin-top: 1rem; }
+        .btn-group .btn { flex: 1; }
+        .review-card { background: var(--slate-50); border-radius: var(--radius); padding: 1rem; margin-bottom: 0.75rem; }
+        .review-card h4 { color: var(--slate-500); font-size: 0.75rem; margin-bottom: 0.25rem; text-transform: uppercase; }
+        .review-card p { font-weight: 600; }
+        .review-card .sub { font-weight: 400; color: var(--slate-600); font-size: 0.9rem; }
+        .success-screen { text-align: center; padding: 1rem 0; }
+        .success-icon { font-size: 4rem; margin-bottom: 1rem; }
+        .success-title { font-size: 1.5rem; font-weight: 800; color: var(--success); margin-bottom: 0.5rem; }
+        .credentials-box { background: white; border: 2px solid var(--primary); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; }
+        .credentials-box h4 { color: var(--primary); margin-bottom: 0.75rem; }
+        .credential-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--slate-100); }
+        .credential-item:last-child { border-bottom: none; }
+        .credential-label { color: var(--slate-500); }
+        .credential-value { font-weight: 700; }
+        .info-box { background: var(--slate-50); border-radius: var(--radius); padding: 1rem; text-align: left; margin-bottom: 1rem; border-left: 4px solid var(--primary); }
+        .info-box.warning { border-left-color: var(--warning); background: #fffbeb; }
+        .info-box h4 { margin-bottom: 0.25rem; font-size: 0.95rem; }
+        .info-box p { color: var(--slate-600); font-size: 0.9rem; }
+        .toast { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--slate-800); color: white; padding: 0.875rem 1.25rem; border-radius: var(--radius); font-weight: 500; opacity: 0; transition: all 0.3s; z-index: 1000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.error { background: var(--danger); }
+        .toast.success { background: var(--success); }
+        .hidden { display: none !important; }
+        /* Paket Seçimi */
+        .package-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
+        @media (max-width: 700px) { .package-grid { grid-template-columns: 1fr; } }
+        .package-card { border: 2px solid var(--slate-200); border-radius: var(--radius); padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative; }
+        .package-card:hover { border-color: var(--slate-300); }
+        .package-card.selected { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+        .package-card.starter.selected { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+        .package-card.pro.selected { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+        .package-card.premium.selected { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.05); }
+        .package-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .package-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
+        .package-card.starter .package-name { color: var(--success); }
+        .package-card.pro .package-name { color: #3b82f6; }
+        .package-card.premium .package-name { color: #8b5cf6; }
+        .package-desc { font-size: 0.8rem; color: var(--slate-500); margin-bottom: 0.5rem; }
+        .package-price { font-size: 1.25rem; font-weight: 800; }
+        .package-price span { font-size: 0.85rem; font-weight: 500; color: var(--slate-500); }
+        .package-badge { position: absolute; top: -10px; right: 10px; background: #3b82f6; color: white; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 600; }
+        .package-check { position: absolute; top: 0.5rem; right: 0.5rem; width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: none; align-items: center; justify-content: center; font-size: 0.8rem; }
+        .package-card.selected .package-check { display: flex; }
+        .package-card.starter.selected .package-check { background: var(--success); }
+        .package-card.pro.selected .package-check { background: #3b82f6; }
+        .package-card.premium.selected .package-check { background: #8b5cf6; }
+        .package-suggestion { background: #fffbeb; border: 1px solid #f59e0b; border-radius: var(--radius); padding: 0.75rem 1rem; margin-top: 0.75rem; display: none; }
+        .package-suggestion.show { display: block; }
+        .package-suggestion p { font-size: 0.9rem; color: #92400e; margin: 0; }
+        
+        /* Disabled package card */
+        .package-card.disabled { opacity: 0.5; cursor: not-allowed; background: var(--slate-100); border-color: var(--slate-200); }
+        .package-card.disabled:hover { border-color: var(--slate-200); }
+        .package-card.disabled .package-name { color: var(--slate-400); }
+        .package-disabled-msg { position: absolute; bottom: 0.5rem; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: #dc2626; font-weight: 600; background: #fef2f2; padding: 0.25rem; border-radius: 0 0 6px 6px; }
+        
+        /* Google Places Autocomplete */
+        .places-search-wrapper { position: relative; }
+        .places-input { font-size: 1rem; }
+        .places-results { 
+            position: absolute; top: 100%; left: 0; right: 0; 
+            background: white; border: 1px solid var(--slate-200); 
+            border-radius: var(--radius); box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            max-height: 300px; overflow-y: auto; z-index: 100; display: none;
+        }
+        .places-results.show { display: block; }
+        .place-item { 
+            padding: 0.875rem 1rem; cursor: pointer; 
+            border-bottom: 1px solid var(--slate-100);
+            transition: background 0.15s;
+        }
+        .place-item:last-child { border-bottom: none; }
+        .place-item:hover { background: var(--slate-50); }
+        .place-item-name { font-weight: 600; color: var(--slate-800); margin-bottom: 0.25rem; }
+        .place-item-address { font-size: 0.85rem; color: var(--slate-500); }
+        .place-item-icon { display: inline-block; margin-right: 0.5rem; }
+        .places-divider { 
+            display: flex; align-items: center; gap: 1rem; 
+            margin: 1.5rem 0; color: var(--slate-400); font-size: 0.85rem;
+        }
+        .places-divider::before, .places-divider::after { 
+            content: ''; flex: 1; height: 1px; background: var(--slate-200); 
+        }
+        .places-loading { 
+            padding: 1rem; text-align: center; color: var(--slate-500); 
+        }
+        .places-powered {
+            padding: 0.5rem 1rem; font-size: 0.7rem; color: var(--slate-400);
+            text-align: right; border-top: 1px solid var(--slate-100);
+        }
+        
+        /* Google Autocomplete Dropdown Stilleri */
+        .pac-container {
+            font-family: 'Inter', sans-serif !important;
+            border-radius: 12px !important;
+            border: 1px solid var(--slate-200) !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
+            margin-top: 4px !important;
+            z-index: 9999 !important;
+        }
+        .pac-item {
+            padding: 12px 16px !important;
+            font-size: 14px !important;
+            cursor: pointer !important;
+            border-bottom: 1px solid var(--slate-100) !important;
+        }
+        .pac-item:hover {
+            background: var(--slate-50) !important;
+        }
+        .pac-item-selected {
+            background: var(--primary-light) !important;
+        }
+        .pac-icon {
+            margin-right: 12px !important;
+        }
+        .pac-item-query {
+            font-weight: 600 !important;
+            color: var(--slate-800) !important;
+        }
+        .pac-matched {
+            font-weight: 700 !important;
+            color: var(--primary) !important;
+        }
+        .pac-logo::after {
+            margin: 8px 12px !important;
+        }
+        
+        /* GSM Warning */
+        .gsm-warning {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-top: 0.75rem;
+        }
+        .gsm-warning .warning-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .gsm-warning .warning-content strong {
+            color: #92400e;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        .gsm-warning .warning-content p {
+            color: #a16207;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        .phone-section {
+            margin-bottom: 1rem;
+        }
+        
+        /* OTP Doğrulama Stilleri */
+        .phone-verified {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--success);
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        .phone-verified::before {
+            content: '✓';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            background: var(--success);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.7rem;
+        }
+        .verify-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .verify-btn:hover { background: var(--primary-dark); }
+        .verify-btn:disabled { background: var(--slate-300); cursor: not-allowed; }
+        .verify-btn.verified { background: var(--success); pointer-events: none; }
+        
+        /* OTP Modal */
+        .otp-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .otp-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .otp-modal {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+        .otp-modal-overlay.active .otp-modal {
+            transform: translateY(0);
+        }
+        .otp-modal-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .otp-modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .otp-modal-desc { color: var(--slate-500); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .otp-modal-phone { font-weight: 700; color: var(--primary); }
+        .otp-inputs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .otp-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-family: inherit;
+        }
+        .otp-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .otp-input.error { border-color: var(--danger); }
+        .otp-input.success { border-color: var(--success); background: #ecfdf5; }
+        .otp-error {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .otp-error.show { display: block; }
+        .otp-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .otp-resend {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .otp-resend:disabled {
+            color: var(--slate-400);
+            cursor: not-allowed;
+        }
+        .otp-timer {
+            color: var(--slate-500);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo"><span>💈</span><span>Zamanlı</span></a>
+            <a href="/fiyatlandirma/" class="back-link">← Paketler</a>
+        </div>
+    </header>
+    <main class="main">
+        <div class="page-header">
+            <h1>💈 Salonunuzu Ekleyin</h1>
+            <p>Paket seçin, online randevu almaya başlayın</p>
+        </div>
+        <div class="steps-indicator" id="stepsIndicator">
+            <div class="step-item active"><div class="step-num">1</div><span class="step-label">Paket</span></div>
+            <div class="step-line"></div>
+            <div class="step-item"><div class="step-num">2</div><span class="step-label">Hizmetler</span></div>
+            <div class="step-line"></div>
+            <div class="step-item"><div class="step-num">3</div><span class="step-label">Paket</span></div>
+            <div class="step-line"></div>
+            <div class="step-item"><div class="step-num">4</div><span class="step-label">Onay</span></div>
+        </div>
+        <!-- Step 1: Salon Bilgileri -->
+        <div id="step1" class="step-content">
+            <div class="form-card">
+                <h2 class="form-section-title">📋 Salon Bilgileri</h2>
+                
+                <!-- Google Places Autocomplete -->
+                <div class="form-group">
+                    <label class="form-label">🔍 İşletmenizi Bulun</label>
+                    <div class="places-search-wrapper">
+                        <input type="text" class="form-input places-input" id="placesSearch" placeholder="Salon adını yazmaya başlayın...">
+                        <div id="placesResults" class="places-results"></div>
+                    </div>
+                    <p class="form-hint">Google Haritalar'da kayıtlı işletmenizi seçin veya manuel doldurun</p>
+                </div>
+                
+                <div class="places-divider">
+                    <span>veya manuel doldurun</span>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Salon Adı <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="salonName" placeholder="Örn: Usta Berber">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Yetkili Adı <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="ownerName" placeholder="Ad Soyad">
+                    </div>
+                </div>
+                
+                <!-- Telefon Bölümü -->
+                <div class="phone-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">📱 GSM / WhatsApp <span class="required">*</span></label>
+                            <input type="tel" class="form-input" id="mobilePhone" placeholder="05XX XXX XX XX" oninput="onPhoneChange()">
+                            <p class="form-hint">Randevu bildirimleri bu numaraya gönderilir</p>
+                            <div id="phoneVerifySection">
+                                <button type="button" class="verify-btn" id="verifyPhoneBtn" onclick="startPhoneVerification()">
+                                    📲 Telefonu Doğrula
+                                </button>
+                            </div>
+                            <div id="phoneVerifiedBadge" class="phone-verified" style="display: none;">
+                                Telefon doğrulandı
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">📞 Sabit Telefon</label>
+                            <input type="tel" class="form-input" id="landlinePhone" placeholder="0XXX XXX XX XX (opsiyonel)">
+                        </div>
+                    </div>
+                    <!-- Google'dan sabit telefon geldiğinde GSM uyarısı -->
+                    <div id="gsmWarning" class="gsm-warning" style="display: none;">
+                        <div class="warning-icon">⚠️</div>
+                        <div class="warning-content">
+                            <strong>GSM numarası gerekli!</strong>
+                            <p>Google'dan sabit telefon alındı. WhatsApp bildirimleri için GSM numaranızı girin.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">E-posta <span class="required">*</span></label>
+                    <input type="email" class="form-input" id="email" placeholder="ornek@email.com">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Şehir <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="city" placeholder="Şehir">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">İlçe <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="district" placeholder="İlçe">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Adres</label>
+                    <textarea class="form-textarea" id="address" placeholder="Açık adres"></textarea>
+                </div>
+                
+                <!-- Gizli konum alanları -->
+                <input type="hidden" id="locationLat">
+                <input type="hidden" id="locationLng">
+                <input type="hidden" id="placeId">
+                
+                <div class="pin-section">
+                    <label class="form-label">🔐 Giriş PIN Kodu <span class="required">*</span></label>
+                    <input type="text" class="form-input pin-input" id="pin" placeholder="••••" maxlength="6" inputmode="numeric">
+                    <p class="form-hint">4-6 haneli PIN belirleyin. Yönetim panelinize giriş için kullanacaksınız.</p>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="goToStep(2)">Devam Et →</button>
+            </div>
+        </div>
+        <!-- Step 2: Personel ve Hizmetler -->
+        <div id="step2" class="step-content hidden">
+            <div class="form-card">
+                <h2 class="form-section-title">👥 Personel</h2>
+                <div id="staffList" class="staff-list">
+                    <div class="staff-item" data-index="0">
+                        <input type="text" class="form-input staff-name" placeholder="Personel adı *">
+                        <input type="text" class="form-input staff-role" placeholder="Uzmanlık">
+                    </div>
+                </div>
+                <button class="add-btn" onclick="addStaff()">+ Personel Ekle</button>
+                <div id="packageSuggestion" class="package-suggestion">
+                    <p>💡 <strong id="suggestionText"></strong></p>
+                </div>
+            </div>
+            <div class="form-card">
+                <h2 class="form-section-title">✂️ Sunulan Hizmetler</h2>
+                <p style="color: var(--slate-500); font-size: 0.85rem; margin-bottom: 1rem;">Sunmak istediğiniz hizmetleri seçin ve fiyatları belirleyin</p>
+                <div id="servicesGrid" class="services-grid"></div>
+                <p style="color: var(--slate-400); font-size: 0.75rem; margin-top: 0.75rem; font-style: italic;">💡 Fiyatları istediğiniz zaman yönetim panelinden değiştirebilirsiniz</p>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-outline" onclick="goToStep(1)">← Geri</button>
+                <button class="btn btn-primary" onclick="goToStep(3)">Devam Et →</button>
+            </div>
+        </div>
+        <!-- Step 3: Paket Seçimi -->
+        <div id="step3" class="step-content hidden">
+            <div class="form-card">
+                <h2 class="form-section-title">📦 Size Uygun Paketi Seçin</h2>
+                <p style="color: var(--slate-500); font-size: 0.9rem; margin-bottom: 1rem;" id="packageRecommendation"></p>
+                <div class="package-grid">
+                    <div class="package-card starter" data-package="starter" onclick="selectPackage('starter')">
+                        <div class="package-check">✓</div>
+                        <div class="package-icon">🟢</div>
+                        <div class="package-name">Başlangıç</div>
+                        <div class="package-desc">1 personel • 1 işletme</div>
+                        <div class="package-price">249 ₺ <span>/ ay</span></div>
+                    </div>
+                    <div class="package-card pro" data-package="pro" onclick="selectPackage('pro')">
+                        <div class="package-badge">Popüler</div>
+                        <div class="package-check">✓</div>
+                        <div class="package-icon">🔵</div>
+                        <div class="package-name">Profesyonel</div>
+                        <div class="package-desc">3 personele kadar</div>
+                        <div class="package-price">499 ₺ <span>/ ay</span></div>
+                    </div>
+                    <div class="package-card premium" data-package="premium" onclick="selectPackage('premium')">
+                        <div class="package-check">✓</div>
+                        <div class="package-icon">🟣</div>
+                        <div class="package-name">Premium</div>
+                        <div class="package-desc">Sınırsız personel</div>
+                        <div class="package-price">799 ₺ <span>/ ay</span></div>
+                    </div>
+                </div>
+                <a href="/fiyatlandirma/" target="_blank" style="font-size: 0.85rem; color: var(--primary); display: inline-block; margin-top: 0.75rem;">📋 Paket özelliklerini karşılaştır</a>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-outline" onclick="goToStep(2)">← Geri</button>
+                <button class="btn btn-primary" onclick="goToStep(4)" id="step3Next" disabled>Devam Et →</button>
+            </div>
+        </div>
+        <!-- Step 4: Onay -->
+        <div id="step4" class="step-content hidden">
+            <div class="form-card">
+                <h2 class="form-section-title">✓ Başvuru Özeti</h2>
+                <div id="reviewContent"></div>
+            </div>
+            <div class="form-card">
+                <h2 class="form-section-title">💬 Eklemek İstedikleriniz</h2>
+                <textarea class="form-textarea" id="note" placeholder="Varsa notlarınız..."></textarea>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-outline" onclick="goToStep(3)">← Geri</button>
+                <button class="btn btn-primary" onclick="submitApplication()" id="submitBtn">✓ Başvuruyu Gönder</button>
+            </div>
+        </div>
+        <!-- Success -->
+        <div id="successScreen" class="step-content hidden">
+            <div class="form-card">
+                <div class="success-screen">
+                    <div class="success-icon">🎉</div>
+                    <h2 class="success-title">Başvurunuz Alındı!</h2>
+                    <p style="color: var(--slate-600); margin-bottom: 1.5rem;">En kısa sürede incelenip size dönüş yapılacaktır.</p>
+                    <div class="credentials-box">
+                        <h4>🔑 Giriş Bilgileriniz</h4>
+                        <div class="credential-item"><span class="credential-label">Telefon:</span><span class="credential-value" id="successPhone">-</span></div>
+                        <div class="credential-item"><span class="credential-label">PIN:</span><span class="credential-value" id="successPin">-</span></div>
+                        <div class="credential-item"><span class="credential-label">Panel:</span><span class="credential-value" id="successUrl" style="font-size:0.75rem;word-break:break-all;">-</span></div>
+                    </div>
+                    <div class="info-box warning">
+                        <h4>⚠️ Önemli</h4>
+                        <p>Bu bilgileri kaydedin! Onaydan sonra bu bilgilerle giriş yapacaksınız.</p>
+                    </div>
+                    <a href="/" class="btn btn-primary" style="text-decoration:none;">Ana Sayfaya Dön</a>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div class="toast" id="toast"></div>
+    
+    <!-- OTP Doğrulama Modal -->
+    <div class="otp-modal-overlay" id="otpModal">
+        <div class="otp-modal">
+            <div class="otp-modal-icon">📱</div>
+            <h3 class="otp-modal-title">Telefon Doğrulama</h3>
+            <p class="otp-modal-desc">
+                <span class="otp-modal-phone" id="otpPhone">05XX XXX XX XX</span><br>
+                numarasına SMS ile 6 haneli doğrulama kodu gönderdik.
+            </p>
+            <div class="otp-inputs">
+                <input type="text" class="otp-input" maxlength="1" id="otp1" oninput="handleOtpInput(this, 1)">
+                <input type="text" class="otp-input" maxlength="1" id="otp2" oninput="handleOtpInput(this, 2)">
+                <input type="text" class="otp-input" maxlength="1" id="otp3" oninput="handleOtpInput(this, 3)">
+                <input type="text" class="otp-input" maxlength="1" id="otp4" oninput="handleOtpInput(this, 4)">
+                <input type="text" class="otp-input" maxlength="1" id="otp5" oninput="handleOtpInput(this, 5)">
+                <input type="text" class="otp-input" maxlength="1" id="otp6" oninput="handleOtpInput(this, 6)">
+            </div>
+            <p class="otp-error" id="otpError">Kod hatalı! Lütfen tekrar deneyin.</p>
+            <div class="otp-actions">
+                <button class="btn btn-primary" onclick="verifyOtpCode()" id="verifyOtpBtn">Doğrula</button>
+                <button class="otp-resend" onclick="resendOtp()" id="resendOtpBtn" disabled>
+                    Kodu Tekrar Gönder
+                </button>
+                <span class="otp-timer" id="otpTimer">60 saniye sonra tekrar gönderebilirsiniz</span>
+                <button class="btn btn-outline" onclick="closeOtpModal()" style="margin-top: 0.5rem;">İptal</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <!-- Google Maps JavaScript API - Places Library -->
+    <script>
+        // Google Maps API'yi dinamik yükle
+        function loadGoogleMapsAPI() {
+            if (typeof GOOGLE_PLACES_CONFIG === 'undefined' || GOOGLE_PLACES_CONFIG.apiKey === 'YOUR_GOOGLE_PLACES_API_KEY') {
+                console.log('Google Places API key not configured');
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_PLACES_CONFIG.apiKey}&libraries=places&language=tr&callback=initGooglePlacesAPI`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+        
+        // Google Maps API yüklenince çağrılır
+        function initGooglePlacesAPI() {
+            console.log('Google Places API loaded');
+            setupPlacesAutocomplete();
+        }
+    </script>
+    
+    <script>
+        let db, currentStep = 1, staffCount = 1, selectedServices = new Map();
+        let selectedPackage = null;
+        
+        // Telefon Doğrulama Değişkenleri
+        let phoneVerified = false;
+        let generatedOtp = null;
+        let otpTimer = null;
+        let otpCountdown = 60;
+        
+        const PACKAGES = {
+            starter: { name: 'Başlangıç', maxStaff: 1, price: 249, setup: 0 },
+            pro: { name: 'Profesyonel', maxStaff: 3, price: 499, setup: 990 },
+            premium: { name: 'Premium', maxStaff: 999, price: 799, setup: 1990 }
+        };
+        
+        const SERVICES = [
+            { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 30, price: 300 },
+            { id: 'sakal-trasi', name: 'Sakal Tıraşı', icon: '🪒', duration: 20, price: 150 },
+            { id: 'sac-sakal', name: 'Saç + Sakal', icon: '💈', duration: 45, price: 450 },
+            { id: 'sac-yikama', name: 'Saç + Yıkama', icon: '💧', duration: 40, price: 400 },
+            { id: 'sac-sakal-yikama', name: 'Saç + Sakal + Yıkama', icon: '🚿', duration: 55, price: 550 },
+            { id: 'sac-sakal-cilt', name: 'Saç + Sakal + Cilt Bakımı (Maske)', icon: '🧴', duration: 60, price: 550 },
+            { id: 'sac-sakal-yikama-cilt', name: 'Saç + Sakal + Yıkama + Cilt Bakımı', icon: '✨', duration: 75, price: 650 },
+            { id: 'sac-sakal-agda', name: 'Saç + Sakal + Ağda (Gözaltı + Kulak)', icon: '👁️', duration: 60, price: 520 }
+        ];
+        
+        function init() {
+            if (typeof firebase !== 'undefined') db = firebase.firestore();
+            if (typeof emailjs !== 'undefined' && typeof EMAILJS_CONFIG !== 'undefined') emailjs.init(EMAILJS_CONFIG.publicKey);
+            renderServices();
+            initPlacesSearch();
+            loadGoogleMapsAPI();
+        }
+        
+        // Google Places Autocomplete
+        let autocomplete = null;
+        let placesService = null;
+        let searchTimeout = null;
+        
+        function initPlacesSearch() {
+            const searchInput = document.getElementById('placesSearch');
+            const resultsDiv = document.getElementById('placesResults');
+            
+            // Manuel arama için fallback
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                
+                if (searchTimeout) clearTimeout(searchTimeout);
+                
+                if (query.length < 3) {
+                    resultsDiv.classList.remove('show');
+                    return;
+                }
+                
+                // Google API yoksa manuel öneriler göster
+                if (typeof google === 'undefined' || !autocomplete) {
+                    searchTimeout = setTimeout(() => {
+                        showManualSearchSuggestion(query);
+                    }, 300);
+                }
+            });
+            
+            // Dışarı tıklayınca kapat
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.places-search-wrapper')) {
+                    resultsDiv.classList.remove('show');
+                }
+            });
+        }
+        
+        // Google Maps API yüklenince Autocomplete kur
+        function setupPlacesAutocomplete() {
+            const searchInput = document.getElementById('placesSearch');
+            const resultsDiv = document.getElementById('placesResults');
+            
+            // Autocomplete options
+            const options = {
+                componentRestrictions: { country: 'tr' },
+                types: ['establishment'],
+                fields: ['place_id', 'name', 'formatted_address', 'address_components', 'geometry', 'formatted_phone_number', 'international_phone_number', 'opening_hours', 'website']
+            };
+            
+            autocomplete = new google.maps.places.Autocomplete(searchInput, options);
+            placesService = new google.maps.places.PlacesService(document.createElement('div'));
+            
+            // Yer seçildiğinde
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                
+                if (!place.geometry) {
+                    showToast('Bu yer bulunamadı. Başka bir yer deneyin.', 'error');
+                    return;
+                }
+                
+                fillFormFromPlace(place);
+            });
+            
+            // Autocomplete dropdown stilini özelleştir
+            const pacContainer = document.querySelector('.pac-container');
+            if (pacContainer) {
+                pacContainer.style.zIndex = '9999';
+            }
+            
+            console.log('Places Autocomplete initialized');
+        }
+        
+        // Google Place verisinden formu doldur
+        function fillFormFromPlace(place) {
+            console.log('Selected place:', place);
+            
+            // Salon adı
+            if (place.name) {
+                document.getElementById('salonName').value = place.name;
+            }
+            
+            // Telefon - GSM mi sabit mi kontrol et
+            if (place.formatted_phone_number || place.international_phone_number) {
+                let phone = (place.formatted_phone_number || place.international_phone_number)
+                    .replace(/\s/g, '').replace(/[()]/g, '').replace(/-/g, '');
+                
+                // Türkiye formatına çevir
+                if (phone.startsWith('+90')) phone = '0' + phone.substring(3);
+                
+                // GSM mi sabit mi kontrol et (05 ile başlıyorsa GSM)
+                const isMobile = phone.startsWith('05') || phone.startsWith('5');
+                
+                if (isMobile) {
+                    // GSM numarası - direkt GSM alanına yaz
+                    if (phone.startsWith('5')) phone = '0' + phone;
+                    document.getElementById('mobilePhone').value = phone;
+                    document.getElementById('gsmWarning').style.display = 'none';
+                } else {
+                    // Sabit telefon - sabit alana yaz ve GSM uyarısı göster
+                    document.getElementById('landlinePhone').value = phone;
+                    document.getElementById('gsmWarning').style.display = 'flex';
+                    document.getElementById('mobilePhone').focus();
+                }
+            }
+            
+            // Adres bileşenlerini ayıkla
+            if (place.address_components) {
+                let city = '', district = '', street = '', streetNumber = '';
+                
+                place.address_components.forEach(component => {
+                    const types = component.types;
+                    
+                    if (types.includes('administrative_area_level_1')) {
+                        city = component.long_name;
+                    }
+                    if (types.includes('administrative_area_level_2') || types.includes('locality')) {
+                        district = component.long_name;
+                    }
+                    if (types.includes('route')) {
+                        street = component.long_name;
+                    }
+                    if (types.includes('street_number')) {
+                        streetNumber = component.long_name;
+                    }
+                });
+                
+                if (city) document.getElementById('city').value = city;
+                if (district) document.getElementById('district').value = district;
+            }
+            
+            // Tam adres
+            if (place.formatted_address) {
+                document.getElementById('address').value = place.formatted_address;
+            }
+            
+            // Konum (lat/lng)
+            if (place.geometry && place.geometry.location) {
+                document.getElementById('locationLat').value = place.geometry.location.lat();
+                document.getElementById('locationLng').value = place.geometry.location.lng();
+            }
+            
+            // Google Place ID
+            if (place.place_id) {
+                document.getElementById('placeId').value = place.place_id;
+            }
+            
+            // Input'u temizle
+            document.getElementById('placesSearch').value = '';
+            
+            showToast('✅ Bilgiler dolduruldu! Kontrol edip düzenleyebilirsiniz.', 'success');
+            
+            // Salon adı inputuna odaklan
+            document.getElementById('ownerName').focus();
+        }
+        
+        function showManualSearchSuggestion(query) {
+            const resultsDiv = document.getElementById('placesResults');
+            resultsDiv.innerHTML = `
+                <div class="place-item" onclick="fillFromSearch('${escapeHtml(query)}')">
+                    <div class="place-item-name"><span class="place-item-icon">✏️</span> "${escapeHtml(query)}" olarak kaydet</div>
+                    <div class="place-item-address">Diğer bilgileri manuel doldurun</div>
+                </div>
+                <div class="place-item" onclick="openGoogleMapsSearch('${escapeHtml(query)}')">
+                    <div class="place-item-name"><span class="place-item-icon">🗺️</span> Google Haritalar'da Ara</div>
+                    <div class="place-item-address">Yeni sekmede açılır</div>
+                </div>
+                <div class="places-powered">
+                    <small>💡 Google API yapılandırıldığında otomatik öneriler gelecek</small>
+                </div>
+            `;
+            resultsDiv.classList.add('show');
+        }
+        
+        function fillFromSearch(name) {
+            document.getElementById('salonName').value = name;
+            document.getElementById('placesSearch').value = '';
+            document.getElementById('placesResults').classList.remove('show');
+            document.getElementById('ownerName').focus();
+            showToast('Salon adı dolduruldu. Diğer bilgileri girin.', 'success');
+        }
+        
+        function openGoogleMapsSearch(query) {
+            window.open(`https://www.google.com/maps/search/${encodeURIComponent(query + ' berber kuaför')}`, '_blank');
+            document.getElementById('placesResults').classList.remove('show');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+        
+        function selectPackage(pkg) {
+            const staffCount = getStaffCount();
+            const limit = PACKAGES[pkg].maxStaff;
+            
+            // Personel sayısı limiti aşıyorsa seçime izin verme
+            if (staffCount > limit) {
+                showToast(`${PACKAGES[pkg].name} paketi maksimum ${limit} personel destekler`, 'error');
+                return;
+            }
+            
+            selectedPackage = pkg;
+            document.querySelectorAll('.package-card').forEach(el => el.classList.remove('selected'));
+            const card = document.querySelector(`.package-card[data-package="${pkg}"]`);
+            if (card && !card.classList.contains('disabled')) {
+                card.classList.add('selected');
+            }
+            const step3Next = document.getElementById('step3Next');
+            if (step3Next) step3Next.disabled = false;
+        }
+        
+        function renderServices() {
+            document.getElementById('servicesGrid').innerHTML = SERVICES.map(s => 
+                `<div class="service-item-edit" data-id="${s.id}">
+                    <label class="service-checkbox" onclick="toggleService('${s.id}')">
+                        <span class="checkbox-mark">✓</span>
+                        <div class="service-info">
+                            <div class="service-name">${s.icon} ${s.name}</div>
+                            <div class="service-meta">${s.duration} dk</div>
+                        </div>
+                    </label>
+                    <div class="service-price-edit">
+                        <input type="number" class="price-input" id="price-${s.id}" value="${s.price}" min="0" step="10" onclick="event.stopPropagation()">
+                        <span class="price-currency">₺</span>
+                    </div>
+                </div>`
+            ).join('');
+            ['sac-kesimi', 'sakal-trasi', 'sac-sakal'].forEach(id => toggleService(id));
+        }
+        
+        function toggleService(id) {
+            const el = document.querySelector(`.service-item-edit[data-id="${id}"]`);
+            const checkbox = el.querySelector('.service-checkbox');
+            if (selectedServices.has(id)) { 
+                selectedServices.delete(id); 
+                checkbox.classList.remove('selected'); 
+            } else { 
+                const service = SERVICES.find(s => s.id === id);
+                selectedServices.set(id, { ...service }); 
+                checkbox.classList.add('selected'); 
+            }
+        }
+        
+        function getServiceWithPrice(id) {
+            const service = SERVICES.find(s => s.id === id);
+            const priceInput = document.getElementById(`price-${id}`);
+            const customPrice = priceInput ? parseInt(priceInput.value) || service.price : service.price;
+            return { ...service, price: customPrice };
+        }
+        
+        function addStaff() {
+            const list = document.getElementById('staffList');
+            const i = staffCount++;
+            const item = document.createElement('div');
+            item.className = 'staff-item'; item.dataset.index = i;
+            item.innerHTML = `<input type="text" class="form-input staff-name" placeholder="Personel adı *">
+                <input type="text" class="form-input staff-role" placeholder="Uzmanlık">
+                <button class="remove-btn" onclick="removeStaff(${i})">✕</button>`;
+            list.appendChild(item);
+        }
+        
+        function removeStaff(i) {
+            if (document.querySelectorAll('.staff-item').length <= 1) { showToast('En az 1 personel gerekli', 'error'); return; }
+            document.querySelector(`.staff-item[data-index="${i}"]`)?.remove();
+        }
+        
+        function getStaffCount() {
+            let count = 0;
+            document.querySelectorAll('.staff-name').forEach(el => { if (el.value.trim()) count++; });
+            return count;
+        }
+        
+        function showPackageRecommendation() {
+            const staffCount = getStaffCount();
+            const rec = document.getElementById('packageRecommendation');
+            
+            // Paket kartlarını güncelle - uygun olmayanları devre dışı bırak
+            updatePackageCards(staffCount);
+            
+            if (staffCount === 1) {
+                rec.innerHTML = '👤 <strong>1 personeliniz</strong> var. Tüm paketleri seçebilirsiniz.';
+                selectPackage('starter');
+            } else if (staffCount <= 3) {
+                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. <span style="color: #3b82f6;">Profesyonel</span> veya <span style="color: #8b5cf6;">Premium</span> paket seçebilirsiniz.`;
+                selectPackage('pro');
+            } else {
+                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. Sadece <span style="color: #8b5cf6;">Premium paket</span> seçebilirsiniz.`;
+                selectPackage('premium');
+            }
+        }
+        
+        function updatePackageCards(staffCount) {
+            const cards = document.querySelectorAll('.package-card');
+            
+            cards.forEach(card => {
+                const pkg = card.dataset.package;
+                const limit = PACKAGES[pkg].maxStaff;
+                const isDisabled = staffCount > limit;
+                
+                // Mevcut disabled mesajını kaldır
+                const existingMsg = card.querySelector('.package-disabled-msg');
+                if (existingMsg) existingMsg.remove();
+                
+                if (isDisabled) {
+                    card.classList.add('disabled');
+                    card.onclick = null;
+                    
+                    // Disabled mesajı ekle
+                    const msg = document.createElement('div');
+                    msg.className = 'package-disabled-msg';
+                    msg.innerHTML = `⚠️ Max ${limit} personel`;
+                    card.appendChild(msg);
+                } else {
+                    card.classList.remove('disabled');
+                    card.onclick = () => selectPackage(pkg);
+                }
+            });
+        }
+        
+        function goToStep(step) {
+            if (step > currentStep && !validateStep(currentStep)) return;
+            currentStep = step;
+            document.querySelectorAll('.step-item').forEach((el, i) => {
+                el.classList.remove('active', 'completed');
+                if (i + 1 < step) el.classList.add('completed');
+                if (i + 1 === step) el.classList.add('active');
+            });
+            document.querySelectorAll('.step-line').forEach((el, i) => el.classList.toggle('completed', i + 1 < step));
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step${step}`).classList.remove('hidden');
+            
+            // Step 3'e geçildiğinde paket önerisini göster
+            if (step === 3) showPackageRecommendation();
+            // Step 4'e geçildiğinde özeti render et
+            if (step === 4) renderReview();
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        function validateStep(step) {
+            if (step === 1) {
+                const v = id => document.getElementById(id).value.trim();
+                if (!v('salonName')) { showToast('Salon adı gerekli', 'error'); return false; }
+                if (!v('ownerName')) { showToast('Yetkili adı gerekli', 'error'); return false; }
+                
+                // GSM numarası kontrolü (zorunlu)
+                const mobilePhone = v('mobilePhone').replace(/\D/g, '');
+                if (mobilePhone.length < 10) { 
+                    showToast('GSM / WhatsApp numarası gerekli', 'error'); 
+                    document.getElementById('mobilePhone').focus();
+                    return false; 
+                }
+                if (!mobilePhone.startsWith('05') && !mobilePhone.startsWith('5')) {
+                    showToast('Geçerli bir GSM numarası girin (05XX ile başlamalı)', 'error');
+                    document.getElementById('mobilePhone').focus();
+                    return false;
+                }
+                
+                // Telefon doğrulama kontrolü - GEÇİCİ OLARAK DEVRE DIŞI
+                // if (!phoneVerified) {
+                //     showToast('Lütfen telefon numaranızı doğrulayın', 'error');
+                //     document.getElementById('verifyPhoneBtn').focus();
+                //     return false;
+                // }
+                
+                if (!v('email').includes('@')) { showToast('Geçerli e-posta girin', 'error'); return false; }
+                if (!v('city')) { showToast('Şehir girin', 'error'); return false; }
+                if (!v('district')) { showToast('İlçe girin', 'error'); return false; }
+                if (v('pin').length < 4) { showToast('En az 4 haneli PIN girin', 'error'); return false; }
+                return true;
+            }
+            if (step === 2) {
+                let hasStaff = false;
+                document.querySelectorAll('.staff-name').forEach(el => { if (el.value.trim()) hasStaff = true; });
+                if (!hasStaff) { showToast('En az 1 personel ekleyin', 'error'); return false; }
+                if (selectedServices.size === 0) { showToast('En az 1 hizmet seçin', 'error'); return false; }
+                return true;
+            }
+            if (step === 3) {
+                if (!selectedPackage) { showToast('Lütfen paket seçin', 'error'); return false; }
+                return true;
+            }
+            return true;
+        }
+        
+        function getFormData() {
+            const staff = [];
+            document.querySelectorAll('.staff-item').forEach((el, i) => {
+                const name = el.querySelector('.staff-name').value.trim();
+                if (name) staff.push({ id: 'staff-' + i, name, title: el.querySelector('.staff-role').value.trim() || 'Berber' });
+            });
+            
+            // Seçili hizmetleri özel fiyatlarıyla al
+            const services = [];
+            selectedServices.forEach((_, id) => {
+                services.push(getServiceWithPrice(id));
+            });
+            
+            const pkg = PACKAGES[selectedPackage];
+            
+            // Telefon numaralarını formatla
+            let mobilePhone = document.getElementById('mobilePhone').value.replace(/\D/g, '');
+            if (mobilePhone.startsWith('5')) mobilePhone = '0' + mobilePhone;
+            mobilePhone = mobilePhone.slice(-11); // 05XXXXXXXXX formatı
+            
+            let landlinePhone = document.getElementById('landlinePhone').value.replace(/\D/g, '');
+            if (landlinePhone) landlinePhone = landlinePhone.slice(-11);
+            
+            return {
+                name: document.getElementById('salonName').value.trim(),
+                ownerName: document.getElementById('ownerName').value.trim(),
+                phone: mobilePhone, // Ana telefon (WhatsApp için GSM)
+                mobilePhone: mobilePhone,
+                landlinePhone: landlinePhone || null,
+                email: document.getElementById('email').value.trim(),
+                city: document.getElementById('city').value,
+                district: document.getElementById('district').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                pin: document.getElementById('pin').value.trim(),
+                staff, 
+                services,
+                package: selectedPackage,
+                packageName: pkg.name,
+                packagePrice: pkg.price,
+                setupFee: pkg.setup,
+                note: document.getElementById('note')?.value.trim() || ''
+            };
+        }
+        
+        function renderReview() {
+            const d = getFormData();
+            const pkg = PACKAGES[selectedPackage];
+            const servicesHtml = d.services.map(s => 
+                `<div style="display:flex;justify-content:space-between;padding:0.25rem 0;"><span>${s.icon} ${s.name}</span><span style="font-weight:600">${s.price} ₺</span></div>`
+            ).join('');
+            
+            document.getElementById('reviewContent').innerHTML = `
+                <div class="review-card" style="border-left: 4px solid ${selectedPackage === 'starter' ? '#10b981' : selectedPackage === 'pro' ? '#3b82f6' : '#8b5cf6'};">
+                    <h4>SEÇİLEN PAKET</h4>
+                    <p>${pkg.name}</p>
+                    <p class="sub">${pkg.price} ₺/ay${pkg.setup > 0 ? ` • Kurulum: ${pkg.setup} ₺` : ' • Kurulum Ücretsiz'}</p>
+                </div>
+                <div class="review-card"><h4>SALON</h4><p>${escapeHtml(d.name)}</p><p class="sub">${escapeHtml(d.district)}, ${escapeHtml(d.city)}</p></div>
+                <div class="review-card"><h4>İLETİŞİM</h4><p>${escapeHtml(d.ownerName)}</p><p class="sub">${d.phone} • ${escapeHtml(d.email)}</p></div>
+                <div class="review-card"><h4>PERSONEL (${d.staff.length})</h4><p class="sub">${d.staff.map(s => escapeHtml(s.name)).join(', ')}</p></div>
+                <div class="review-card"><h4>HİZMETLER (${d.services.length})</h4>${servicesHtml}</div>`;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+        
+        function generateSlug(name) {
+            return name.toLowerCase().replace(/[çÇ]/g,'c').replace(/[ğĞ]/g,'g').replace(/[ıİ]/g,'i')
+                .replace(/[öÖ]/g,'o').replace(/[şŞ]/g,'s').replace(/[üÜ]/g,'u').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+        }
+        
+        async function getUniqueSlug(base) {
+            const q1 = await db.collection('salons').where('slug', '==', base).get();
+            if (q1.empty) return base;
+            const d = getFormData();
+            const withCity = base + '-' + generateSlug(d.district || d.city);
+            const q2 = await db.collection('salons').where('slug', '==', withCity).get();
+            if (q2.empty) return withCity;
+            return null;
+        }
+        
+        async function submitApplication() {
+            if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true; btn.innerHTML = '⏳ Gönderiliyor...';
+            try {
+                const d = getFormData();
+                const slug = await getUniqueSlug(generateSlug(d.name));
+                if (!slug) {
+                    showToast('Bu salon adı kullanılıyor. Farklı ad seçin.', 'error');
+                    btn.disabled = false; btn.innerHTML = '✓ Başvuruyu Gönder';
+                    goToStep(1); document.getElementById('salonName').focus();
+                    return;
+                }
+                
+                // Services artık getFormData'dan özel fiyatlarıyla geliyor
+                const services = d.services.map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    icon: s.icon,
+                    duration: s.duration,
+                    price: s.price,
+                    active: true
+                }));
+                
+                // Konum bilgilerini al
+                const locationLat = document.getElementById('locationLat').value;
+                const locationLng = document.getElementById('locationLng').value;
+                const placeId = document.getElementById('placeId').value;
+                
+                const salonData = {
+                    name: d.name, slug, ownerName: d.ownerName, 
+                    phone: d.phone, // Ana telefon (GSM/WhatsApp)
+                    mobilePhone: d.mobilePhone,
+                    landlinePhone: d.landlinePhone,
+                    email: d.email,
+                    city: d.city, district: d.district, address: d.address, pin: d.pin,
+                    category: 'berber', 
+                    package: d.package,
+                    packageName: d.packageName,
+                    packagePrice: d.packagePrice,
+                    setupFee: d.setupFee,
+                    staff: d.staff, 
+                    services,
+                    note: d.note, rating: 5.0, reviewCount: 0, active: false, status: 'pending',
+                    workingHours: APP_CONFIG.workingHours.default, createdAt: new Date().toISOString()
+                };
+                
+                // Konum varsa ekle
+                if (locationLat && locationLng) {
+                    salonData.location = {
+                        lat: parseFloat(locationLat),
+                        lng: parseFloat(locationLng)
+                    };
+                }
+                if (placeId) salonData.googlePlaceId = placeId;
+                
+                await db.collection('salons').add(salonData);
+                
+                // Send admin email
+                if (typeof emailjs !== 'undefined' && typeof EMAILJS_CONFIG !== 'undefined') {
+                    emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateNewSalon, {
+                        to_email: 'feaborzan@gmail.com', salon_name: d.name, owner_name: d.ownerName,
+                        phone: d.phone, email: d.email, city: d.city, district: d.district, slug,
+                        package_name: d.packageName, package_price: d.packagePrice + ' ₺/ay',
+                        setup_fee: d.setupFee > 0 ? d.setupFee + ' ₺' : 'Ücretsiz',
+                        created_at: new Date().toLocaleString('tr-TR'), admin_url: location.origin + '/admin/'
+                    }).catch(e => console.error('Email error:', e));
+                }
+                
+                document.getElementById('successPhone').textContent = d.phone;
+                document.getElementById('successPin').textContent = d.pin;
+                document.getElementById('successUrl').textContent = location.origin + '/berber/salon/yonetim/?slug=' + slug;
+                document.getElementById('stepsIndicator').style.display = 'none';
+                document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+                document.getElementById('successScreen').classList.remove('hidden');
+                showToast('Başvuru gönderildi!', 'success');
+            } catch (e) {
+                console.error(e);
+                showToast('Hata oluştu. Tekrar deneyin.', 'error');
+                btn.disabled = false; btn.innerHTML = '✓ Başvuruyu Gönder';
+            }
+        }
+        
+        function showToast(msg, type = '') {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.className = 'toast show ' + type;
+            setTimeout(() => t.className = 'toast', 3000);
+        }
+        
+        // ================== TELEFON DOĞRULAMA FONKSİYONLARI ==================
+        
+        // Telefon değiştiğinde doğrulamayı sıfırla
+        function onPhoneChange() {
+            const phone = document.getElementById('mobilePhone').value.replace(/\D/g, '');
+            const verifyBtn = document.getElementById('verifyPhoneBtn');
+            const verifiedBadge = document.getElementById('phoneVerifiedBadge');
+            
+            if (phoneVerified) {
+                phoneVerified = false;
+                verifyBtn.classList.remove('verified');
+                verifyBtn.innerHTML = '📲 Telefonu Doğrula';
+                verifyBtn.style.display = 'inline-flex';
+                verifiedBadge.style.display = 'none';
+            }
+            
+            // 10 hane olduysa doğrulama butonunu aktif et
+            verifyBtn.disabled = phone.length < 10;
+        }
+        
+        // Telefon doğrulamayı başlat
+        async function startPhoneVerification() {
+            const phone = document.getElementById('mobilePhone').value.replace(/\D/g, '');
+            
+            if (phone.length < 10) {
+                showToast('Geçerli bir telefon numarası girin', 'error');
+                return;
+            }
+            
+            // Telefonu göster
+            const formattedPhone = '0' + phone.slice(-10);
+            const maskedPhone = formattedPhone.substring(0, 4) + ' *** ** ' + formattedPhone.slice(-2);
+            document.getElementById('otpPhone').textContent = maskedPhone;
+            
+            // Butonu devre dışı bırak
+            const btn = document.getElementById('verifyPhoneBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Gönderiliyor...';
+            
+            try {
+                // Twilio Verify API ile SMS gönder
+                const response = await fetch('/functions/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phone.slice(-10) })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Modal aç
+                    document.getElementById('otpModal').classList.add('active');
+                    document.getElementById('otp1').focus();
+                    
+                    // Geri sayımı başlat
+                    startOtpTimer();
+                    
+                    showToast('Doğrulama kodu gönderildi', 'success');
+                } else {
+                    showToast(result.error || 'SMS gönderilemedi', 'error');
+                }
+            } catch (error) {
+                console.error('OTP gönderme hatası:', error);
+                showToast('Bağlantı hatası, tekrar deneyin', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '📱 Telefonu Doğrula';
+            }
+        }
+        
+        // OTP tekrar gönder
+        async function resendOtp() {
+            const phone = document.getElementById('mobilePhone').value.replace(/\D/g, '');
+            
+            const resendBtn = document.getElementById('resendOtpBtn');
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'Gönderiliyor...';
+            
+            try {
+                const response = await fetch('/functions/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phone.slice(-10) })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Kod tekrar gönderildi', 'success');
+                    startOtpTimer();
+                } else {
+                    showToast(result.error || 'Gönderilemedi', 'error');
+                    resendBtn.disabled = false;
+                }
+            } catch (error) {
+                showToast('Bağlantı hatası', 'error');
+                resendBtn.disabled = false;
+            }
+            
+            resendBtn.textContent = 'Kodu Tekrar Gönder';
+        }
+        
+        // OTP geri sayım zamanlayıcısı
+        function startOtpTimer() {
+            otpCountdown = 60;
+            const timerEl = document.getElementById('otpTimer');
+            const resendBtn = document.getElementById('resendOtpBtn');
+            
+            resendBtn.disabled = true;
+            
+            if (otpTimer) clearInterval(otpTimer);
+            
+            otpTimer = setInterval(() => {
+                otpCountdown--;
+                timerEl.textContent = `${otpCountdown} saniye sonra tekrar gönderebilirsiniz`;
+                
+                if (otpCountdown <= 0) {
+                    clearInterval(otpTimer);
+                    timerEl.textContent = '';
+                    resendBtn.disabled = false;
+                }
+            }, 1000);
+        }
+        
+        // OTP input handler
+        function handleOtpInput(input, index) {
+            const value = input.value.replace(/\D/g, '');
+            input.value = value;
+            
+            // Hata stilini kaldır
+            input.classList.remove('error');
+            document.getElementById('otpError').classList.remove('show');
+            
+            // Sonraki input'a geç
+            if (value && index < 6) {
+                document.getElementById('otp' + (index + 1)).focus();
+            }
+            
+            // 6 hane tamamlandıysa otomatik doğrula
+            const otp = getEnteredOtp();
+            if (otp.length === 6) {
+                verifyOtpCode();
+            }
+        }
+        
+        // Girilen OTP'yi al
+        function getEnteredOtp() {
+            return document.getElementById('otp1').value +
+                   document.getElementById('otp2').value +
+                   document.getElementById('otp3').value +
+                   document.getElementById('otp4').value +
+                   document.getElementById('otp5').value +
+                   document.getElementById('otp6').value;
+        }
+        
+        // OTP doğrula
+        async function verifyOtpCode() {
+            const enteredOtp = getEnteredOtp();
+            
+            if (enteredOtp.length !== 6) {
+                showToast('Lütfen 6 haneli kodu girin', 'error');
+                return;
+            }
+            
+            const phone = document.getElementById('mobilePhone').value.replace(/\D/g, '');
+            const verifyBtn = document.querySelector('.otp-actions .btn-primary');
+            
+            if (verifyBtn) {
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = 'Doğrulanıyor...';
+            }
+            
+            try {
+                const response = await fetch('/functions/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        phone: phone.slice(-10),
+                        code: enteredOtp 
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.status === 'approved') {
+                    // Doğrulama başarılı
+                    phoneVerified = true;
+                    
+                    // Inputları başarılı göster
+                    for (let i = 1; i <= 6; i++) {
+                        document.getElementById('otp' + i).classList.add('success');
+                    }
+                    
+                    setTimeout(() => {
+                        closeOtpModal();
+                        
+                        // Doğrulama başarılı - UI güncelle
+                        document.getElementById('verifyPhoneBtn').innerHTML = '✓ Doğrulandı';
+                        document.getElementById('verifyPhoneBtn').disabled = true;
+                        document.getElementById('verifyPhoneBtn').style.background = 'var(--success)';
+                        document.getElementById('mobilePhone').readOnly = true;
+                        
+                        showToast('Telefon doğrulandı!', 'success');
+                    }, 500);
+                } else {
+                    // Hatalı kod
+                    for (let i = 1; i <= 6; i++) {
+                        document.getElementById('otp' + i).classList.add('error');
+                    }
+                    document.getElementById('otpError').classList.add('show');
+                    
+                    showToast(result.message || 'Kod hatalı', 'error');
+                }
+            } catch (error) {
+                console.error('OTP doğrulama hatası:', error);
+                showToast('Bağlantı hatası, tekrar deneyin', 'error');
+            } finally {
+                if (verifyBtn) {
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Doğrula';
+                }
+            }
+        }
+        
+        // OTP modalını kapat
+        function closeOtpModal() {
+            document.getElementById('otpModal').classList.remove('active');
+            
+            // Inputları temizle
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById('otp' + i).value = '';
+                document.getElementById('otp' + i).classList.remove('error', 'success');
+            }
+            document.getElementById('otpError').classList.remove('show');
+            
+            // Timer'ı durdur
+            if (otpTimer) {
+                clearInterval(otpTimer);
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>

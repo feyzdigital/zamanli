@@ -1,0 +1,11 @@
+/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/berber/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/admin/*
+  Cache-Control: no-cache, no-store, must-revalidate

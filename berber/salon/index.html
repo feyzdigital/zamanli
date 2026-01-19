@@ -1,0 +1,3013 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Salon - Zamanlı</title>
+    
+    <!-- PWA Install Prompt - En erken yakala -->
+    <script>window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__pwaPrompt=e;console.log('[PWA] Prompt yakalandı')});</script>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon.svg">
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--slate-100);
+            color: var(--slate-800);
+            line-height: 1.5;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Header - Minimal */
+        .header {
+            background: white;
+            padding: 0 1rem;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--slate-200);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--slate-900);
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .back-btn {
+            color: var(--slate-500);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            color: var(--slate-600);
+        }
+        
+        .desktop-only { display: block; }
+        
+        @media (max-width: 600px) {
+            .desktop-only { display: none; }
+        }
+        
+        /* Mobile Menu */
+        .salon-mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 280px;
+            height: 100%;
+            background: white;
+            z-index: 1001;
+            transition: right 0.3s ease;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .salon-mobile-menu.active {
+            right: 0;
+        }
+        
+        .salon-menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid var(--slate-200);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .salon-menu-header button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--slate-500);
+        }
+        
+        .salon-menu-nav {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .salon-menu-nav a {
+            padding: 1rem;
+            text-decoration: none;
+            color: var(--slate-700);
+            font-weight: 500;
+            border-bottom: 1px solid var(--slate-100);
+            transition: background 0.2s;
+        }
+        
+        .salon-menu-nav a:hover {
+            background: var(--slate-50);
+        }
+        
+        .salon-menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .salon-menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Login Modal */
+        .salon-login-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .salon-login-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .salon-login-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+        
+        .salon-login-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--slate-200);
+        }
+        
+        .salon-login-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        
+        .salon-login-header button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--slate-400);
+        }
+        
+        .salon-login-body {
+            padding: 1.5rem;
+        }
+        
+        .salon-login-body > p {
+            text-align: center;
+            color: var(--slate-500);
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+        
+        .salon-login-field {
+            margin-bottom: 1rem;
+        }
+        
+        .salon-login-field label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--slate-700);
+            margin-bottom: 0.4rem;
+        }
+        
+        .salon-login-field input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--slate-200);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        
+        .salon-login-field input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .salon-login-error {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            min-height: 1.2em;
+        }
+        
+        .salon-login-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .salon-login-btn:disabled {
+            opacity: 0.7;
+        }
+        
+        .salon-login-register {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--slate-500);
+            margin-top: 1rem;
+        }
+        
+        .salon-login-register a {
+            color: var(--primary);
+            font-weight: 500;
+            text-decoration: none;
+        }
+        
+        /* Loading & Error */
+        .loading, .error-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            gap: 1rem;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--slate-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Main Layout */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 900px) {
+            .main {
+                grid-template-columns: 1fr;
+                padding: 0;
+                padding-bottom: 150px; /* Bottom nav (70px) + booking toggle (80px) */
+            }
+        }
+        
+        /* Salon Card */
+        .salon-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        
+        @media (max-width: 900px) {
+            .salon-card { border-radius: 0; }
+        }
+        
+        .salon-cover {
+            height: 180px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .salon-cover.has-logo {
+            background: linear-gradient(135deg, var(--slate-800), var(--slate-900));
+        }
+        
+        .salon-cover-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            background: white;
+        }
+        
+        .salon-info {
+            padding: 1.25rem;
+        }
+        
+        .salon-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .salon-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        .salon-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: var(--slate-100);
+            padding: 0.35rem 0.65rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .salon-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            color: var(--slate-600);
+            font-size: 0.9rem;
+        }
+        
+        .salon-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        
+        .status-badge {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.closed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Section */
+        .section {
+            padding: 1.25rem;
+            border-top: 1px solid var(--slate-100);
+        }
+        
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--slate-800);
+        }
+        
+        /* Services */
+        .service-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.875rem 0;
+            border-bottom: 1px solid var(--slate-100);
+        }
+        
+        .service-item:last-child { border-bottom: none; }
+        
+        .service-info h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+        
+        .service-info span {
+            font-size: 0.8rem;
+            color: var(--slate-500);
+        }
+        
+        .service-price {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        /* Staff */
+        .staff-grid {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+        
+        .staff-card {
+            text-align: center;
+            min-width: 80px;
+        }
+        
+        .staff-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--slate-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 0.5rem;
+        }
+        
+        .staff-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .staff-role {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+        }
+        
+        /* Hours */
+        .hours-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .hour-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            font-size: 0.875rem;
+        }
+        
+        .hour-day { color: var(--slate-600); }
+        .hour-time { font-weight: 500; }
+        .hour-time.closed { color: var(--danger); }
+        
+        /* Aksiyon Butonları */
+        .salon-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.5rem 0.875rem;
+            background: var(--slate-100);
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--slate-700);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: var(--slate-200);
+        }
+        
+        .action-btn span { font-size: 1rem; }
+        
+        /* Galeri */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        .gallery-item {
+            aspect-ratio: 4/3;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .gallery-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .gallery-item:hover img {
+            transform: scale(1.08);
+        }
+        
+        /* Lightbox */
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .lightbox-overlay.active {
+            display: flex;
+        }
+        
+        .lightbox-image {
+            max-width: 90%;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .lightbox-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Yorumlar */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .section-header .section-title {
+            margin-bottom: 0;
+        }
+        
+        .avg-rating {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .review-card {
+            background: var(--slate-50);
+            border-radius: var(--radius);
+            padding: 1rem;
+        }
+        
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        
+        .review-user {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .review-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--primary);
+        }
+        
+        .review-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .review-date {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+        }
+        
+        .review-stars {
+            color: #fbbf24;
+            font-size: 0.9rem;
+        }
+        
+        .review-text {
+            font-size: 0.9rem;
+            color: var(--slate-600);
+            line-height: 1.5;
+        }
+        
+        .review-service {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--slate-200);
+        }
+        
+        .no-reviews {
+            color: var(--slate-500);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .review-count {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            font-weight: 400;
+        }
+        
+        /* Lightbox */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .lightbox.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+        
+        .lightbox-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+        
+        /* Google Calendar Button */
+        .btn-google-cal {
+            width: 100%;
+            padding: 0.75rem;
+            background: white;
+            color: var(--slate-700);
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+        
+        .btn-google-cal:hover {
+            background: var(--slate-50);
+            border-color: var(--slate-300);
+        }
+        
+        .btn-google-cal img {
+            width: 18px;
+            height: 18px;
+        }
+        
+        /* Yorum Yapma Formu */
+        .add-review-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .add-review-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        .review-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+        
+        .review-modal.active {
+            display: flex;
+        }
+        
+        .review-modal-content {
+            background: white;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .review-modal-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .review-modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .review-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--slate-500);
+        }
+        
+        .review-modal-body {
+            padding: 1.25rem;
+        }
+        
+        .rating-input {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        
+        .rating-star {
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--slate-300);
+            transition: color 0.15s;
+        }
+        
+        .rating-star.active,
+        .rating-star:hover {
+            color: #fbbf24;
+        }
+        
+        .rating-label {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--slate-600);
+            margin-bottom: 1rem;
+        }
+        
+        .review-form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .review-form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--slate-700);
+        }
+        
+        .review-form-group input,
+        .review-form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--slate-300);
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        
+        .review-form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .review-submit-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .review-submit-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        .review-submit-btn:disabled {
+            background: var(--slate-300);
+            cursor: not-allowed;
+        }
+        
+        .review-verify-section {
+            background: var(--slate-50);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .review-verify-section p {
+            font-size: 0.85rem;
+            color: var(--slate-600);
+            margin-bottom: 0.75rem;
+        }
+        
+        .verify-input-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .verify-input-row input {
+            flex: 1;
+        }
+        
+        .verify-btn {
+            padding: 0.75rem 1rem;
+            background: var(--slate-700);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        /* Google Takvim Export Butonu (Berber Yönetim) */
+        .gcal-export-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid var(--slate-300);
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: var(--slate-700);
+        }
+        
+        .gcal-export-btn:hover {
+            background: var(--slate-50);
+            border-color: var(--primary);
+        }
+        
+        /* ========== BOOKING PANEL ========== */
+        .booking-panel {
+            position: sticky;
+            top: 72px;
+        }
+        
+        @media (max-width: 900px) {
+            .booking-panel {
+                position: fixed;
+                bottom: 70px; /* Bottom nav yüksekliği */
+                left: 0;
+                right: 0;
+                top: auto;
+                z-index: 200;
+            }
+        }
+        
+        .booking-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+        
+        @media (max-width: 900px) {
+            .booking-card {
+                border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+                max-height: calc(85vh - 70px); /* Bottom nav için alan bırak */
+                display: flex;
+                flex-direction: column;
+            }
+        }
+        
+        /* Mobile Toggle Bar */
+        .booking-toggle {
+            display: none;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            cursor: pointer;
+            color: white;
+        }
+        
+        @media (max-width: 900px) {
+            .booking-toggle { display: flex; align-items: center; justify-content: space-between; }
+        }
+        
+        .toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .toggle-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .toggle-text h4 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .toggle-text p {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.85);
+        }
+        
+        .toggle-arrow {
+            font-size: 1.25rem;
+            color: rgba(255,255,255,0.8);
+            transition: transform 0.3s;
+        }
+        
+        .booking-card.collapsed .toggle-arrow {
+            transform: rotate(180deg);
+        }
+        
+        /* Booking Content */
+        .booking-content {
+            padding: 1.25rem;
+            overflow-y: auto;
+        }
+        
+        @media (max-width: 900px) {
+            .booking-card.collapsed .booking-content { display: none; }
+            .booking-content { flex: 1; }
+        }
+        
+        .booking-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+        
+        @media (max-width: 900px) {
+            .booking-title { display: none; }
+        }
+        
+        /* Form Steps */
+        .form-step {
+            margin-bottom: 1.5rem;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
+        
+        .step-num {
+            width: 22px;
+            height: 22px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        
+        .step-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--slate-700);
+        }
+        
+        /* Select Input */
+        .form-select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 18px;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* Date Selector */
+        .date-scroll {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding: 0.25rem 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .date-scroll::-webkit-scrollbar { display: none; }
+        
+        .date-item {
+            min-width: 60px;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+        
+        .date-item:hover { border-color: var(--slate-300); }
+        
+        .date-item.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .date-item.selected .date-day,
+        .date-item.selected .date-month { color: white; }
+        
+        .date-day {
+            font-size: 0.7rem;
+            color: var(--slate-500);
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+        
+        .date-num {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .date-month {
+            font-size: 0.7rem;
+            color: var(--slate-500);
+            margin-top: 0.15rem;
+        }
+        
+        /* Time Grid */
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .time-slot {
+            padding: 0.75rem;
+            text-align: center;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+        
+        .time-slot:hover:not(.disabled) { border-color: var(--primary); }
+        
+        .time-slot.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .time-slot.disabled {
+            background: var(--slate-100);
+            color: var(--slate-400);
+            cursor: not-allowed;
+            border-color: var(--slate-100);
+        }
+        
+        .time-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: var(--slate-500);
+            padding: 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Summary */
+        .booking-summary {
+            background: var(--slate-50);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .summary-label { color: var(--slate-500); }
+        .summary-value { font-weight: 600; }
+        
+        /* Book Button */
+        .book-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .book-btn:hover:not(:disabled) { background: var(--primary-dark); }
+        
+        .book-btn:disabled {
+            background: var(--slate-300);
+            cursor: not-allowed;
+        }
+        
+        /* ========== MODALS ========== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--slate-100);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--slate-100);
+            border-radius: 50%;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: var(--slate-500);
+        }
+        
+        .modal-body {
+            padding: 1.25rem;
+        }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: var(--slate-700);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .form-hint {
+            font-size: 0.8rem;
+            color: var(--slate-500);
+            margin-top: 0.35rem;
+        }
+        
+        /* Success Modal */
+        .success-content {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .success-check {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--success), #059669);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.25rem;
+            animation: scaleIn 0.4s ease-out;
+        }
+        
+        .success-check span {
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        @keyframes scaleIn {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .success-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .success-text {
+            color: var(--slate-600);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .success-details {
+            background: var(--slate-50);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        
+        .success-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--slate-200);
+            font-size: 0.9rem;
+        }
+        
+        .success-row:last-child { border-bottom: none; }
+        .success-row-label { color: var(--slate-500); }
+        .success-row-value { font-weight: 600; }
+        
+        .btn-whatsapp {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #25d366, #128C7E);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);
+        }
+        
+        .btn-whatsapp:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+        }
+        
+        .btn-whatsapp:active {
+            transform: translateY(0);
+        }
+        
+        .success-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .success-btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        
+        .btn-calendar {
+            padding: 0.875rem;
+            background: var(--slate-100);
+            color: var(--slate-700);
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .btn-calendar:hover {
+            background: var(--slate-200);
+        }
+        
+        .btn-done {
+            padding: 0.875rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        
+        .btn-done:hover {
+            background: var(--primary-dark);
+        }
+        
+        .success-modal .modal {
+            max-width: 380px;
+        }
+        
+        .btn-secondary {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--slate-100);
+            color: var(--slate-700);
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--slate-500);
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 900px) {
+            footer { display: none; }
+        }
+        
+        /* AI Öneri Banner */
+        .ai-suggestion-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .ai-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .ai-banner-icon {
+            font-size: 1.5rem;
+        }
+        
+        .ai-banner-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+        
+        .ai-banner-text strong {
+            font-size: 0.9rem;
+            color: #1e293b;
+        }
+        
+        .ai-banner-text span {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        
+        .ai-suggest-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .ai-suggest-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+        
+        @media (max-width: 500px) {
+            .ai-suggestion-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+            .ai-banner-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="/" class="logo">💈 Zamanlı</a>
+        <div class="header-right">
+            <a href="/berber/" class="back-btn desktop-only">← Berberlere Dön</a>
+            <button class="menu-btn" onclick="toggleSalonMenu()">☰</button>
+        </div>
+    </header>
+    
+    <!-- Mobile Menu -->
+    <div id="salonMobileMenu" class="salon-mobile-menu">
+        <div class="salon-menu-header">
+            <span>💈 Zamanlı</span>
+            <button onclick="toggleSalonMenu()">✕</button>
+        </div>
+        <nav class="salon-menu-nav">
+            <a href="/">🏠 Ana Sayfa</a>
+            <a href="/berber/">💈 Berber Bul</a>
+            <a href="/berber/kayit/">➕ Salonunu Ekle</a>
+            <a href="#" onclick="showSalonLoginModal(); toggleSalonMenu(); return false;">🔑 Giriş Yap</a>
+        </nav>
+    </div>
+    <div id="salonMenuOverlay" class="salon-menu-overlay" onclick="toggleSalonMenu()"></div>
+    
+    <!-- Login Modal -->
+    <div id="salonLoginModal" class="salon-login-modal">
+        <div class="salon-login-content">
+            <div class="salon-login-header">
+                <h3>🔑 Salon Girişi</h3>
+                <button onclick="closeSalonLoginModal()">×</button>
+            </div>
+            <div class="salon-login-body">
+                <p>Yönetim panelinize erişmek için giriş yapın</p>
+                <form onsubmit="handleSalonLogin(event)">
+                    <div class="salon-login-field">
+                        <label>Telefon Numarası</label>
+                        <input type="tel" id="salonLoginPhone" placeholder="05XX XXX XX XX" required>
+                    </div>
+                    <div class="salon-login-field">
+                        <label>PIN Kodu</label>
+                        <input type="password" id="salonLoginPin" placeholder="4-6 haneli PIN" maxlength="6" required>
+                    </div>
+                    <p id="salonLoginError" class="salon-login-error"></p>
+                    <button type="submit" class="salon-login-btn">Giriş Yap</button>
+                </form>
+                <p class="salon-login-register">Henüz salonunuz yok mu? <a href="/berber/kayit/">Ücretsiz Kayıt Ol</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="loadingState" class="loading">
+        <div class="spinner"></div>
+        <p>Yükleniyor...</p>
+    </div>
+    
+    <div id="errorState" class="error-state" style="display: none;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">😕</div>
+        <h2 style="margin-bottom: 0.5rem;">Salon Bulunamadı</h2>
+        <p style="color: var(--slate-600); margin-bottom: 1.5rem;">Bu salon mevcut değil veya aktif değil.</p>
+        <a href="/berber/" class="book-btn" style="max-width: 200px; display: inline-block; text-decoration: none; text-align: center;">Berberlere Dön</a>
+    </div>
+    
+    <main id="mainContent" class="main" style="display: none;">
+        <!-- Salon Details -->
+        <div class="salon-details">
+            <div class="salon-card">
+                <div class="salon-cover" id="salonCover">💈</div>
+                <div class="salon-info">
+                    <div class="salon-header-row">
+                        <h1 id="salonName" class="salon-name">Salon</h1>
+                        <div class="salon-rating" id="salonRatingBox">⭐ <span id="salonRating">5.0</span> <span id="reviewCount" class="review-count"></span></div>
+                    </div>
+                    <div class="salon-meta">
+                        <div class="salon-meta-item">📍 <span id="salonLocation">Konum</span></div>
+                        <div class="salon-meta-item">📞 <span id="salonPhone">Telefon</span></div>
+                        <span id="salonStatus" class="status-badge">Açık</span>
+                    </div>
+                    
+                    <!-- Aksiyon Butonları -->
+                    <div class="salon-actions">
+                        <button onclick="openDirections()" class="action-btn" id="directionsBtn" style="display:none;">
+                            <span>🗺️</span> Yol Tarifi
+                        </button>
+                        <button onclick="callSalon()" class="action-btn">
+                            <span>📞</span> Ara
+                        </button>
+                        <a href="#" id="googleBusinessBtn" class="action-btn" target="_blank" style="display:none;">
+                            <span>⭐</span> Google'da Değerlendir
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Galeri -->
+                <div id="gallerySection" class="section" style="display:none;">
+                    <h3 class="section-title">📸 Galeri</h3>
+                    <div id="galleryGrid" class="gallery-grid"></div>
+                </div>
+                
+                <div class="section">
+                    <h3 class="section-title">Hizmetler</h3>
+                    <div id="serviceList"></div>
+                </div>
+                
+                <div class="section">
+                    <h3 class="section-title">Ekibimiz</h3>
+                    <div id="staffGrid" class="staff-grid"></div>
+                </div>
+                
+                <div class="section">
+                    <h3 class="section-title">Çalışma Saatleri</h3>
+                    <div id="hoursList" class="hours-grid"></div>
+                </div>
+                
+                <!-- Yorumlar Bölümü -->
+                <div class="section" id="reviewsSection">
+                    <div class="section-header">
+                        <h3 class="section-title">⭐ Değerlendirmeler</h3>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span id="avgRating" class="avg-rating"></span>
+                            <button class="add-review-btn" onclick="openReviewModal()">✍️ Yorum Yap</button>
+                        </div>
+                    </div>
+                    <div id="reviewsList" class="reviews-list">
+                        <p class="no-reviews">Henüz değerlendirme yok</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Booking Panel -->
+        <div class="booking-panel">
+            <div id="bookingCard" class="booking-card collapsed">
+                <div class="booking-toggle" onclick="toggleBooking()">
+                    <div class="toggle-left">
+                        <div class="toggle-icon">📅</div>
+                        <div class="toggle-text">
+                            <h4>Randevu Al</h4>
+                            <p id="toggleSummary">Hizmet ve tarih seçin</p>
+                        </div>
+                    </div>
+                    <span class="toggle-arrow">▼</span>
+                </div>
+                
+                <div class="booking-content">
+                    <h3 class="booking-title">Randevu Al</h3>
+                    
+                    <!-- AI Öneri Butonu -->
+                    <div class="ai-suggestion-banner" id="aiSuggestionBanner" style="display: none;">
+                        <div class="ai-banner-content">
+                            <span class="ai-banner-icon">🤖</span>
+                            <div class="ai-banner-text">
+                                <strong>Daha önce geldiyseniz</strong>
+                                <span>Size özel tarih önerebiliriz</span>
+                            </div>
+                        </div>
+                        <button type="button" class="ai-suggest-btn" onclick="triggerAIRecommendation()">
+                            <span class="ai-icon">✨</span>
+                            Akıllı Öneri
+                        </button>
+                    </div>
+                    
+                    <div class="form-step">
+                        <div class="step-header">
+                            <span class="step-num">1</span>
+                            <span class="step-title">Hizmet Seçin</span>
+                        </div>
+                        <select id="serviceSelect" class="form-select" onchange="updateBooking()">
+                            <option value="">Hizmet seçin...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-step">
+                        <div class="step-header">
+                            <span class="step-num">2</span>
+                            <span class="step-title">Personel (Opsiyonel)</span>
+                        </div>
+                        <select id="staffSelect" class="form-select" onchange="updateBooking()">
+                            <option value="">Fark etmez</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-step">
+                        <div class="step-header">
+                            <span class="step-num">3</span>
+                            <span class="step-title">Tarih Seçin</span>
+                        </div>
+                        <div id="dateScroll" class="date-scroll"></div>
+                    </div>
+                    
+                    <div class="form-step">
+                        <div class="step-header">
+                            <span class="step-num">4</span>
+                            <span class="step-title">Saat Seçin</span>
+                        </div>
+                        <div id="timeGrid" class="time-grid">
+                            <p class="time-empty">Önce tarih seçin</p>
+                        </div>
+                    </div>
+                    
+                    <div id="bookingSummary" class="booking-summary" style="display: none;">
+                        <div class="summary-row">
+                            <span class="summary-label">Hizmet</span>
+                            <span class="summary-value" id="summaryService">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Tarih</span>
+                            <span class="summary-value" id="summaryDate">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Saat</span>
+                            <span class="summary-value" id="summaryTime">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Tutar</span>
+                            <span class="summary-value" id="summaryPrice">-</span>
+                        </div>
+                    </div>
+                    
+                    <button id="bookBtn" class="book-btn" onclick="openBookingModal()" disabled>
+                        Randevuyu Onayla
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Booking Form Modal -->
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Bilgilerinizi Girin</h3>
+                <button class="modal-close" onclick="closeBookingModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="bookingForm" onsubmit="submitBooking(event)">
+                    <div class="form-group">
+                        <label class="form-label">Ad Soyad *</label>
+                        <input type="text" id="customerName" class="form-input" required placeholder="Adınız Soyadınız">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefon *</label>
+                        <input type="tel" id="customerPhone" class="form-input" required placeholder="05XX XXX XX XX">
+                        <p class="form-hint">WhatsApp'tan hatırlatma göndereceğiz</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Not (Opsiyonel)</label>
+                        <input type="text" id="customerNote" class="form-input" placeholder="Özel isteğiniz var mı?">
+                    </div>
+                    
+                    <div class="booking-summary">
+                        <div class="summary-row">
+                            <span class="summary-label">Hizmet</span>
+                            <span class="summary-value" id="modalService">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Tarih</span>
+                            <span class="summary-value" id="modalDate">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Saat</span>
+                            <span class="summary-value" id="modalTime">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Tutar</span>
+                            <span class="summary-value" id="modalPrice">-</span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="book-btn">✓ Randevuyu Tamamla</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal success-modal">
+            <div class="modal-body">
+                <div class="success-content">
+                    <div class="success-check"><span>✓</span></div>
+                    <h3 class="success-title">Randevu Başvurunuz Alındı!</h3>
+                    <p class="success-text">Salon sahibi onayladığında veya reddettiğinde WhatsApp'tan bilgilendirileceksiniz.</p>
+                    <div id="successDetails" class="success-details"></div>
+                    
+                    <div class="success-actions">
+                        <button class="btn-whatsapp" onclick="openWhatsApp()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            Salona Mesaj Gönder
+                        </button>
+                        
+                        <div class="success-btn-row">
+                            <a href="#" id="addToGoogleCalBtn" class="btn-calendar" target="_blank" onclick="addToGoogleCalendar(event)">
+                                📅 Takvime Ekle
+                            </a>
+                            <button class="btn-done" onclick="closeSuccessModal()">Tamam</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lightbox for Gallery -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+        <img id="lightboxImg" src="" alt="">
+    </div>
+    
+    <!-- Yorum Yapma Modalı -->
+    <div id="reviewModal" class="review-modal">
+        <div class="review-modal-content">
+            <div class="review-modal-header">
+                <h3>⭐ Değerlendirme Yap</h3>
+                <button class="review-modal-close" onclick="closeReviewModal()">×</button>
+            </div>
+            <div class="review-modal-body">
+                <!-- Doğrulama Bölümü -->
+                <div id="reviewVerifySection" class="review-verify-section">
+                    <p>Yorum yapabilmek için randevunuzu doğrulayın:</p>
+                    <div class="verify-input-row">
+                        <input type="tel" id="verifyPhone" placeholder="Telefon numaranız" class="form-input">
+                        <button class="verify-btn" onclick="verifyForReview()">Doğrula</button>
+                    </div>
+                    <p id="verifyError" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.5rem; display: none;"></p>
+                </div>
+                
+                <!-- Doğrulanmış Kullanıcı Bilgisi -->
+                <div id="reviewVerifiedInfo" style="display: none;">
+                    <div class="verified-badge">✓ Doğrulanmış Müşteri</div>
+                    <p id="verifiedName" style="font-weight: 600; margin-top: 0.5rem;"></p>
+                    <p id="verifiedService" style="font-size: 0.85rem; color: var(--slate-500);"></p>
+                </div>
+                
+                <!-- Yorum Formu (Doğrulamadan Sonra Görünür) -->
+                <div id="reviewFormSection" style="display: none; margin-top: 1rem;">
+                    <div class="rating-input" id="ratingStars">
+                        <span class="rating-star" data-value="1" onclick="setRating(1)">★</span>
+                        <span class="rating-star" data-value="2" onclick="setRating(2)">★</span>
+                        <span class="rating-star" data-value="3" onclick="setRating(3)">★</span>
+                        <span class="rating-star" data-value="4" onclick="setRating(4)">★</span>
+                        <span class="rating-star" data-value="5" onclick="setRating(5)">★</span>
+                    </div>
+                    <p class="rating-label" id="ratingLabel">Puanınızı seçin</p>
+                    
+                    <div class="review-form-group">
+                        <label>Yorumunuz</label>
+                        <textarea id="reviewComment" placeholder="Deneyiminizi paylaşın..."></textarea>
+                    </div>
+                    
+                    <button class="review-submit-btn" id="submitReviewBtn" onclick="submitReview()" disabled>
+                        Yorum Gönder
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer id="footer">
+        <p>© 2026 Zamanlı - Tüm hakları saklıdır.</p>
+    </footer>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="/config.js"></script>
+    
+    <script>
+        let db, salon = null;
+        let selectedService = null, selectedStaff = null, selectedDate = null, selectedTime = null;
+        let existingAppointments = [];
+        
+        // EmailJS init
+        if (typeof emailjs !== 'undefined' && typeof EMAILJS_CONFIG !== 'undefined') {
+            emailjs.init(EMAILJS_CONFIG.publicKey);
+        }
+        
+        const DAYS_TR = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+        const DAYS_SHORT = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+        const MONTHS_TR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+        const MONTHS_FULL = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        
+        // ========== MOBİL MENÜ ==========
+        function toggleSalonMenu() {
+            document.getElementById('salonMobileMenu').classList.toggle('active');
+            document.getElementById('salonMenuOverlay').classList.toggle('active');
+            document.body.style.overflow = document.getElementById('salonMobileMenu').classList.contains('active') ? 'hidden' : '';
+        }
+        
+        // ========== GİRİŞ MODAL ==========
+        function showSalonLoginModal() {
+            const modal = document.getElementById('salonLoginModal');
+            if (modal) modal.classList.add('active');
+        }
+        
+        function closeSalonLoginModal() {
+            const modal = document.getElementById('salonLoginModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.getElementById('salonLoginError').textContent = '';
+            }
+        }
+        
+        async function handleSalonLogin(e) {
+            e.preventDefault();
+            
+            const phoneRaw = document.getElementById('salonLoginPhone').value.replace(/\D/g, '');
+            const phone10 = phoneRaw.slice(-10);
+            const phone11 = '0' + phone10;
+            const pin = document.getElementById('salonLoginPin').value;
+            const errorEl = document.getElementById('salonLoginError');
+            const btn = e.target.querySelector('button[type="submit"]');
+            
+            btn.disabled = true;
+            btn.textContent = 'Giriş yapılıyor...';
+            errorEl.textContent = '';
+            
+            try {
+                let snapshot = null;
+                
+                // 1. phone field ile 11 haneli
+                snapshot = await db.collection('salons')
+                    .where('phone', '==', phone11)
+                    .limit(1)
+                    .get();
+                
+                // 2. phone field ile 10 haneli
+                if (snapshot.empty) {
+                    snapshot = await db.collection('salons')
+                        .where('phone', '==', phone10)
+                        .limit(1)
+                        .get();
+                }
+                
+                // 3. mobilePhone field ile 11 haneli
+                if (snapshot.empty) {
+                    snapshot = await db.collection('salons')
+                        .where('mobilePhone', '==', phone11)
+                        .limit(1)
+                        .get();
+                }
+                
+                // 4. mobilePhone field ile 10 haneli
+                if (snapshot.empty) {
+                    snapshot = await db.collection('salons')
+                        .where('mobilePhone', '==', phone10)
+                        .limit(1)
+                        .get();
+                }
+                
+                if (snapshot.empty) {
+                    throw new Error('Bu telefon ile kayıtlı salon bulunamadı');
+                }
+                
+                const salonData = snapshot.docs[0].data();
+                
+                if (salonData.pin !== pin) {
+                    throw new Error('PIN kodu hatalı');
+                }
+                
+                const slug = salonData.slug || snapshot.docs[0].id;
+                window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
+                
+            } catch (error) {
+                errorEl.textContent = error.message;
+                btn.disabled = false;
+                btn.textContent = 'Giriş Yap';
+            }
+        }
+        
+        async function init() {
+            if (typeof firebase === 'undefined') { setTimeout(init, 100); return; }
+            firebase.initializeApp(FIREBASE_CONFIG);
+            db = firebase.firestore();
+            
+            // Önce URL parametresinden slug'ı al
+            const urlParams = new URLSearchParams(window.location.search);
+            let slug = urlParams.get('slug');
+            
+            // Eğer parametre yoksa, eski yöntemle dene (geriye uyumluluk)
+            if (!slug) {
+                const pathParts = window.location.pathname.split('/').filter(Boolean);
+                console.log('Path parts:', pathParts);
+                // URL: /berber/[slug]/ -> pathParts = ['berber', 'slug']
+                slug = pathParts[1];
+            }
+            
+            console.log('Looking for slug:', slug);
+            
+            if (!slug || slug === 'salon') { showError(); return; }
+            
+            try {
+                // Önce slug ile ara
+                let snap = await db.collection('salons').where('slug', '==', slug).limit(1).get();
+                console.log('Query result:', snap.empty ? 'empty' : snap.docs[0].data());
+                
+                if (snap.empty) { 
+                    console.log('Salon not found with slug:', slug);
+                    showError(); 
+                    return; 
+                }
+                
+                const salonData = snap.docs[0].data();
+                if (!salonData.active) {
+                    console.log('Salon is not active');
+                    showError();
+                    return;
+                }
+                
+                salon = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                
+                // Load subcollections
+                const [staffSnap, svcSnap] = await Promise.all([
+                    db.collection('salons').doc(salon.id).collection('staff').get(),
+                    db.collection('salons').doc(salon.id).collection('services').where('active', '==', true).get()
+                ]);
+                
+                salon.staffList = staffSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                salon.serviceList = svcSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                if (salon.serviceList.length === 0 && salon.services) {
+                    salon.serviceList = salon.services.filter(s => s.active !== false);
+                }
+                if (salon.staffList.length === 0 && salon.staff) {
+                    salon.staffList = salon.staff;
+                }
+                
+                // Randevuları yükle (hata olursa devam et)
+                await loadExistingAppointments();
+                
+                // Sayfayı render et
+                renderSalon();
+                
+            } catch (e) {
+                console.error('Init error:', e);
+                showError();
+            }
+        }
+        
+        function showError() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'flex';
+        }
+        
+        async function loadExistingAppointments() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                // Basit sorgu - sadece salonId ile filtrele, geri kalanı client-side yap
+                const snap = await db.collection('appointments')
+                    .where('salonId', '==', salon.id)
+                    .get();
+                
+                existingAppointments = snap.docs
+                    .map(d => d.data())
+                    .filter(a => a.date >= today && ['pending', 'confirmed'].includes(a.status));
+                    
+                console.log('Loaded appointments:', existingAppointments.length);
+            } catch (e) {
+                console.error('Error loading appointments:', e);
+                existingAppointments = [];
+            }
+        }
+        
+        function renderSalon() {
+            document.getElementById('salonName').textContent = salon.name;
+            document.getElementById('salonLocation').textContent = `${salon.district || ''}, ${salon.city || ''}`;
+            document.getElementById('salonPhone').textContent = salon.phone || '';
+            document.getElementById('salonRating').textContent = (salon.rating || 5).toFixed(1);
+            
+            // Review count
+            if (salon.reviewCount > 0) {
+                document.getElementById('reviewCount').textContent = `(${salon.reviewCount})`;
+            }
+            
+            // Status
+            const statusEl = document.getElementById('salonStatus');
+            const isOpen = checkIfOpen();
+            statusEl.textContent = isOpen ? 'Açık' : 'Kapalı';
+            statusEl.className = 'status-badge' + (isOpen ? '' : ' closed');
+            
+            // Logo (varsa göster)
+            const coverEl = document.getElementById('salonCover');
+            if (salon.logo) {
+                coverEl.classList.add('has-logo');
+                coverEl.innerHTML = `<img src="${salon.logo}" alt="${salon.name} Logo" class="salon-cover-logo">`;
+            }
+            
+            // Yol Tarifi butonu (konum varsa göster)
+            if (salon.location?.lat && salon.location?.lng) {
+                document.getElementById('directionsBtn').style.display = 'inline-flex';
+            }
+            
+            // Google Business link (varsa göster)
+            if (salon.googleBusinessUrl) {
+                const gbBtn = document.getElementById('googleBusinessBtn');
+                gbBtn.href = salon.googleBusinessUrl;
+                gbBtn.style.display = 'inline-flex';
+            }
+            
+            // Galeri (varsa göster)
+            if (salon.gallery && salon.gallery.length > 0) {
+                document.getElementById('gallerySection').style.display = 'block';
+                const galleryHtml = salon.gallery.map((img, idx) => `
+                    <div class="gallery-item" onclick="openLightbox('${img}')">
+                        <img src="${img}" alt="Galeri ${idx + 1}" loading="lazy">
+                    </div>
+                `).join('');
+                document.getElementById('galleryGrid').innerHTML = galleryHtml;
+            }
+            
+            // Services
+            const serviceHtml = salon.serviceList.map(s => `
+                <div class="service-item">
+                    <div class="service-info">
+                        <h4>${s.name}</h4>
+                        <span>${s.duration || 30} dakika</span>
+                    </div>
+                    <span class="service-price">${s.price || 100} ₺</span>
+                </div>
+            `).join('');
+            document.getElementById('serviceList').innerHTML = serviceHtml || '<p style="color:var(--slate-500)">Hizmet bilgisi yok</p>';
+            
+            // Staff
+            const staffHtml = salon.staffList.map(s => `
+                <div class="staff-card">
+                    <div class="staff-avatar">${s.avatar ? `<img src="${s.avatar}" alt="${s.name}">` : '👤'}</div>
+                    <div class="staff-name">${s.name}</div>
+                    <div class="staff-role">${s.title || s.role || 'Berber'}</div>
+                </div>
+            `).join('');
+            document.getElementById('staffGrid').innerHTML = staffHtml || '<p style="color:var(--slate-500)">Personel bilgisi yok</p>';
+            
+            // Hours
+            const defaultHours = { mon: { open: '09:00', close: '19:00' }, tue: { open: '09:00', close: '19:00' }, wed: { open: '09:00', close: '19:00' }, thu: { open: '09:00', close: '19:00' }, fri: { open: '09:00', close: '19:00' }, sat: { open: '09:00', close: '18:00' }, sun: { closed: true } };
+            const hours = salon.workingHours || defaultHours;
+            const dayNames = { mon: 'Pazartesi', tue: 'Salı', wed: 'Çarşamba', thu: 'Perşembe', fri: 'Cuma', sat: 'Cumartesi', sun: 'Pazar' };
+            const hoursHtml = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => {
+                const h = hours[d];
+                return `<div class="hour-item"><span class="hour-day">${dayNames[d]}</span><span class="hour-time${h?.closed ? ' closed' : ''}">${h?.closed ? 'Kapalı' : `${h?.open || '09:00'} - ${h?.close || '19:00'}`}</span></div>`;
+            }).join('');
+            document.getElementById('hoursList').innerHTML = hoursHtml;
+            
+            // Yorumları yükle
+            loadReviews();
+            
+            // Booking selects
+            const serviceSelect = document.getElementById('serviceSelect');
+            serviceSelect.innerHTML = '<option value="">Hizmet seçin...</option>' + salon.serviceList.map(s => `<option value="${s.id}">${s.name} - ${s.price || 100} ₺</option>`).join('');
+            
+            const staffSelect = document.getElementById('staffSelect');
+            staffSelect.innerHTML = '<option value="">Fark etmez</option>' + salon.staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            
+            // Dates
+            renderDates();
+            
+            // Show content
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'grid';
+        }
+        
+        // Yorumları yükle
+        async function loadReviews() {
+            try {
+                const snap = await db.collection('salons').doc(salon.id).collection('reviews')
+                    .orderBy('createdAt', 'desc')
+                    .limit(10)
+                    .get();
+                
+                if (snap.empty) {
+                    document.getElementById('reviewsList').innerHTML = '<p class="no-reviews">Henüz değerlendirme yok</p>';
+                    return;
+                }
+                
+                const reviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                // Ortalama puan
+                const avgRating = reviews.reduce((sum, r) => sum + (r.rating || 5), 0) / reviews.length;
+                document.getElementById('avgRating').textContent = `${avgRating.toFixed(1)} / 5`;
+                
+                const reviewsHtml = reviews.map(r => {
+                    const initials = (r.customerName || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                    const stars = '⭐'.repeat(r.rating || 5);
+                    const date = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('tr-TR') : '';
+                    
+                    return `
+                        <div class="review-card">
+                            <div class="review-header">
+                                <div class="review-user">
+                                    <div class="review-avatar">${initials}</div>
+                                    <div>
+                                        <div class="review-name">${escapeHtml(r.customerName || 'Anonim')}</div>
+                                        <div class="review-date">${date}</div>
+                                    </div>
+                                </div>
+                                <div class="review-stars">${stars}</div>
+                            </div>
+                            ${r.comment ? `<p class="review-text">${escapeHtml(r.comment)}</p>` : ''}
+                            ${r.serviceName ? `<p class="review-service">✂️ ${escapeHtml(r.serviceName)}</p>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+                document.getElementById('reviewsList').innerHTML = reviewsHtml;
+                
+            } catch (e) {
+                console.error('Error loading reviews:', e);
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+        
+        // Yol tarifi
+        function openDirections() {
+            if (salon.location?.lat && salon.location?.lng) {
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${salon.location.lat},${salon.location.lng}`, '_blank');
+            } else if (salon.address) {
+                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(salon.address + ', ' + salon.city)}`, '_blank');
+            }
+        }
+        
+        // Telefon arama
+        function callSalon() {
+            if (salon.phone) {
+                window.location.href = `tel:${salon.phone}`;
+            }
+        }
+        
+        // Lightbox
+        function openLightbox(imgSrc) {
+            document.getElementById('lightboxImg').src = imgSrc;
+            document.getElementById('lightbox').classList.add('active');
+        }
+        
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+        
+        // Google Takvime Ekle
+        function addToGoogleCalendar(e) {
+            e.preventDefault();
+            const apt = window.lastAppointment;
+            if (!apt) return;
+            
+            const startDate = new Date(apt.date + 'T' + apt.time + ':00');
+            const endDate = new Date(startDate.getTime() + (apt.serviceDuration || 30) * 60000);
+            
+            const formatGoogleDate = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            
+            const title = encodeURIComponent(`${apt.service} - ${salon.name}`);
+            const details = encodeURIComponent(`Randevu: ${apt.service}\nSalon: ${salon.name}\nTutar: ${apt.servicePrice} ₺`);
+            const location = encodeURIComponent(salon.address || `${salon.district}, ${salon.city}`);
+            const dates = `${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}`;
+            
+            const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+            window.open(url, '_blank');
+        }
+        
+        function checkIfOpen() {
+            const now = new Date();
+            const dayKey = DAY_KEYS[now.getDay()];
+            const hours = salon.workingHours?.[dayKey];
+            if (!hours || hours.closed) return false;
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            const [oh, om] = (hours.open || '09:00').split(':').map(Number);
+            const [ch, cm] = (hours.close || '19:00').split(':').map(Number);
+            return currentTime >= oh * 60 + om && currentTime < ch * 60 + cm;
+        }
+        
+        function renderDates() {
+            const container = document.getElementById('dateScroll');
+            let html = '';
+            const today = new Date();
+            
+            for (let i = 0; i < 14; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                
+                const dayKey = DAY_KEYS[date.getDay()];
+                const hours = salon.workingHours?.[dayKey];
+                const isClosed = hours?.closed;
+                
+                if (!isClosed) {
+                    html += `
+                        <div class="date-item" data-date="${date.toISOString()}" onclick="selectDate(this)">
+                            <div class="date-day">${DAYS_SHORT[date.getDay()]}</div>
+                            <div class="date-num">${date.getDate()}</div>
+                            <div class="date-month">${MONTHS_TR[date.getMonth()]}</div>
+                        </div>
+                    `;
+                }
+            }
+            container.innerHTML = html;
+        }
+        
+        function selectDate(el) {
+            document.querySelectorAll('.date-item').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedDate = new Date(el.dataset.date);
+            selectedTime = null;
+            renderTimeSlots();
+            updateBooking();
+        }
+        
+        function renderTimeSlots() {
+            const container = document.getElementById('timeGrid');
+            if (!selectedDate) {
+                container.innerHTML = '<p class="time-empty">Önce tarih seçin</p>';
+                return;
+            }
+            
+            const dayKey = DAY_KEYS[selectedDate.getDay()];
+            const hours = salon.workingHours?.[dayKey] || { open: '09:00', close: '19:00' };
+            
+            if (hours.closed) {
+                container.innerHTML = '<p class="time-empty">Bu gün kapalı</p>';
+                return;
+            }
+            
+            const [startH, startM] = (hours.open || '09:00').split(':').map(Number);
+            const [endH, endM] = (hours.close || '19:00').split(':').map(Number);
+            const startMins = startH * 60 + startM;
+            const endMins = endH * 60 + endM;
+            
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            const now = new Date();
+            const isToday = dateStr === now.toISOString().split('T')[0];
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            
+            // Temizlik molası (config'den al veya varsayılan 5dk)
+            const cleaningBreak = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.appointment?.cleaningBreakMinutes) || 5;
+            const slotInterval = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.appointment?.slotInterval) || 30;
+            
+            // Seçili hizmetin süresi
+            const serviceDuration = selectedService?.duration || 30;
+            
+            let html = '';
+            for (let mins = startMins; mins < endMins; mins += slotInterval) {
+                const time = `${String(Math.floor(mins/60)).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;
+                
+                const isPast = isToday && mins <= currentMins;
+                
+                // Randevu çakışma kontrolü (temizlik molası dahil)
+                const isBooked = checkTimeSlotConflict(dateStr, mins, serviceDuration, cleaningBreak);
+                
+                // Hizmet süresi mesai bitimine sığıyor mu?
+                const exceedsWorkHours = (mins + serviceDuration) > endMins;
+                
+                const disabled = isPast || isBooked || exceedsWorkHours;
+                
+                let tooltip = '';
+                if (isPast) tooltip = 'Geçmiş saat';
+                else if (isBooked) tooltip = 'Bu saat dolu';
+                else if (exceedsWorkHours) tooltip = 'Hizmet süresi mesai saatini aşıyor';
+                
+                html += `<div class="time-slot${disabled ? ' disabled' : ''}" data-time="${time}" ${tooltip ? `title="${tooltip}"` : ''} onclick="${disabled ? '' : `selectTime(this)`}">${time}</div>`;
+            }
+            
+            container.innerHTML = html || '<p class="time-empty">Uygun saat yok</p>';
+        }
+        
+        // Randevu çakışma kontrolü (temizlik molası dahil)
+        function checkTimeSlotConflict(dateStr, slotStartMins, serviceDuration, cleaningBreak) {
+            // Yeni randevunun kapladığı süre: başlangıç ~ bitiş + temizlik molası
+            const newStart = slotStartMins;
+            const newEnd = slotStartMins + serviceDuration;
+            
+            return existingAppointments.some(apt => {
+                if (apt.date !== dateStr) return false;
+                if (!['pending', 'confirmed'].includes(apt.status)) return false;
+                
+                // Mevcut randevunun zamanları
+                const [aptH, aptM] = apt.time.split(':').map(Number);
+                const aptStart = aptH * 60 + aptM;
+                const aptDuration = apt.serviceDuration || 30;
+                const aptEnd = aptStart + aptDuration + cleaningBreak; // Mevcut randevu + temizlik molası
+                
+                // Çakışma kontrolü
+                // Yeni randevu, mevcut randevunun temizlik molası dahil süresine giriyorsa VEYA
+                // Mevcut randevu, yeni randevunun süresine giriyorsa = çakışma
+                return (newStart < aptEnd && newEnd > aptStart);
+            });
+        }
+        
+        function selectTime(el) {
+            document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedTime = el.dataset.time;
+            updateBooking();
+        }
+        
+        function updateBooking() {
+            const prevService = selectedService;
+            selectedService = salon.serviceList.find(s => s.id === document.getElementById('serviceSelect').value) || null;
+            const staffId = document.getElementById('staffSelect').value;
+            selectedStaff = staffId ? salon.staffList.find(s => s.id === staffId) : null;
+            
+            // Hizmet değiştiyse slotları yeniden render et (süre farklı olabilir)
+            if (prevService?.id !== selectedService?.id && selectedDate) {
+                selectedTime = null;
+                renderTimeSlots();
+            }
+            
+            const isComplete = selectedService && selectedDate && selectedTime;
+            
+            document.getElementById('bookBtn').disabled = !isComplete;
+            document.getElementById('bookingSummary').style.display = isComplete ? 'block' : 'none';
+            
+            if (isComplete) {
+                document.getElementById('summaryService').textContent = selectedService.name;
+                document.getElementById('summaryDate').textContent = formatDate(selectedDate);
+                document.getElementById('summaryTime').textContent = selectedTime;
+                document.getElementById('summaryPrice').textContent = `${selectedService.price || 100} ₺`;
+                
+                document.getElementById('toggleSummary').textContent = `${selectedService.name} • ${selectedDate.getDate()} ${MONTHS_TR[selectedDate.getMonth()]} ${selectedTime}`;
+            } else {
+                document.getElementById('toggleSummary').textContent = 'Hizmet ve tarih seçin';
+            }
+        }
+        
+        function formatDate(date) {
+            return `${date.getDate()} ${MONTHS_FULL[date.getMonth()]} ${DAYS_TR[date.getDay()]}`;
+        }
+        
+        function toggleBooking() {
+            const card = document.getElementById('bookingCard');
+            card.classList.toggle('collapsed');
+        }
+        
+        function openBookingModal() {
+            document.getElementById('modalService').textContent = selectedService.name;
+            document.getElementById('modalDate').textContent = formatDate(selectedDate);
+            document.getElementById('modalTime').textContent = selectedTime;
+            document.getElementById('modalPrice').textContent = `${selectedService.price || 100} ₺`;
+            document.getElementById('bookingModal').classList.add('active');
+        }
+        
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.remove('active');
+        }
+        
+        async function submitBooking(e) {
+            e.preventDefault();
+            
+            const customerName = document.getElementById('customerName').value.trim();
+            const customerPhone = document.getElementById('customerPhone').value.trim().replace(/\D/g, '');
+            const customerNote = document.getElementById('customerNote').value.trim();
+            
+            if (!customerName || customerPhone.length < 10) {
+                if (typeof ZamanliUX !== 'undefined') {
+                    ZamanliUX.warning('Lütfen ad ve telefon bilgilerinizi doğru girin.');
+                } else {
+                    alert('Lütfen ad ve telefon bilgilerinizi doğru girin.');
+                }
+                return;
+            }
+            
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Kaydediliyor...';
+            
+            try {
+                const appointment = {
+                    salonId: salon.id,
+                    salonName: salon.name,
+                    salonPhone: salon.phone,
+                    customerName,
+                    customerPhone: customerPhone.slice(-10),
+                    customerNote,
+                    service: selectedService.name,
+                    servicePrice: selectedService.price || 100,
+                    serviceDuration: selectedService.duration || 30,
+                    staffName: selectedStaff?.name || 'Belirtilmedi',
+                    date: selectedDate.toISOString().split('T')[0],
+                    time: selectedTime,
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('appointments').add(appointment);
+                window.lastAppointment = appointment;
+                
+                closeBookingModal();
+                showSuccess(appointment);
+                notifySalonOwner(appointment);
+                
+            } catch (error) {
+                console.error(error);
+                if (typeof ZamanliUX !== 'undefined') {
+                    ZamanliUX.error('Bir hata oluştu. Lütfen tekrar deneyin.');
+                } else {
+                    alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                }
+                btn.disabled = false;
+                btn.textContent = '✓ Randevuyu Tamamla';
+            }
+        }
+        
+        function showSuccess(apt) {
+            document.getElementById('successDetails').innerHTML = `
+                <div class="success-row"><span class="success-row-label">Salon</span><span class="success-row-value">${apt.salonName}</span></div>
+                <div class="success-row"><span class="success-row-label">Hizmet</span><span class="success-row-value">${apt.service}</span></div>
+                <div class="success-row"><span class="success-row-label">Tarih</span><span class="success-row-value">${formatDateFromStr(apt.date)}</span></div>
+                <div class="success-row"><span class="success-row-label">Saat</span><span class="success-row-value">${apt.time}</span></div>
+                <div class="success-row"><span class="success-row-label">Tutar</span><span class="success-row-value">${apt.servicePrice} ₺</span></div>
+            `;
+            
+            document.getElementById('bookingCard').classList.add('collapsed');
+            document.getElementById('successModal').classList.add('active');
+        }
+        
+        function formatDateFromStr(dateStr) {
+            const d = new Date(dateStr);
+            return `${d.getDate()} ${MONTHS_FULL[d.getMonth()]} ${DAYS_TR[d.getDay()]}`;
+        }
+        
+        function notifySalonOwner(apt) {
+            const phone = (apt.salonPhone || '').replace(/\D/g, '');
+            if (!phone) return;
+            
+            const formattedDate = formatDateFromStr(apt.date);
+            
+            // WhatsApp mesajı hazırla
+            const msg = `🔔 Yeni Randevu Talebi!
+
+• Müşteri: ${apt.customerName}
+• Telefon: ${apt.customerPhone}
+• Tarih: ${formattedDate}
+• Saat: ${apt.time}
+• Hizmet: ${apt.service}
+• Ücret: ${apt.servicePrice} ₺
+${apt.customerNote ? `• Not: ${apt.customerNote}` : ''}
+
+Yönetim panelinden onaylayın:
+${location.origin}/berber/salon/yonetim/?slug=${salon.slug}`;
+            
+            window.salonNotifyUrl = `https://wa.me/90${phone}?text=${encodeURIComponent(msg)}`;
+            
+            // E-posta bildirimi gönder (berbere)
+            if (salon.email && typeof emailjs !== 'undefined' && typeof EMAILJS_CONFIG !== 'undefined') {
+                // WhatsApp onay linki oluştur
+                const customerPhoneClean = apt.customerPhone.replace(/\D/g, '').slice(-10);
+                const approvalMsg = `✅ Randevunuz Onaylandı!
+
+Merhaba ${apt.customerName},
+${salon.name} randevunuz onaylanmıştır.
+
+• Tarih: ${formattedDate}
+• Saat: ${apt.time}
+• Hizmet: ${apt.service}
+• Ücret: ${apt.servicePrice} ₺
+
+• Adres: ${salon.address || salon.district + ', ' + salon.city}
+
+Görüşmek üzere!`;
+                
+                const whatsappApprovalUrl = `https://wa.me/90${customerPhoneClean}?text=${encodeURIComponent(approvalMsg)}`;
+                
+                emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateNewAppointment, {
+                    to_email: salon.email,
+                    salon_name: salon.name,
+                    customer_name: apt.customerName,
+                    customer_phone: '0' + apt.customerPhone,
+                    appointment_date: formattedDate,
+                    appointment_time: apt.time,
+                    service_name: apt.service,
+                    service_price: apt.servicePrice + ' ₺',
+                    customer_note: apt.customerNote || '-',
+                    panel_url: location.origin + '/berber/salon/yonetim/?slug=' + salon.slug,
+                    whatsapp_approval_url: whatsappApprovalUrl
+                }).then(() => {
+                    console.log('📧 Berbere e-posta bildirimi gönderildi');
+                }).catch(e => {
+                    console.error('Email error:', e);
+                });
+            }
+        }
+        
+        function openWhatsApp() {
+            const apt = window.lastAppointment;
+            if (!apt) return;
+            
+            const msg = `Merhaba! Zamanlı üzerinden randevu aldım.
+
+• Tarih: ${formatDateFromStr(apt.date)}
+• Saat: ${apt.time}
+• Hizmet: ${apt.service}
+• Ücret: ${apt.servicePrice} ₺
+
+Onayınızı bekliyorum. Teşekkürler!`;
+            
+            const phone = (apt.salonPhone || '').replace(/\D/g, '');
+            if (phone) window.open(`https://wa.me/90${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+        
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.remove('active');
+            // Reset
+            selectedService = null;
+            selectedStaff = null;
+            selectedDate = null;
+            selectedTime = null;
+            document.getElementById('serviceSelect').value = '';
+            document.getElementById('staffSelect').value = '';
+            document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+            document.getElementById('timeGrid').innerHTML = '<p class="time-empty">Önce tarih seçin</p>';
+            document.getElementById('bookingSummary').style.display = 'none';
+            document.getElementById('bookBtn').disabled = true;
+            document.getElementById('bookingForm').reset();
+            document.getElementById('toggleSummary').textContent = 'Hizmet ve tarih seçin';
+            loadExistingAppointments();
+        }
+        
+        // PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+        
+        // ==================== YORUM SİSTEMİ ====================
+        let reviewRating = 0;
+        let verifiedAppointment = null;
+        
+        function openReviewModal() {
+            document.getElementById('reviewModal').classList.add('active');
+            // Reset
+            reviewRating = 0;
+            verifiedAppointment = null;
+            document.getElementById('reviewVerifySection').style.display = 'block';
+            document.getElementById('reviewVerifiedInfo').style.display = 'none';
+            document.getElementById('reviewFormSection').style.display = 'none';
+            document.getElementById('verifyPhone').value = '';
+            document.getElementById('verifyError').style.display = 'none';
+            document.getElementById('reviewComment').value = '';
+            updateRatingStars();
+        }
+        
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.remove('active');
+        }
+        
+        async function verifyForReview() {
+            const phone = document.getElementById('verifyPhone').value.replace(/\D/g, '').slice(-10);
+            const errorEl = document.getElementById('verifyError');
+            
+            if (phone.length !== 10) {
+                errorEl.textContent = 'Geçerli bir telefon numarası girin';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            try {
+                // Son 7 gün içindeki tamamlanmış randevuları bul
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                const dateStr = sevenDaysAgo.toISOString().split('T')[0];
+                
+                const snap = await db.collection('appointments')
+                    .where('salonId', '==', salon.id)
+                    .where('customerPhone', '==', phone)
+                    .where('status', 'in', ['confirmed', 'completed'])
+                    .orderBy('date', 'desc')
+                    .limit(1)
+                    .get();
+                
+                if (snap.empty) {
+                    errorEl.textContent = 'Bu numarayla kayıtlı randevu bulunamadı';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                
+                const apt = snap.docs[0].data();
+                
+                // Zaten yorum yapılmış mı kontrol et
+                const existingReview = await db.collection('salons').doc(salon.id)
+                    .collection('reviews')
+                    .where('appointmentId', '==', snap.docs[0].id)
+                    .get();
+                
+                if (!existingReview.empty) {
+                    errorEl.textContent = 'Bu randevu için zaten yorum yapmışsınız';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                
+                // Doğrulama başarılı
+                verifiedAppointment = {
+                    id: snap.docs[0].id,
+                    ...apt
+                };
+                
+                document.getElementById('reviewVerifySection').style.display = 'none';
+                document.getElementById('reviewVerifiedInfo').style.display = 'block';
+                document.getElementById('reviewFormSection').style.display = 'block';
+                
+                document.getElementById('verifiedName').textContent = apt.customerName;
+                document.getElementById('verifiedService').textContent = `${apt.service} - ${apt.date}`;
+                
+            } catch (error) {
+                console.error('Verify error:', error);
+                errorEl.textContent = 'Bir hata oluştu, tekrar deneyin';
+                errorEl.style.display = 'block';
+            }
+        }
+        
+        function setRating(value) {
+            reviewRating = value;
+            updateRatingStars();
+            document.getElementById('submitReviewBtn').disabled = false;
+            
+            const labels = ['', 'Çok kötü', 'Kötü', 'Orta', 'İyi', 'Mükemmel'];
+            document.getElementById('ratingLabel').textContent = labels[value];
+        }
+        
+        function updateRatingStars() {
+            document.querySelectorAll('.rating-star').forEach(star => {
+                const value = parseInt(star.dataset.value);
+                star.classList.toggle('active', value <= reviewRating);
+            });
+        }
+        
+        async function submitReview() {
+            if (!verifiedAppointment || reviewRating === 0) return;
+            
+            const comment = document.getElementById('reviewComment').value.trim();
+            const btn = document.getElementById('submitReviewBtn');
+            
+            btn.disabled = true;
+            btn.textContent = 'Gönderiliyor...';
+            
+            try {
+                const review = {
+                    appointmentId: verifiedAppointment.id,
+                    customerName: verifiedAppointment.customerName,
+                    customerPhone: verifiedAppointment.customerPhone,
+                    serviceName: verifiedAppointment.service,
+                    rating: reviewRating,
+                    comment: comment,
+                    verified: true,
+                    createdAt: new Date().toISOString()
+                };
+                
+                await db.collection('salons').doc(salon.id).collection('reviews').add(review);
+                
+                // Başarı
+                closeReviewModal();
+                showToast('Yorumunuz için teşekkürler! ⭐');
+                
+                // Yorumları yeniden yükle
+                loadReviews();
+                
+            } catch (error) {
+                console.error('Review submit error:', error);
+                btn.textContent = 'Yorum Gönder';
+                btn.disabled = false;
+                alert('Bir hata oluştu, tekrar deneyin');
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:1rem 1.5rem;border-radius:8px;z-index:9999;font-size:0.9rem;';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        // Lightbox fonksiyonları
+        function openLightbox(imgSrc) {
+            document.getElementById('lightboxImage').src = imgSrc;
+            document.getElementById('lightboxOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeLightbox() {
+            document.getElementById('lightboxOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // ========== AI ÖNERİ SİSTEMİ ==========
+        let customerAppointmentsCache = null;
+        
+        // AI Öneri banner'ını göster
+        function showAIBanner() {
+            const banner = document.getElementById('aiSuggestionBanner');
+            if (banner) banner.style.display = 'flex';
+        }
+        
+        // AI Önerisini tetikle
+        async function triggerAIRecommendation() {
+            // Telefon numarası iste
+            const phone = prompt('Telefon numaranızı girin (Daha önce randevu aldıysanız):', '05');
+            
+            if (!phone || phone.length < 10) {
+                if (typeof ZamanliUX !== 'undefined') {
+                    ZamanliUX.warning('Geçerli bir telefon numarası girin.');
+                } else {
+                    alert('Geçerli bir telefon numarası girin.');
+                }
+                return;
+            }
+            
+            // Loading göster
+            const btn = document.querySelector('.ai-suggest-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="ai-icon">⏳</span> Analiz ediliyor...';
+            btn.disabled = true;
+            
+            try {
+                // Müşteri randevularını getir
+                const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+                const snapshot = await db.collection('appointments')
+                    .where('customerPhone', '>=', cleanPhone)
+                    .where('customerPhone', '<=', cleanPhone + '\uf8ff')
+                    .orderBy('customerPhone')
+                    .get();
+                
+                const customerAppointments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                customerAppointmentsCache = customerAppointments;
+                
+                // Salon randevularını al (müsaitlik için)
+                const allAppointments = window.allAppointments || [];
+                
+                // AI Önerisini oluştur
+                if (typeof AIRecommendation !== 'undefined') {
+                    const recommendation = AIRecommendation.generateRecommendation(
+                        customerAppointments,
+                        salon,
+                        allAppointments
+                    );
+                    
+                    showAIRecommendationPopup(recommendation);
+                } else {
+                    if (typeof ZamanliUX !== 'undefined') {
+                        ZamanliUX.error('AI modülü yüklenemedi. Lütfen sayfayı yenileyin.');
+                    } else {
+                        alert('AI modülü yüklenemedi. Lütfen sayfayı yenileyin.');
+                    }
+                }
+                
+            } catch (e) {
+                console.error('AI Öneri hatası:', e);
+                if (typeof ZamanliUX !== 'undefined') {
+                    ZamanliUX.error('Öneri oluşturulurken bir hata oluştu.');
+                } else {
+                    alert('Öneri oluşturulurken bir hata oluştu.');
+                }
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        // Öneriyi uygula (tarih ve saat seç)
+        function applyAIRecommendation(date, time) {
+            // Tarih seçiciden o tarihi bul ve tıkla
+            const dateItems = document.querySelectorAll('.date-item');
+            dateItems.forEach(item => {
+                if (item.dataset.date === date) {
+                    item.click();
+                }
+            });
+            
+            // Saat seçimi için bekle
+            setTimeout(() => {
+                const timeSlots = document.querySelectorAll('.time-slot:not(.disabled)');
+                timeSlots.forEach(slot => {
+                    if (slot.dataset.time === time) {
+                        slot.click();
+                    }
+                });
+            }, 500);
+            
+            closeAIPopup();
+        }
+        
+        // Sayfa yüklendiğinde AI banner'ı göster
+        setTimeout(showAIBanner, 1000);
+        
+        init();
+    </script>
+    
+    <!-- AI Recommendation Module -->
+    <script src="/ai-recommendation.js"></script>
+    
+    <!-- UX Enhancements Module -->
+    <script src="/ux-enhancements.js"></script>
+    
+    <!-- Lightbox -->
+    <div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox()">
+        <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+        <img src="" alt="Galeri" class="lightbox-image" id="lightboxImage" onclick="event.stopPropagation()">
+    </div>
+</body>
+</html>

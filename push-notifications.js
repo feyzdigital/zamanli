@@ -1,0 +1,495 @@
+// Zamanlı Push Notification Manager
+// Firebase Cloud Messaging entegrasyonu
+
+const PushManager = {
+    // FCM VAPID Key (Firebase Console'dan alınacak)
+    // Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
+    VAPID_KEY: 'BBOpQdU-eCIYjiQHiVPY8x2tBlhDYhZlYgARXayyRs4XR1q9zOghL_zuu3gaTSvgOGY6Q9fAtEK5zQXu-VMaHZM', // Bu değeri Firebase'den almanız gerekiyor
+    
+    // Durum
+    isSupported: false,
+    permission: 'default',
+    subscription: null,
+    fcmToken: null,
+    
+    // ==================== BAŞLATMA ====================
+    async init() {
+        console.log('[Push] Initializing...');
+        
+        // Tarayıcı desteği kontrolü
+        this.isSupported = this.checkSupport();
+        if (!this.isSupported) {
+            console.warn('[Push] Push notifications not supported');
+            return false;
+        }
+        
+        // Mevcut izin durumunu al
+        this.permission = Notification.permission;
+        console.log('[Push] Current permission:', this.permission);
+        
+        // Eğer zaten izin verilmişse token al
+        if (this.permission === 'granted') {
+            await this.getToken();
+        }
+        
+        return true;
+    },
+    
+    // ==================== DESTEK KONTROLÜ ====================
+    checkSupport() {
+        const checks = {
+            serviceWorker: 'serviceWorker' in navigator,
+            pushManager: 'PushManager' in window,
+            notification: 'Notification' in window
+        };
+        
+        console.log('[Push] Support checks:', checks);
+        
+        return checks.serviceWorker && checks.pushManager && checks.notification;
+    },
+    
+    // ==================== İZİN İSTEME ====================
+    async requestPermission() {
+        if (!this.isSupported) {
+            return { success: false, error: 'not_supported' };
+        }
+        
+        try {
+            const permission = await Notification.requestPermission();
+            this.permission = permission;
+            
+            console.log('[Push] Permission result:', permission);
+            
+            if (permission === 'granted') {
+                // İzin verildi, token al
+                const token = await this.getToken();
+                return { success: true, permission, token };
+            } else if (permission === 'denied') {
+                return { success: false, error: 'denied', permission };
+            } else {
+                return { success: false, error: 'dismissed', permission };
+            }
+        } catch (error) {
+            console.error('[Push] Permission error:', error);
+            return { success: false, error: error.message };
+        }
+    },
+    
+    // ==================== FCM TOKEN ALMA ====================
+    async getToken() {
+        try {
+            // Service Worker'ın hazır olmasını bekle
+            const registration = await navigator.serviceWorker.ready;
+            
+            // Firebase Messaging kullanılıyorsa
+            if (typeof firebase !== 'undefined' && firebase.messaging) {
+                const messaging = firebase.messaging();
+                
+                const token = await messaging.getToken({
+                    vapidKey: this.VAPID_KEY,
+                    serviceWorkerRegistration: registration
+                });
+                
+                if (token) {
+                    this.fcmToken = token;
+                    console.log('[Push] FCM Token:', token);
+                    
+                    // Token'ı sunucuya kaydet
+                    await this.saveTokenToServer(token);
+                    
+                    return token;
+                }
+            } else {
+                // Fallback: Web Push API kullan
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: this.urlBase64ToUint8Array(this.VAPID_KEY)
+                });
+                
+                this.subscription = subscription;
+                console.log('[Push] Subscription:', subscription);
+                
+                // Subscription'ı sunucuya kaydet
+                await this.saveSubscriptionToServer(subscription);
+                
+                return subscription;
+            }
+        } catch (error) {
+            console.error('[Push] Token error:', error);
+            return null;
+        }
+    },
+    
+    // ==================== TOKEN SUNUCUYA KAYDETME ====================
+    async saveTokenToServer(token, userType = 'customer', userId = null) {
+        try {
+            // Firestore'a kaydet
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                const db = firebase.firestore();
+                
+                const tokenData = {
+                    token: token,
+                    userType: userType, // 'customer' veya 'salon'
+                    userId: userId,
+                    platform: this.detectPlatform(),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // Token ID olarak hash kullan
+                const tokenId = await this.hashToken(token);
+                
+                await db.collection('push_tokens').doc(tokenId).set(tokenData, { merge: true });
+                
+                console.log('[Push] Token saved to Firestore');
+                return true;
+            }
+        } catch (error) {
+            console.error('[Push] Save token error:', error);
+            return false;
+        }
+    },
+    
+    // Subscription için (Firebase kullanılmıyorsa)
+    async saveSubscriptionToServer(subscription) {
+        // Aynı mantık, farklı veri yapısı
+        return this.saveTokenToServer(JSON.stringify(subscription));
+    },
+    
+    // ==================== SALON İÇİN TOKEN KAYDETME ====================
+    async registerSalonForPush(salonId) {
+        if (!this.fcmToken && !this.subscription) {
+            const result = await this.requestPermission();
+            if (!result.success) return result;
+        }
+        
+        const token = this.fcmToken || JSON.stringify(this.subscription);
+        return this.saveTokenToServer(token, 'salon', salonId);
+    },
+    
+    // ==================== MÜŞTERİ İÇİN TOKEN KAYDETME ====================
+    async registerCustomerForPush(customerId = null, phone = null) {
+        if (!this.fcmToken && !this.subscription) {
+            const result = await this.requestPermission();
+            if (!result.success) return result;
+        }
+        
+        try {
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                const db = firebase.firestore();
+                const token = this.fcmToken || JSON.stringify(this.subscription);
+                const tokenId = await this.hashToken(token);
+                
+                const tokenData = {
+                    token: token,
+                    userType: 'customer',
+                    customerId: customerId,
+                    phone: phone,
+                    platform: this.detectPlatform(),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('push_tokens').doc(tokenId).set(tokenData, { merge: true });
+                
+                // Telefon numarası varsa, randevularla ilişkilendir
+                if (phone) {
+                    localStorage.setItem('zamanli_push_phone', phone);
+                }
+                
+                return { success: true };
+            }
+        } catch (error) {
+            console.error('[Push] Register customer error:', error);
+            return { success: false, error: error.message };
+        }
+    },
+    
+    // ==================== LOCAL NOTIFICATION ====================
+    async showLocalNotification(title, options = {}) {
+        if (this.permission !== 'granted') {
+            console.warn('[Push] No permission for notifications');
+            return false;
+        }
+        
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            
+            const defaultOptions = {
+                icon: '/icons/icon-192x192.png',
+                badge: '/icons/icon-72x72.png',
+                vibrate: [200, 100, 200],
+                tag: 'zamanli-' + Date.now(),
+                ...options
+            };
+            
+            await registration.showNotification(title, defaultOptions);
+            return true;
+        } catch (error) {
+            console.error('[Push] Show notification error:', error);
+            return false;
+        }
+    },
+    
+    // ==================== YARDIMCI FONKSİYONLAR ====================
+    
+    // Platform tespiti
+    detectPlatform() {
+        const ua = navigator.userAgent;
+        if (/android/i.test(ua)) return 'android';
+        if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+        if (/Windows/.test(ua)) return 'windows';
+        if (/Mac/.test(ua)) return 'mac';
+        return 'other';
+    },
+    
+    // Token hash'leme (ID olarak kullanmak için)
+    async hashToken(token) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(token);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    },
+    
+    // VAPID key dönüşümü
+    urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+        
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    },
+    
+    // ==================== İZİN DURUMU UI ====================
+    getPermissionStatus() {
+        if (!this.isSupported) {
+            return {
+                status: 'unsupported',
+                message: 'Tarayıcınız bildirimleri desteklemiyor',
+                canRequest: false
+            };
+        }
+        
+        switch (this.permission) {
+            case 'granted':
+                return {
+                    status: 'granted',
+                    message: 'Bildirimler aktif',
+                    canRequest: false
+                };
+            case 'denied':
+                return {
+                    status: 'denied',
+                    message: 'Bildirimler engellenmiş. Tarayıcı ayarlarından izin verin.',
+                    canRequest: false
+                };
+            default:
+                return {
+                    status: 'default',
+                    message: 'Bildirimlere izin verin',
+                    canRequest: true
+                };
+        }
+    }
+};
+
+// ==================== BİLDİRİM İZNİ UI ====================
+function createNotificationPromptUI() {
+    // Zaten varsa ekleme
+    if (document.getElementById('notificationPrompt')) return;
+    
+    const status = PushManager.getPermissionStatus();
+    if (!status.canRequest) return;
+    
+    const promptHTML = `
+        <div id="notificationPrompt" class="notification-prompt">
+            <div class="notification-prompt-content">
+                <div class="notification-prompt-icon">🔔</div>
+                <div class="notification-prompt-text">
+                    <h4>Bildirimleri Aç</h4>
+                    <p>Randevu hatırlatmaları ve güncellemeler için bildirimlere izin ver</p>
+                </div>
+                <div class="notification-prompt-actions">
+                    <button class="btn-allow" onclick="handleNotificationAllow()">İzin Ver</button>
+                    <button class="btn-later" onclick="handleNotificationLater()">Sonra</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // CSS ekle
+    if (!document.getElementById('notificationPromptStyles')) {
+        const style = document.createElement('style');
+        style.id = 'notificationPromptStyles';
+        style.textContent = `
+            .notification-prompt {
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                right: 20px;
+                max-width: 400px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 16px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+                padding: 20px;
+                z-index: 10000;
+                animation: slideUp 0.3s ease;
+                display: none;
+            }
+            
+            .notification-prompt.show {
+                display: block;
+            }
+            
+            @keyframes slideUp {
+                from { transform: translateY(100px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            
+            .notification-prompt-content {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            
+            .notification-prompt-icon {
+                font-size: 40px;
+            }
+            
+            .notification-prompt-text {
+                flex: 1;
+                min-width: 200px;
+            }
+            
+            .notification-prompt-text h4 {
+                margin: 0 0 4px 0;
+                font-size: 16px;
+                color: #1f2937;
+            }
+            
+            .notification-prompt-text p {
+                margin: 0;
+                font-size: 14px;
+                color: #6b7280;
+            }
+            
+            .notification-prompt-actions {
+                display: flex;
+                gap: 8px;
+                width: 100%;
+                margin-top: 12px;
+            }
+            
+            .notification-prompt-actions button {
+                flex: 1;
+                padding: 12px 20px;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                border: none;
+                transition: all 0.2s;
+            }
+            
+            .btn-allow {
+                background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                color: white;
+            }
+            
+            .btn-allow:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+            }
+            
+            .btn-later {
+                background: #f3f4f6;
+                color: #6b7280;
+            }
+            
+            .btn-later:hover {
+                background: #e5e7eb;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', promptHTML);
+}
+
+async function handleNotificationAllow() {
+    const prompt = document.getElementById('notificationPrompt');
+    const result = await PushManager.requestPermission();
+    
+    if (result.success) {
+        prompt.innerHTML = `
+            <div class="notification-prompt-content" style="justify-content: center; text-align: center;">
+                <div style="font-size: 48px;">✅</div>
+                <div>
+                    <h4 style="margin: 0;">Bildirimler Açıldı!</h4>
+                    <p style="margin: 8px 0 0 0; color: #6b7280;">Artık randevu güncellemelerini alacaksınız</p>
+                </div>
+            </div>
+        `;
+        
+        setTimeout(() => {
+            prompt.classList.remove('show');
+            setTimeout(() => prompt.remove(), 300);
+        }, 2000);
+    } else {
+        prompt.classList.remove('show');
+    }
+    
+    localStorage.setItem('notification-prompt-shown', 'true');
+}
+
+function handleNotificationLater() {
+    const prompt = document.getElementById('notificationPrompt');
+    prompt.classList.remove('show');
+    
+    // 1 gün sonra tekrar göster
+    const nextShow = Date.now() + (24 * 60 * 60 * 1000);
+    localStorage.setItem('notification-prompt-next', nextShow.toString());
+}
+
+function showNotificationPrompt() {
+    const prompt = document.getElementById('notificationPrompt');
+    if (prompt) {
+        prompt.classList.add('show');
+    }
+}
+
+// ==================== AUTO INIT ====================
+document.addEventListener('DOMContentLoaded', async () => {
+    // Push Manager'ı başlat
+    await PushManager.init();
+    
+    // UI oluştur
+    createNotificationPromptUI();
+    
+    // Gösterilecek mi kontrol et
+    const status = PushManager.getPermissionStatus();
+    if (status.canRequest) {
+        const nextShow = localStorage.getItem('notification-prompt-next');
+        const alreadyShown = localStorage.getItem('notification-prompt-shown');
+        
+        if (!alreadyShown || (nextShow && Date.now() > parseInt(nextShow))) {
+            // 3 saniye sonra göster
+            setTimeout(showNotificationPrompt, 3000);
+        }
+    }
+});
+
+// Export
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = PushManager;
+}

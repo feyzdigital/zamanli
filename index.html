@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zamanlı - Online Randevu Sistemi</title>
+    <meta name="description" content="Berber, kuaför ve güzellik salonları için online randevu sistemi. Kolayca randevu al, sıra bekleme!">
+    
+    <!-- PWA Install Prompt - En erken yakala -->
+    <script>window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__pwaPrompt=e;console.log('[PWA] Prompt yakalandı')});</script>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Zamanlı">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-128x128.png">
+    
+    <!-- iOS Splash Screens -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#6366f1">
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png">
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">
+                <span class="logo-icon">💈</span>
+                <span class="logo-text">Zamanlı</span>
+            </a>
+            <nav class="nav desktop-nav">
+                <a href="/berber/" class="nav-link">💈 Berberler</a>
+                <a href="/berber/kayit/" class="nav-link highlight">Salonunu Ekle</a>
+                <a href="#" onclick="showLoginModal(); return false;" class="nav-link">🔑 Giriş</a>
+            </nav>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+        </div>
+    </header>
+    
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="mobile-menu">
+        <div class="mobile-menu-header">
+            <span class="logo">💈 Zamanlı</span>
+            <button class="mobile-menu-close" onclick="toggleMobileMenu()">✕</button>
+        </div>
+        <nav class="mobile-menu-nav">
+            <a href="/">🏠 Ana Sayfa</a>
+            <a href="/berber/">💈 Berber Bul</a>
+            <a href="/berber/kayit/" class="highlight">➕ Salonunu Ekle</a>
+            <a href="#" onclick="showLoginModal(); toggleMobileMenu(); return false;">🔑 Giriş Yap</a>
+            <a href="#" onclick="ZamanliUX.showInstallPrompt(); toggleMobileMenu(); return false;" id="mobileInstallBtn" class="pwa-hide-when-installed">📲 Uygulamayı İndir</a>
+        </nav>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <span class="hero-badge">💈 Berber Randevu Sistemi</span>
+                <h1>Berber Randevusu<br><span class="gradient-text">Artık Çok Kolay!</span></h1>
+                <p class="hero-desc">Favori berberini bul, anında randevu al. Sıra bekleme, zaman kaybetme!</p>
+                
+                <div class="hero-actions">
+                    <a href="/berber/" class="btn btn-primary btn-lg">
+                        <span>🔍</span> Berber Bul
+                    </a>
+                    <a href="/demo/berber/" class="btn btn-outline btn-lg">
+                        <span>👁️</span> Demo İncele
+                    </a>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-value">500+</span>
+                        <span class="stat-label">Aktif Salon</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">10K+</span>
+                        <span class="stat-label">Mutlu Müşteri</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">%100</span>
+                        <span class="stat-label">Ücretsiz</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div class="mock-header">
+                            <span>💈</span> Demo Berber
+                        </div>
+                        <div class="mock-services">
+                            <div class="mock-service">
+                                <span>✂️ Saç Kesimi</span>
+                                <span>150 ₺</span>
+                            </div>
+                            <div class="mock-service">
+                                <span>🪒 Sakal Tıraşı</span>
+                                <span>100 ₺</span>
+                            </div>
+                            <div class="mock-service active">
+                                <span>💈 Saç + Sakal</span>
+                                <span>200 ₺</span>
+                            </div>
+                        </div>
+                        <div class="mock-calendar">
+                            <div class="mock-day">Pzt</div>
+                            <div class="mock-day">Sal</div>
+                            <div class="mock-day active">Çar</div>
+                            <div class="mock-day">Per</div>
+                            <div class="mock-day">Cum</div>
+                        </div>
+                        <div class="mock-btn">Randevu Al</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Neden Zamanlı?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Anında Randevu</h3>
+                    <p>Telefon açmadan, beklemeden saniyeler içinde randevu al</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>WhatsApp Hatırlatma</h3>
+                    <p>Randevu saatinden önce WhatsApp ile hatırlatma al</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Şeffaf Fiyatlar</h3>
+                    <p>Tüm hizmet fiyatlarını önceden gör, sürpriz yaşama</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⭐</div>
+                    <h3>Kaliteli Salonlar</h3>
+                    <p>Onaylı ve değerlendirmeli berber salonları</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- For Salons Section -->
+    <section class="for-salons">
+        <div class="container">
+            <div class="salon-cta">
+                <div class="salon-cta-content">
+                    <span class="cta-badge">💼 Salon Sahipleri İçin</span>
+                    <h2>Salonunuzu Dijitale Taşıyın</h2>
+                    <p>Online randevu sistemi ile müşterilerinize 7/24 hizmet verin. Hemen başlayın!</p>
+                    <ul class="cta-features">
+                        <li>✅ Kolay kurulum (5 dakika)</li>
+                        <li>✅ WhatsApp entegrasyonu</li>
+                        <li>✅ Randevu yönetim paneli</li>
+                        <li>✅ PWA mobil uygulama</li>
+                    </ul>
+                    <a href="/fiyatlandirma/" class="btn btn-primary btn-lg">
+                        Şimdi Başla →
+                    </a>
+                </div>
+                <div class="salon-cta-visual">
+                    <div class="dashboard-preview">
+                        <div class="dash-header">📊 Yönetim Paneli</div>
+                        <div class="dash-stats">
+                            <div class="dash-stat">
+                                <span class="dash-num">24</span>
+                                <span class="dash-label">Bugün</span>
+                            </div>
+                            <div class="dash-stat">
+                                <span class="dash-num">156</span>
+                                <span class="dash-label">Bu Hafta</span>
+                            </div>
+                            <div class="dash-stat">
+                                <span class="dash-num">4.8⭐</span>
+                                <span class="dash-label">Puan</span>
+                            </div>
+                        </div>
+                        <div class="dash-appointments">
+                            <div class="dash-apt">
+                                <span>09:00</span>
+                                <span>Ahmet Y.</span>
+                                <span class="dash-apt-status">✓</span>
+                            </div>
+                            <div class="dash-apt">
+                                <span>09:45</span>
+                                <span>Mehmet K.</span>
+                                <span class="dash-apt-status">✓</span>
+                            </div>
+                            <div class="dash-apt active">
+                                <span>10:30</span>
+                                <span>Ali D.</span>
+                                <span class="dash-apt-status pending">◯</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Preview -->
+    <section class="categories">
+        <div class="container">
+            <h2 class="section-title">Yakında Diğer Kategoriler</h2>
+            <div class="categories-grid">
+                <div class="category-card active">
+                    <div class="category-icon">💈</div>
+                    <h3>Berber</h3>
+                    <span class="category-status live">Aktif</span>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon">💇‍♀️</div>
+                    <h3>Kuaför</h3>
+                    <span class="category-status soon">Yakında</span>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon">💆</div>
+                    <h3>Güzellik</h3>
+                    <span class="category-status soon">Yakında</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="logo-icon">💈</span>
+                    <span class="logo-text">Zamanlı</span>
+                    <p>Online randevu sistemi</p>
+                </div>
+                <div class="footer-links">
+                    <a href="/berber/">Berber Bul</a>
+                    <a href="/berber/kayit/">Salonunu Ekle</a>
+                    <a href="https://wa.me/905433838587" target="_blank">İletişim</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 Zamanlı. Tüm hakları saklıdır.</p>
+                <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">
+                    <a href="https://feyzdigital.com" target="_blank" style="color: inherit; text-decoration: none;">Feyz Digital</a> tarafından geliştirildi.
+                </p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileMenuOverlay" class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+    
+    <!-- Login Modal -->
+    <div id="loginModal" class="login-modal-overlay">
+        <div class="login-modal">
+            <div class="login-modal-header">
+                <h3>🔑 Salon Girişi</h3>
+                <button class="login-modal-close" onclick="closeLoginModal()">×</button>
+            </div>
+            <div class="login-modal-body">
+                <p class="login-modal-desc">Yönetim panelinize erişmek için giriş yapın</p>
+                <form onsubmit="handleLogin(event)">
+                    <div class="login-form-group">
+                        <label>Telefon Numarası</label>
+                        <input type="tel" id="loginPhone" placeholder="05XX XXX XX XX" required>
+                    </div>
+                    <div class="login-form-group">
+                        <label>PIN Kodu</label>
+                        <input type="password" id="loginPin" placeholder="4-6 haneli PIN" maxlength="6" required>
+                    </div>
+                    <p id="loginError" class="login-error"></p>
+                    <button type="submit" class="login-btn">Giriş Yap</button>
+                </form>
+                <p class="login-register-link">Henüz salonunuz yok mu? <a href="/berber/kayit/">Ücretsiz Kayıt Ol</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Firebase & Push Notification Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+    <script src="/config.js"></script>
+    <script src="/push-notifications.js"></script>
+    
+    <!-- Scripts -->
+    <script>
+        // Service Worker kaydı
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+        
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('active');
+            document.getElementById('mobileMenuOverlay').classList.toggle('active');
+            document.body.style.overflow = document.getElementById('mobileMenu').classList.contains('active') ? 'hidden' : '';
+        }
+        
+        // ========== LOGIN MODAL ==========
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+        
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('loginError').classList.remove('show');
+            document.getElementById('loginPhone').value = '';
+            document.getElementById('loginPin').value = '';
+        }
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const phone = document.getElementById('loginPhone').value.replace(/\D/g, '').slice(-10);
+            const pin = document.getElementById('loginPin').value;
+            const errorEl = document.getElementById('loginError');
+            const btn = e.target.querySelector('button[type="submit"]');
+            
+            if (phone.length < 10 || pin.length < 4) {
+                errorEl.textContent = 'Geçerli telefon ve PIN girin';
+                errorEl.classList.add('show');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Giriş yapılıyor...';
+            errorEl.classList.remove('show');
+            
+            try {
+                // Firebase'den salon bul
+                const db = firebase.firestore();
+                
+                // Telefon formatları: 5XXXXXXXXX (10 hane) ve 05XXXXXXXXX (11 hane)
+                const phone10 = phone.slice(-10); // Son 10 hane
+                const phone11 = '0' + phone10; // Başına 0 ekle
+                
+                // Önce phone field'ı ile dene
+                let snapshot = await db.collection('salons')
+                    .where('phone', '==', phone11)
+                    .limit(1)
+                    .get();
+                
+                // Bulunamadıysa 10 haneli dene
+                if (snapshot.empty) {
+                    snapshot = await db.collection('salons')
+                        .where('phone', '==', phone10)
+                        .limit(1)
+                        .get();
+                }
+                
+                // Hala bulunamadıysa mobilePhone ile dene
+                if (snapshot.empty) {
+                    snapshot = await db.collection('salons')
+                        .where('mobilePhone', '==', phone11)
+                        .limit(1)
+                        .get();
+                }
+                
+                if (snapshot.empty) {
+                    snapshot = await db.collection('salons')
+                        .where('mobilePhone', '==', phone10)
+                        .limit(1)
+                        .get();
+                }
+                
+                if (snapshot.empty) {
+                    throw new Error('Bu telefon numarası ile kayıtlı salon bulunamadı');
+                }
+                
+                const salon = snapshot.docs[0].data();
+                
+                if (salon.pin !== pin) {
+                    throw new Error('PIN kodu hatalı');
+                }
+                
+                // Başarılı - yönetim paneline yönlendir
+                const slug = salon.slug || snapshot.docs[0].id;
+                window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
+                
+            } catch (error) {
+                errorEl.textContent = error.message || 'Giriş başarısız';
+                errorEl.classList.add('show');
+                btn.disabled = false;
+                btn.textContent = 'Giriş Yap';
+            }
+        }
+        
+        // ESC ile modal kapat
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeLoginModal();
+                toggleMobileMenu();
+            }
+        });
+    </script>
+    
+    <!-- UX Enhancements -->
+    <script src="/ux-enhancements.js"></script>
+</body>
+</html>

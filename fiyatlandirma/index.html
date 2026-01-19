@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiyatlandırma - Zamanlı</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --pro: #3b82f6;
+            --premium: #8b5cf6;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--slate-50);
+            color: var(--slate-800);
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--slate-200);
+            padding: 0 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--slate-900);
+        }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .nav a {
+            text-decoration: none;
+            color: var(--slate-600);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .nav a:hover { color: var(--primary); }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover { background: var(--primary-dark); }
+        
+        .btn-outline {
+            background: white;
+            color: var(--slate-700);
+            border: 2px solid var(--slate-200);
+        }
+        
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+        
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 4rem 1.5rem 3rem;
+            background: linear-gradient(180deg, white 0%, var(--slate-50) 100%);
+        }
+        
+        .hero h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            color: var(--slate-900);
+            margin-bottom: 1rem;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--slate-600);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Pricing Section */
+        .pricing-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem;
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            align-items: start;
+        }
+        
+        /* Pricing Card */
+        .pricing-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 2px solid var(--slate-200);
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .pricing-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+        
+        .pricing-card.popular {
+            border-color: var(--pro);
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.15);
+        }
+        
+        .pricing-card.premium-card {
+            border-color: var(--premium);
+        }
+        
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--pro);
+            color: white;
+            padding: 0.35rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .card-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--slate-100);
+        }
+        
+        .card-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin: 0 auto 1rem;
+        }
+        
+        .starter .card-icon { background: #dcfce7; }
+        .pro .card-icon { background: #dbeafe; }
+        .premium-card .card-icon { background: #ede9fe; }
+        
+        .card-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .starter .card-title { color: var(--success); }
+        .pro .card-title { color: var(--pro); }
+        .premium-card .card-title { color: var(--premium); }
+        
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--slate-500);
+        }
+        
+        .card-price {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .price {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--slate-900);
+        }
+        
+        .price-currency {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .price-period {
+            color: var(--slate-500);
+            font-size: 1rem;
+        }
+        
+        .setup-fee {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.35rem 0.75rem;
+            background: var(--slate-100);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--slate-600);
+        }
+        
+        .setup-fee.free {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        /* Features */
+        .features-list {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+        
+        .features-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            font-size: 0.95rem;
+            color: var(--slate-700);
+        }
+        
+        .features-list .check {
+            color: var(--success);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .features-list .x {
+            color: var(--slate-300);
+            flex-shrink: 0;
+        }
+        
+        .feature-category {
+            font-weight: 700;
+            color: var(--slate-800);
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--slate-100);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .feature-category:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        
+        /* Card CTA */
+        .card-cta {
+            margin-top: auto;
+        }
+        
+        .card-cta .btn {
+            width: 100%;
+            padding: 1rem;
+        }
+        
+        .starter .card-cta .btn {
+            background: var(--success);
+        }
+        
+        .starter .card-cta .btn:hover {
+            background: #059669;
+        }
+        
+        .pro .card-cta .btn {
+            background: var(--pro);
+        }
+        
+        .pro .card-cta .btn:hover {
+            background: #2563eb;
+        }
+        
+        .premium-card .card-cta .btn {
+            background: var(--premium);
+        }
+        
+        .premium-card .card-cta .btn:hover {
+            background: #7c3aed;
+        }
+        
+        /* FAQ Section */
+        .faq-section {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 4rem;
+        }
+        
+        .faq-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+        }
+        
+        .faq-item {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 0.75rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .faq-question {
+            font-weight: 600;
+            color: var(--slate-800);
+            margin-bottom: 0.5rem;
+        }
+        
+        .faq-answer {
+            color: var(--slate-600);
+            font-size: 0.95rem;
+        }
+        
+        /* CTA Banner */
+        .cta-banner {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 3rem 1.5rem;
+            text-align: center;
+            color: white;
+        }
+        
+        .cta-banner h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .cta-banner p {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cta-banner .btn {
+            background: white;
+            color: var(--primary);
+        }
+        
+        .cta-banner .btn:hover {
+            background: var(--slate-100);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--slate-900);
+            color: var(--slate-400);
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+        
+        /* Mobile */
+        @media (max-width: 1024px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                max-width: 450px;
+                margin: 0 auto;
+            }
+            
+            .pricing-card.popular {
+                order: -1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav { display: none; }
+            
+            .hero h1 { font-size: 2rem; }
+            .hero p { font-size: 1rem; }
+            .hero { padding: 2.5rem 1rem 2rem; }
+            
+            .pricing-section { padding: 0 1rem 3rem; }
+            
+            .pricing-card { padding: 1.5rem; }
+            
+            .price { font-size: 2.5rem; }
+            
+            .faq-section { padding: 2rem 1rem 3rem; }
+            .faq-title { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo">💈 Zamanlı</a>
+            <nav class="nav">
+                <a href="/">Ana Sayfa</a>
+                <a href="/berber/">Berberler</a>
+            </nav>
+            <a href="/berber/kayit/" class="btn btn-primary">Salonunu Ekle</a>
+        </div>
+    </header>
+    
+    <section class="hero">
+        <h1>İşletmenize Uygun Paketi Seçin</h1>
+        <p>Her büyüklükteki berber ve kuaför için esnek fiyatlandırma. Kurulum desteği dahil.</p>
+    </section>
+    
+    <section class="pricing-section">
+        <div class="pricing-grid">
+            <!-- Starter -->
+            <div class="pricing-card starter">
+                <div class="card-header">
+                    <div class="card-icon">🟢</div>
+                    <h3 class="card-title">Başlangıç</h3>
+                    <p class="card-desc">1 personel • 1 işletme</p>
+                </div>
+                
+                <div class="card-price">
+                    <div class="price"><span class="price-currency">₺</span>249</div>
+                    <div class="price-period">/ ay</div>
+                    <div class="setup-fee free">Kurulum Ücretsiz</div>
+                </div>
+                
+                <ul class="features-list">
+                    <li class="feature-category">Randevu Yönetimi</li>
+                    <li><span class="check">✓</span> Kişiye özel online randevu sayfası</li>
+                    <li><span class="check">✓</span> Hizmet listesi + fiyatlar</li>
+                    <li><span class="check">✓</span> Çalışma saatleri + mola tanımlama</li>
+                    <li><span class="check">✓</span> Manuel randevu ekleme/düzenleme</li>
+                    <li><span class="check">✓</span> Günlük randevu listesi</li>
+                    
+                    <li class="feature-category">Bildirimler</li>
+                    <li><span class="check">✓</span> E-posta bildirimi (yeni randevu)</li>
+                    <li><span class="check">✓</span> Tek tıkla WhatsApp onay</li>
+                    
+                    <li class="feature-category">Uygulama</li>
+                    <li><span class="check">✓</span> PWA (mobil uygulama gibi)</li>
+                    
+                    <li class="feature-category">Dahil Değil</li>
+                    <li><span class="x">✗</span> Çoklu personel</li>
+                    <li><span class="x">✗</span> Hizmet süresi özelleştirme</li>
+                    <li><span class="x">✗</span> Raporlama</li>
+                    <li><span class="x">✗</span> Müşteri geçmişi</li>
+                </ul>
+                
+                <div class="card-cta">
+                    <a href="/berber/kayit/" class="btn btn-primary">Hemen Başla</a>
+                </div>
+            </div>
+            
+            <!-- Pro -->
+            <div class="pricing-card pro popular">
+                <div class="popular-badge">En Popüler</div>
+                <div class="card-header">
+                    <div class="card-icon">🔵</div>
+                    <h3 class="card-title">Profesyonel</h3>
+                    <p class="card-desc">3 personele kadar • 1 işletme</p>
+                </div>
+                
+                <div class="card-price">
+                    <div class="price"><span class="price-currency">₺</span>499</div>
+                    <div class="price-period">/ ay</div>
+                    <div class="setup-fee">Kurulum: 990 ₺</div>
+                </div>
+                
+                <ul class="features-list">
+                    <li class="feature-category">Başlangıç'taki Her Şey +</li>
+                    <li><span class="check">✓</span> Çoklu personel takvimi (3'e kadar)</li>
+                    <li><span class="check">✓</span> Personel bazlı çalışma saatleri</li>
+                    <li><span class="check">✓</span> Hizmet süresi özelleştirme</li>
+                    
+                    <li class="feature-category">Müşteri Yönetimi</li>
+                    <li><span class="check">✓</span> Müşteri listesi (ad, telefon, not)</li>
+                    <li><span class="check">✓</span> No-show işaretleme</li>
+                    
+                    <li class="feature-category">Takvim & Raporlar</li>
+                    <li><span class="check">✓</span> Günlük / haftalık görünüm</li>
+                    <li><span class="check">✓</span> En yoğun gün/saat raporu</li>
+                    <li><span class="check">✓</span> En çok alınan hizmet raporu</li>
+                    
+                    <li class="feature-category">Yetkilendirme</li>
+                    <li><span class="check">✓</span> İşletme sahibi rolü</li>
+                    <li><span class="check">✓</span> Personel rolü (kısıtlı erişim)</li>
+                </ul>
+                
+                <div class="card-cta">
+                    <a href="/berber/kayit/" class="btn btn-primary">Hemen Başla</a>
+                </div>
+            </div>
+            
+            <!-- Premium -->
+            <div class="pricing-card premium-card">
+                <div class="card-header">
+                    <div class="card-icon">🟣</div>
+                    <h3 class="card-title">Premium</h3>
+                    <p class="card-desc">Sınırsız personel • Çoklu şube</p>
+                </div>
+                
+                <div class="card-price">
+                    <div class="price"><span class="price-currency">₺</span>799</div>
+                    <div class="price-period">/ ay</div>
+                    <div class="setup-fee">Kurulum: 1.990 ₺</div>
+                </div>
+                
+                <ul class="features-list">
+                    <li class="feature-category">Profesyonel'deki Her Şey +</li>
+                    <li><span class="check">✓</span> Sınırsız personel</li>
+                    <li><span class="check">✓</span> Çoklu şube / lokasyon</li>
+                    <li><span class="check">✓</span> Şube bazlı takvim</li>
+                    
+                    <li class="feature-category">Gelişmiş Raporlar</li>
+                    <li><span class="check">✓</span> Personel doluluk oranı</li>
+                    <li><span class="check">✓</span> Hizmet bazlı yoğunluk</li>
+                    <li><span class="check">✓</span> Performans karşılaştırma</li>
+                    
+                    <li class="feature-category">Marka & Özelleştirme</li>
+                    <li><span class="check">✓</span> Logo ve renk özelleştirme</li>
+                    <li><span class="check">✓</span> Özel alan adı yönlendirme</li>
+                    <li><span class="check">✓</span> Veri dışa aktarma (Excel/CSV)</li>
+                    
+                    <li class="feature-category">Destek</li>
+                    <li><span class="check">✓</span> Öncelikli destek</li>
+                    <li><span class="check">✓</span> Kurulum / taşıma desteği</li>
+                    <li><span class="check">✓</span> Entegrasyon altyapısı</li>
+                </ul>
+                
+                <div class="card-cta">
+                    <a href="/berber/kayit/" class="btn btn-primary">Hemen Başla</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="faq-section">
+        <h2 class="faq-title">Sıkça Sorulan Sorular</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question">Paketimi sonradan değiştirebilir miyim?</div>
+            <div class="faq-answer">Evet, dilediğiniz zaman üst pakete geçebilirsiniz. Alt pakete geçiş dönem sonunda yapılabilir.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">Kurulum ücreti ne içeriyor?</div>
+            <div class="faq-answer">Hesap oluşturma, hizmet ve personel tanımlama, çalışma saatleri ayarlama ve kullanım eğitimi dahildir.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">Ödeme nasıl yapılıyor?</div>
+            <div class="faq-answer">Aylık ödemeler havale/EFT ile yapılmaktadır. Fatura her ay başında gönderilir.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">İptal etmek istersem ne olur?</div>
+            <div class="faq-answer">İstediğiniz zaman iptal edebilirsiniz. Mevcut dönem sonuna kadar kullanmaya devam edersiniz.</div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question">PWA nedir?</div>
+            <div class="faq-answer">Progressive Web App - telefonunuza uygulama olarak ekleyebileceğiniz web uygulaması. App Store'dan indirmeye gerek yok.</div>
+        </div>
+    </section>
+    
+    <section class="cta-banner">
+        <h2>Hangi paketi seçeceğinize karar veremediniz mi?</h2>
+        <p>Bize ulaşın, işletmenize en uygun paketi birlikte belirleyelim.</p>
+        <a href="https://wa.me/905433838587" target="_blank" class="btn">WhatsApp ile İletişime Geç</a>
+    </section>
+    
+    <footer class="footer">
+        <p>© 2026 Zamanlı. Tüm hakları saklıdır.</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">
+            <a href="https://feyzdigital.com" target="_blank" style="color: inherit; text-decoration: none;">Feyz Digital</a> tarafından geliştirildi.
+        </p>
+    </footer>
+</body>
+</html>

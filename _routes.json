@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/berber/salon/*",
+    "/berber/kayit/*",
+    "/admin/*",
+    "/fiyatlandirma/*",
+    "/demo/*",
+    "/randevu/*",
+    "/functions/*",
+    "/icons/*",
+    "/*.css",
+    "/*.js",
+    "/*.json",
+    "/*.html",
+    "/*.svg",
+    "/*.png",
+    "/*.jpg",
+    "/*.ico"
+  ]
+}

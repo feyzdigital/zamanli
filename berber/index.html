@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Berber Bul - Zamanlı</title>
+    <meta name="description" content="Yakınındaki berberleri bul, karşılaştır ve anında online randevu al.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <!-- PWA Install Prompt - En erken yakala -->
+    <script>window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__pwaPrompt=e;console.log('[PWA] Prompt yakalandı')});</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --radius: 0.75rem;
+            --radius-lg: 1rem;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--slate-50);
+            color: var(--slate-800);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--slate-200);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--slate-900);
+        }
+        
+        .logo-icon { font-size: 1.75rem; }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .nav-link {
+            text-decoration: none;
+            color: var(--slate-600);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            transition: all 0.2s;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary);
+            background: var(--slate-100);
+        }
+        
+        .nav-link.highlight {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .nav-link.highlight:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+        
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 3rem 1.5rem;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        
+        .hero p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+        
+        /* Search Box */
+        .search-box {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0.5rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .search-input {
+            flex: 1;
+            border: none;
+            padding: 1rem;
+            font-size: 1rem;
+            font-family: inherit;
+            border-radius: var(--radius);
+        }
+        
+        .search-input:focus {
+            outline: none;
+        }
+        
+        .search-input::placeholder {
+            color: var(--slate-400);
+        }
+        
+        .search-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .search-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Main */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+        
+        /* Filters */
+        .filters-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .results-count {
+            font-weight: 600;
+            color: var(--slate-700);
+        }
+        
+        .filters {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--slate-200);
+            background: white;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .filter-btn:hover {
+            border-color: var(--slate-300);
+        }
+        
+        .filter-btn.active {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+            color: var(--primary);
+        }
+        
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--slate-200);
+            background: white;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        /* Salon Grid */
+        .salon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .salon-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .salon-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .salon-image {
+            height: 180px;
+            background: linear-gradient(135deg, var(--slate-200), var(--slate-300));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            position: relative;
+        }
+        
+        .salon-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .salon-badge.open {
+            background: var(--success);
+        }
+        
+        .salon-badge.closed {
+            background: var(--slate-400);
+        }
+        
+        .distance-badge {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 0.15rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+        
+        .salon-content {
+            padding: 1.25rem;
+        }
+        
+        .salon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .salon-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        .salon-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: var(--slate-100);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .salon-rating .star {
+            color: var(--warning);
+        }
+        
+        .salon-location {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--slate-500);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .salon-services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .service-tag {
+            background: var(--slate-100);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            color: var(--slate-600);
+        }
+        
+        .salon-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--slate-100);
+        }
+        
+        .salon-price {
+            font-size: 0.9rem;
+            color: var(--slate-500);
+        }
+        
+        .salon-price strong {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Yol Tarifi Butonu */
+        .btn-directions {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.75rem;
+            background: var(--slate-100);
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--slate-600);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-directions:hover {
+            background: var(--slate-200);
+            color: var(--primary);
+        }
+        
+        /* Gelişmiş Arama */
+        .advanced-search {
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .advanced-search-header {
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--slate-700);
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .advanced-search-header:hover {
+            background: var(--slate-50);
+        }
+        
+        .advanced-search.open .advanced-search-header {
+            border-bottom: 1px solid var(--slate-200);
+        }
+        
+        .toggle-icon {
+            transition: transform 0.3s;
+        }
+        
+        .advanced-search.open .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        .advanced-search-body {
+            padding: 1.25rem;
+        }
+        
+        .search-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        
+        .search-field {
+            flex: 1;
+            min-width: 140px;
+        }
+        
+        .search-field label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--slate-600);
+            margin-bottom: 0.35rem;
+        }
+        
+        .search-field select,
+        .search-field input {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        
+        .search-field select:focus,
+        .search-field input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .search-btn-adv {
+            padding: 0.625rem 1.25rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .search-btn-adv:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* En Erken Badge */
+        .earliest-badge {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: var(--success);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 600px) {
+            .search-row {
+                flex-direction: column;
+            }
+            .search-field {
+                width: 100%;
+            }
+            .search-btn-adv {
+                width: 100%;
+            }
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--slate-500);
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: var(--slate-700);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 4rem;
+        }
+        
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--slate-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* CTA Banner */
+        .cta-banner {
+            background: linear-gradient(135deg, var(--slate-800), var(--slate-900));
+            color: white;
+            padding: 3rem;
+            border-radius: var(--radius-lg);
+            margin-top: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        
+        .cta-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .cta-content p {
+            opacity: 0.8;
+        }
+        
+        .btn-white {
+            background: white;
+            color: var(--slate-900);
+        }
+        
+        .btn-white:hover {
+            background: var(--slate-100);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--slate-900);
+            color: var(--slate-400);
+            padding: 2rem 1.5rem;
+            margin-top: 4rem;
+            text-align: center;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-container { height: 60px; }
+            .nav-desktop { display: none; }
+            .hero h1 { font-size: 1.75rem; }
+            .hero { padding: 2rem 1rem; }
+            .search-box { flex-direction: column; }
+            .search-btn { justify-content: center; }
+            .salon-grid { grid-template-columns: 1fr; }
+            .filters-bar { flex-direction: column; align-items: flex-start; }
+            .cta-banner { flex-direction: column; text-align: center; }
+        }
+        
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            background: white;
+            border-bottom: 1px solid var(--slate-200);
+            padding: 1rem;
+            z-index: 99;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .mobile-menu.active { display: flex; }
+        
+        .mobile-menu a {
+            display: block;
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            color: var(--slate-700);
+            font-weight: 500;
+            border-radius: var(--radius);
+        }
+        
+        .mobile-menu a:hover { background: var(--slate-100); }
+        .mobile-menu a.highlight { background: var(--primary); color: white; }
+        
+        @media (max-width: 768px) {
+            .mobile-menu-btn { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo">
+                <span class="logo-icon">💈</span>
+                <span>Zamanlı</span>
+            </a>
+            <nav class="nav nav-desktop">
+                <a href="/berber/" class="nav-link" style="color: var(--primary); font-weight: 600;">💈 Berberler</a>
+                <a href="/berber/kayit/" class="nav-link highlight">Salonunu Ekle</a>
+                <a href="#" onclick="showLoginModal(); return false;" class="nav-link">🔑 Giriş Yap</a>
+            </nav>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+        </div>
+    </header>
+    
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="/">🏠 Ana Sayfa</a>
+        <a href="/berber/" style="color: var(--primary); font-weight: 600;">💈 Berber Bul</a>
+        <a href="/berber/kayit/" class="highlight">➕ Salonunu Ekle</a>
+        <a href="#" onclick="showLoginModal(); return false;">🔑 Giriş Yap</a>
+    </div>
+    
+    <!-- Hero -->
+    <section class="hero">
+        <h1>💈 Berber Bul</h1>
+        <p>Yakınındaki en iyi berberleri keşfet, anında randevu al</p>
+        
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" placeholder="Salon adı veya konum ara...">
+            <button class="search-btn" onclick="searchSalons()">
+                <span>🔍</span>
+                <span>Ara</span>
+            </button>
+        </div>
+    </section>
+    
+    <!-- Main -->
+    <main class="main">
+        <!-- Gelişmiş Arama -->
+        <div class="advanced-search" id="advancedSearch">
+            <div class="advanced-search-header" onclick="toggleAdvancedSearch()">
+                <span>🔍 Gelişmiş Arama</span>
+                <span class="toggle-icon" id="advSearchIcon">▼</span>
+            </div>
+            <div class="advanced-search-body" id="advSearchBody" style="display:none;">
+                <div class="search-row">
+                    <div class="search-field">
+                        <label>Hizmet</label>
+                        <select id="serviceFilter">
+                            <option value="">Tüm Hizmetler</option>
+                            <option value="sac-kesimi">✂️ Saç Kesimi</option>
+                            <option value="sakal-trasi">🪒 Sakal Tıraşı</option>
+                            <option value="sac-sakal">💈 Saç + Sakal</option>
+                            <option value="cilt-bakimi">🧴 Cilt Bakımı</option>
+                        </select>
+                    </div>
+                    <div class="search-field">
+                        <label>Tarih</label>
+                        <input type="date" id="dateFilter" min="">
+                    </div>
+                    <div class="search-field">
+                        <label>Saat</label>
+                        <select id="timeFilter">
+                            <option value="">Tüm Saatler</option>
+                            <option value="09:00">09:00</option>
+                            <option value="10:00">10:00</option>
+                            <option value="11:00">11:00</option>
+                            <option value="12:00">12:00</option>
+                            <option value="13:00">13:00</option>
+                            <option value="14:00">14:00</option>
+                            <option value="15:00">15:00</option>
+                            <option value="16:00">16:00</option>
+                            <option value="17:00">17:00</option>
+                            <option value="18:00">18:00</option>
+                            <option value="19:00">19:00</option>
+                        </select>
+                    </div>
+                    <button class="search-btn-adv" onclick="applyAdvancedSearch()">🔍 Ara</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="results-count" id="resultsCount">Yükleniyor...</div>
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Tümü</button>
+                <button class="filter-btn" data-filter="open-now">🟢 Şimdi Açık</button>
+                <button class="filter-btn" data-filter="earliest">⚡ En Erken</button>
+                <button class="filter-btn" data-filter="nearby" id="nearbyBtn">📍 Yakınımda</button>
+                <button class="filter-btn" data-filter="top-rated">⭐ En İyi</button>
+                <select class="filter-select" id="cityFilter">
+                    <option value="">Tüm Şehirler</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Salon Grid -->
+        <div class="salon-grid" id="salonGrid">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Berberler yükleniyor...</p>
+            </div>
+        </div>
+        
+        <!-- CTA Banner -->
+        <div class="cta-banner">
+            <div class="cta-content">
+                <h3>💼 Berber Salonunuz mu Var?</h3>
+                <p>Hemen kayıt olun, online randevu almaya başlayın!</p>
+            </div>
+            <a href="/berber/kayit/" class="btn btn-white">Şimdi Kayıt Ol →</a>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2026 Zamanlı. Tüm hakları saklıdır.</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.8;">
+            <a href="https://feyzdigital.com" target="_blank" style="color: inherit; text-decoration: none;">Feyz Digital</a> tarafından geliştirildi.
+        </p>
+    </footer>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="/config.js"></script>
+    
+    <script>
+        let db;
+        let allSalons = [];
+        let filteredSalons = [];
+        let userLocation = null;
+        
+        // Initialize
+        async function init() {
+            if (typeof firebase !== 'undefined') {
+                db = firebase.firestore();
+                await loadSalons();
+                setupEventListeners();
+            }
+        }
+        
+        // Şu an açık mı kontrol et
+        function isOpenNow(salon) {
+            const now = new Date();
+            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const today = days[now.getDay()];
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            
+            const hours = salon.workingHours;
+            if (!hours || !hours[today]) {
+                // Varsayılan: Hafta içi 09-19, Cumartesi 09-18, Pazar kapalı
+                if (today === 'sun') return false;
+                if (today === 'sat') return currentTime >= 540 && currentTime <= 1080; // 09:00-18:00
+                return currentTime >= 540 && currentTime <= 1140; // 09:00-19:00
+            }
+            
+            const dayHours = hours[today];
+            if (dayHours.closed) return false;
+            
+            const [openH, openM] = (dayHours.open || '09:00').split(':').map(Number);
+            const [closeH, closeM] = (dayHours.close || '19:00').split(':').map(Number);
+            const openTime = openH * 60 + openM;
+            const closeTime = closeH * 60 + closeM;
+            
+            return currentTime >= openTime && currentTime <= closeTime;
+        }
+        
+        // Konum al
+        function getUserLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Tarayıcınız konum desteklemiyor'));
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    (err) => reject(err),
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+        }
+        
+        // İki nokta arası mesafe (km) - Haversine formülü
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371; // Dünya yarıçapı (km)
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        // Load Salons
+        async function loadSalons() {
+            try {
+                const snapshot = await db.collection('salons')
+                    .where('active', '==', true)
+                    .where('status', '==', 'approved')
+                    .where('category', '==', 'berber')
+                    .get();
+                
+                allSalons = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // If no salons with category, try without category filter (for existing data)
+                if (allSalons.length === 0) {
+                    const fallbackSnapshot = await db.collection('salons')
+                        .where('active', '==', true)
+                        .where('status', '==', 'approved')
+                        .get();
+                    
+                    allSalons = fallbackSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                }
+                
+                // Mark demo salons and filter out old demo-berber
+                allSalons = allSalons
+                    .filter(s => s.slug !== 'demo-berber') // Eski demo-berber'i filtrele
+                    .map(s => ({
+                        ...s,
+                        isDemo: s.slug === 'demo' || s.name?.toLowerCase().includes('demo')
+                    }));
+                
+                // Add demo salon if no salons exist
+                if (allSalons.length === 0) {
+                    allSalons = [{
+                        id: 'demo',
+                        name: 'Demo Berber',
+                        slug: 'demo',
+                        city: 'Istanbul',
+                        district: 'Kadikoy',
+                        rating: 4.8,
+                        reviewCount: 124,
+                        services: ['Sac Kesimi', 'Sakal', 'Cilt Bakimi'],
+                        minPrice: 100,
+                        isOpen: true,
+                        isDemo: true
+                    }];
+                }
+                
+                filteredSalons = [...allSalons];
+                populateCityFilter();
+                renderSalons();
+                
+            } catch (error) {
+                console.error('Error loading salons:', error);
+                document.getElementById('salonGrid').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">😕</div>
+                        <h3>Bir hata oluştu</h3>
+                        <p>Lütfen sayfayı yenileyin</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Populate City Filter
+        function populateCityFilter() {
+            const cities = [...new Set(allSalons.map(s => s.city).filter(Boolean))];
+            const select = document.getElementById('cityFilter');
+            cities.sort().forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                select.appendChild(option);
+            });
+        }
+        
+        // Render Salons
+        function renderSalons() {
+            const grid = document.getElementById('salonGrid');
+            const countEl = document.getElementById('resultsCount');
+            
+            countEl.textContent = `${filteredSalons.length} berber bulundu`;
+            
+            if (filteredSalons.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-icon">🔍</div>
+                        <h3>Sonuç bulunamadı</h3>
+                        <p>Farklı bir arama yapmayı deneyin</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = filteredSalons.map(salon => {
+                const services = salon.services || ['Saç Kesimi', 'Sakal'];
+                const displayServices = Array.isArray(services) 
+                    ? services.slice(0, 3) 
+                    : ['Saç Kesimi', 'Sakal'];
+                
+                const salonUrl = salon.isDemo ? '/demo/berber/' : `/berber/salon/?slug=${salon.slug}`;
+                const openNow = isOpenNow(salon);
+                const distanceText = salon.distance && salon.distance < 999 
+                    ? `${salon.distance.toFixed(1)} km` 
+                    : '';
+                const hasLocation = salon.location?.lat && salon.location?.lng;
+                const earliestBadge = salon.earliestSlot ? `<span class="earliest-badge">⚡ ${salon.earliestSlot}</span>` : '';
+                
+                return `
+                    <div class="salon-card" onclick="window.location.href='${salonUrl}'">
+                        <div class="salon-image">
+                            ${salon.logo ? `<img src="${salon.logo}" alt="${escapeHtml(salon.name)}" style="width:100%;height:100%;object-fit:cover;">` : '💈'}
+                            ${openNow ? '<span class="salon-badge open">Açık</span>' : '<span class="salon-badge closed">Kapalı</span>'}
+                            ${earliestBadge}
+                        </div>
+                        <div class="salon-content">
+                            <div class="salon-header">
+                                <h3 class="salon-name">${escapeHtml(salon.name)}</h3>
+                                <div class="salon-rating">
+                                    <span class="star">⭐</span>
+                                    <span>${(salon.rating || 5).toFixed ? (salon.rating || 5).toFixed(1) : (salon.rating || '5')}</span>
+                                    ${salon.reviewCount ? `<span style="font-size:0.75rem;color:var(--slate-400)">(${salon.reviewCount})</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="salon-location">
+                                📍 ${escapeHtml(salon.district || '')}${salon.district && salon.city ? ', ' : ''}${escapeHtml(salon.city || '')}
+                                ${distanceText ? `<span class="distance-badge">${distanceText}</span>` : ''}
+                            </div>
+                            <div class="salon-services">
+                                ${displayServices.map(s => `<span class="service-tag">${escapeHtml(typeof s === 'string' ? s : s.name)}</span>`).join('')}
+                            </div>
+                            <div class="salon-footer">
+                                <div class="salon-price">
+                                    <strong>${salon.minPrice || 100} ₺</strong>'den başlayan
+                                </div>
+                                <div class="salon-actions-row">
+                                    ${hasLocation ? `<button class="btn-directions" onclick="event.stopPropagation(); openDirections(${salon.location.lat}, ${salon.location.lng})">🗺️</button>` : ''}
+                                    <span class="btn btn-primary">Randevu Al</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Search Salons
+        function searchSalons() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (!query) {
+                filteredSalons = [...allSalons];
+            } else {
+                filteredSalons = allSalons.filter(salon => 
+                    salon.name?.toLowerCase().includes(query) ||
+                    salon.city?.toLowerCase().includes(query) ||
+                    salon.district?.toLowerCase().includes(query)
+                );
+            }
+            
+            applyFilters();
+        }
+        
+        // Apply Filters
+        async function applyFilters() {
+            const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
+            const cityFilter = document.getElementById('cityFilter').value;
+            
+            let results = [...filteredSalons];
+            
+            // City filter
+            if (cityFilter) {
+                results = results.filter(s => s.city === cityFilter);
+            }
+            
+            // Status filters
+            if (activeFilter === 'open-now') {
+                results = results.filter(s => isOpenNow(s));
+            } else if (activeFilter === 'top-rated') {
+                results = results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+            } else if (activeFilter === 'nearby') {
+                // Konum izni al
+                const nearbyBtn = document.getElementById('nearbyBtn');
+                
+                if (!userLocation) {
+                    nearbyBtn.innerHTML = '📍 Konum alınıyor...';
+                    try {
+                        userLocation = await getUserLocation();
+                        nearbyBtn.innerHTML = '📍 Yakınımda';
+                    } catch (err) {
+                        nearbyBtn.innerHTML = '📍 Yakınımda';
+                        alert('Konum alınamadı. Lütfen konum iznini kontrol edin.');
+                        // Tümü filtresine dön
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+                        renderSalons();
+                        return;
+                    }
+                }
+                
+                // Konumu olan salonları mesafeye göre sırala
+                results = results.map(s => {
+                    if (s.location?.lat && s.location?.lng) {
+                        s.distance = calculateDistance(userLocation.lat, userLocation.lng, s.location.lat, s.location.lng);
+                    } else {
+                        // Konum yoksa şehre göre tahmini mesafe
+                        s.distance = 999;
+                    }
+                    return s;
+                }).sort((a, b) => a.distance - b.distance);
+            } else if (activeFilter === 'earliest') {
+                // En erken randevu filtresi - bugün veya yarın müsait olanlar
+                results = results.filter(s => isOpenNow(s) || willOpenToday(s) || willOpenTomorrow(s));
+                // En yakın müsaitliğe göre sırala
+                results.forEach(s => {
+                    s.earliestSlot = getEarliestSlot(s);
+                });
+                results.sort((a, b) => {
+                    if (!a.earliestSlot) return 1;
+                    if (!b.earliestSlot) return -1;
+                    return a.earliestSlot.localeCompare(b.earliestSlot);
+                });
+            }
+            
+            filteredSalons = results;
+            renderSalons();
+        }
+        
+        // Bugün açılacak mı kontrol
+        function willOpenToday(salon) {
+            const now = new Date();
+            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const today = days[now.getDay()];
+            const hours = salon.workingHours?.[today];
+            if (!hours || hours.closed) return false;
+            const [closeH, closeM] = (hours.close || '19:00').split(':').map(Number);
+            const closeTime = closeH * 60 + closeM;
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            return currentTime < closeTime;
+        }
+        
+        // Yarın açık mı kontrol
+        function willOpenTomorrow(salon) {
+            const now = new Date();
+            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const tomorrow = days[(now.getDay() + 1) % 7];
+            const hours = salon.workingHours?.[tomorrow];
+            return hours && !hours.closed;
+        }
+        
+        // En erken müsait slot
+        function getEarliestSlot(salon) {
+            const now = new Date();
+            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            
+            // Bugün
+            const today = days[now.getDay()];
+            const todayHours = salon.workingHours?.[today];
+            if (todayHours && !todayHours.closed) {
+                const currentMins = now.getHours() * 60 + now.getMinutes();
+                const [openH, openM] = (todayHours.open || '09:00').split(':').map(Number);
+                const openMins = openH * 60 + openM;
+                if (currentMins < openMins) {
+                    return `Bugün ${todayHours.open}`;
+                } else {
+                    // Şu anki saatten sonraki ilk slot
+                    const nextSlot = Math.ceil(currentMins / 30) * 30;
+                    const [closeH, closeM] = (todayHours.close || '19:00').split(':').map(Number);
+                    if (nextSlot < closeH * 60 + closeM) {
+                        return `Bugün ${String(Math.floor(nextSlot/60)).padStart(2,'0')}:${String(nextSlot%60).padStart(2,'0')}`;
+                    }
+                }
+            }
+            
+            // Yarın
+            const tomorrow = days[(now.getDay() + 1) % 7];
+            const tomorrowHours = salon.workingHours?.[tomorrow];
+            if (tomorrowHours && !tomorrowHours.closed) {
+                return `Yarın ${tomorrowHours.open || '09:00'}`;
+            }
+            
+            return null;
+        }
+        
+        // Gelişmiş arama toggle
+        function toggleAdvancedSearch() {
+            const container = document.getElementById('advancedSearch');
+            const body = document.getElementById('advSearchBody');
+            container.classList.toggle('open');
+            body.style.display = container.classList.contains('open') ? 'block' : 'none';
+        }
+        
+        // Gelişmiş arama uygula
+        async function applyAdvancedSearch() {
+            const service = document.getElementById('serviceFilter').value;
+            const date = document.getElementById('dateFilter').value;
+            const time = document.getElementById('timeFilter').value;
+            
+            let results = [...allSalons];
+            
+            // Hizmet filtresi
+            if (service) {
+                results = results.filter(s => {
+                    const services = s.services || [];
+                    return services.some(svc => {
+                        const svcId = typeof svc === 'string' ? svc.toLowerCase().replace(/\s+/g, '-') : svc.id;
+                        return svcId?.includes(service);
+                    });
+                });
+            }
+            
+            // Tarih ve saat filtresi (belirtilen saatte açık olanlar)
+            if (date && time) {
+                const selectedDate = new Date(date);
+                const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                const dayKey = days[selectedDate.getDay()];
+                const [targetH, targetM] = time.split(':').map(Number);
+                const targetMins = targetH * 60 + targetM;
+                
+                results = results.filter(s => {
+                    const hours = s.workingHours?.[dayKey];
+                    if (!hours || hours.closed) return false;
+                    
+                    const [openH, openM] = (hours.open || '09:00').split(':').map(Number);
+                    const [closeH, closeM] = (hours.close || '19:00').split(':').map(Number);
+                    const openMins = openH * 60 + openM;
+                    const closeMins = closeH * 60 + closeM;
+                    
+                    return targetMins >= openMins && targetMins < closeMins;
+                });
+            }
+            
+            filteredSalons = results;
+            renderSalons();
+            
+            // Sonuç mesajı
+            const countEl = document.getElementById('resultsCount');
+            let msg = `${filteredSalons.length} berber bulundu`;
+            if (date) msg += ` (${new Date(date).toLocaleDateString('tr-TR')})`;
+            if (time) msg += ` (${time})`;
+            countEl.textContent = msg;
+        }
+        
+        // Yol tarifi aç
+        function openDirections(lat, lng) {
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+        }
+        
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Search on enter
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchSalons();
+            });
+            
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    filteredSalons = [...allSalons];
+                    searchSalons();
+                });
+            });
+            
+            // City filter
+            document.getElementById('cityFilter').addEventListener('change', () => {
+                searchSalons();
+            });
+            
+            // Date filter min değeri (bugün)
+            const dateInput = document.getElementById('dateFilter');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.min = today;
+                dateInput.value = today;
+            }
+        }
+        
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+        
+        // Toggle Mobile Menu
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('active');
+        }
+        
+        // Open Salon Login
+        function openSalonLogin() {
+            const slug = prompt('Salon URL\'nizi girin:\n(Örn: usta-berber)');
+            if (slug && slug.trim()) {
+                window.location.href = `/berber/salon/yonetim/?slug=${slug.trim()}`;
+            }
+        }
+        
+        // Close mobile menu on click outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('mobileMenu');
+            const btn = document.querySelector('.mobile-menu-btn');
+            if (!menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.classList.remove('active');
+            }
+        });
+        
+        // Salon Giriş Modal
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+        
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('loginPhone').value = '';
+            document.getElementById('loginPin').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+        
+        async function salonLogin() {
+            const phone = document.getElementById('loginPhone').value.replace(/\D/g, '');
+            const pin = document.getElementById('loginPin').value;
+            const errorEl = document.getElementById('loginError');
+            const btn = document.querySelector('#loginModal .btn-primary');
+            
+            if (phone.length < 10) {
+                errorEl.textContent = 'Geçerli telefon numarası girin';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            if (!pin) {
+                errorEl.textContent = 'PIN kodunu girin';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Giriş yapılıyor...';
+            errorEl.style.display = 'none';
+            
+            try {
+                // Telefon formatları: 5XXXXXXXXX (10 hane) ve 05XXXXXXXXX (11 hane)
+                const phone10 = phone.slice(-10);
+                const phone11 = '0' + phone10;
+                
+                let snapshot = null;
+                
+                // 1. phone field ile 11 haneli dene
+                snapshot = await db.collection('salons')
+                    .where('phone', '==', phone11)
+                    .where('active', '==', true)
+                    .get();
+                
+                // 2. phone field ile 10 haneli dene
+                if (snapshot.empty) {
+                    snapshot = await db.collection('salons')
+                        .where('phone', '==', phone10)
+                        .where('active', '==', true)
+                        .get();
+                }
+                
+                // 3. mobilePhone field ile 11 haneli dene
+                if (snapshot.empty) {
+                    snapshot = await db.collection('salons')
+                        .where('mobilePhone', '==', phone11)
+                        .where('active', '==', true)
+                        .get();
+                }
+                
+                // 4. mobilePhone field ile 10 haneli dene
+                if (snapshot.empty) {
+                    snapshot = await db.collection('salons')
+                        .where('mobilePhone', '==', phone10)
+                        .where('active', '==', true)
+                        .get();
+                }
+                
+                if (snapshot.empty) {
+                    errorEl.textContent = 'Bu telefon numarasına kayıtlı aktif salon bulunamadı';
+                    errorEl.style.display = 'block';
+                } else {
+                    // Salon bulundu, PIN kontrolü yap
+                    const doc = snapshot.docs[0];
+                    const salon = doc.data();
+                    
+                    if (salon.pin === pin) {
+                        // PIN doğru, yönlendir
+                        const slug = salon.slug;
+                        window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
+                    } else {
+                        errorEl.textContent = 'PIN kodu hatalı';
+                        errorEl.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorEl.textContent = 'Bir hata oluştu, tekrar deneyin';
+                errorEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Giriş Yap';
+            }
+        }
+        
+        // Personel Girişi
+        async function staffLogin() {
+            const phone = document.getElementById('loginPhone').value.replace(/\D/g, '');
+            const pin = document.getElementById('loginPin').value;
+            const errorEl = document.getElementById('loginError');
+            const btn = document.querySelector('#loginModal .btn-primary');
+            
+            if (phone.length < 10) {
+                errorEl.textContent = 'Geçerli telefon numarası girin';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            if (!pin) {
+                errorEl.textContent = 'PIN kodunu girin';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Giriş yapılıyor...';
+            errorEl.style.display = 'none';
+            
+            try {
+                const phoneToSearch = phone.slice(-10);
+                
+                // Tüm aktif salonları al ve personelleri kontrol et
+                const salonsSnap = await db.collection('salons')
+                    .where('active', '==', true)
+                    .get();
+                
+                let foundStaff = null;
+                let foundSalon = null;
+                
+                for (const salonDoc of salonsSnap.docs) {
+                    const staffSnap = await db.collection('salons').doc(salonDoc.id)
+                        .collection('staff')
+                        .where('phone', '==', phoneToSearch)
+                        .get();
+                    
+                    if (!staffSnap.empty) {
+                        const staffData = staffSnap.docs[0].data();
+                        if (staffData.pin === pin) {
+                            foundStaff = { id: staffSnap.docs[0].id, ...staffData };
+                            foundSalon = { id: salonDoc.id, ...salonDoc.data() };
+                            break;
+                        }
+                    }
+                }
+                
+                if (foundStaff && foundSalon) {
+                    // Personel girişi başarılı - session storage'a kaydet
+                    sessionStorage.setItem('staffSession', JSON.stringify({
+                        staffId: foundStaff.id,
+                        staffName: foundStaff.name,
+                        salonId: foundSalon.id,
+                        salonSlug: foundSalon.slug,
+                        category: foundSalon.category || 'berber'
+                    }));
+                    window.location.href = `/berber/salon/yonetim/?slug=${foundSalon.slug}&staff=${foundStaff.id}`;
+                } else {
+                    errorEl.textContent = 'Telefon veya PIN hatalı';
+                    errorEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Staff login error:', error);
+                errorEl.textContent = 'Bir hata oluştu, tekrar deneyin';
+                errorEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Giriş Yap';
+            }
+        }
+        
+        // Giriş tipi değiştir
+        function switchLoginType(type) {
+            const salonTab = document.getElementById('loginTabSalon');
+            const staffTab = document.getElementById('loginTabStaff');
+            const loginBtn = document.querySelector('#loginModal .btn-primary');
+            const title = document.getElementById('loginTitle');
+            const subtitle = document.getElementById('loginSubtitle');
+            
+            if (type === 'salon') {
+                salonTab.classList.add('active');
+                staffTab.classList.remove('active');
+                loginBtn.onclick = salonLogin;
+                title.textContent = 'Salon Girişi';
+                subtitle.textContent = 'Yönetim panelinize erişin';
+            } else {
+                staffTab.classList.add('active');
+                salonTab.classList.remove('active');
+                loginBtn.onclick = staffLogin;
+                title.textContent = 'Personel Girişi';
+                subtitle.textContent = 'Randevularınızı görüntüleyin';
+            }
+            
+            document.getElementById('loginError').style.display = 'none';
+        }
+        
+        // Start
+        init();
+    </script>
+    
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal" onclick="if(event.target === this) closeLoginModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔑</div>
+                <h2 id="loginTitle" style="color: var(--slate-800); margin-bottom: 0.25rem;">Salon Girişi</h2>
+                <p id="loginSubtitle" style="color: var(--slate-500); font-size: 0.9rem;">Yönetim panelinize erişin</p>
+            </div>
+            
+            <!-- Giriş Tipi Seçimi -->
+            <div class="login-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <button id="loginTabSalon" class="login-tab active" onclick="switchLoginType('salon')">
+                    💈 Salon Sahibi
+                </button>
+                <button id="loginTabStaff" class="login-tab" onclick="switchLoginType('staff')">
+                    👤 Personel
+                </button>
+            </div>
+            
+            <div id="loginError" style="display: none; background: var(--danger); color: white; padding: 0.75rem; border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.9rem; text-align: center;"></div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-weight: 500; margin-bottom: 0.5rem; color: var(--slate-700);">Telefon Numarası</label>
+                <input type="tel" id="loginPhone" placeholder="05XX XXX XX XX" style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--slate-200); border-radius: var(--radius); font-size: 1rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--slate-200)'">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 500; margin-bottom: 0.5rem; color: var(--slate-700);">PIN Kodu</label>
+                <input type="password" id="loginPin" placeholder="••••••" maxlength="6" style="width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--slate-200); border-radius: var(--radius); font-size: 1rem; letter-spacing: 0.25rem; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--slate-200)'" onkeypress="if(event.key==='Enter') document.querySelector('#loginModal .btn-primary').click()">
+            </div>
+            
+            <button class="btn btn-primary" onclick="salonLogin()" style="width: 100%; padding: 1rem; font-size: 1rem;">Giriş Yap</button>
+            
+            <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--slate-500);">
+                Hesabınız yok mu? <a href="/berber/kayit/" style="color: var(--primary); text-decoration: none; font-weight: 500;">Salonunuzu Ekleyin</a>
+            </p>
+        </div>
+    </div>
+    
+    <style>
+        .login-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .login-tab {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid var(--slate-200);
+            background: white;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .login-tab:hover {
+            border-color: var(--primary-light);
+        }
+        .login-tab.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            max-width: 400px;
+            width: 100%;
+            position: relative;
+            box-shadow: var(--shadow-lg);
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--slate-400);
+            cursor: pointer;
+        }
+        .modal-close:hover {
+            color: var(--slate-600);
+        }
+    </style>
+    
+    <!-- UX Enhancements -->
+    <script src="/ux-enhancements.js"></script>
+</body>
+</html>

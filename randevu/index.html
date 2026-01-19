@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Randevu Detayı - Zamanlı</title>
+    <meta name="theme-color" content="#6366f1">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #e0e7ff;
+            --success: #10b981; --success-light: #d1fae5; --success-dark: #059669;
+            --warning: #f59e0b; --warning-light: #fef3c7;
+            --danger: #ef4444; --danger-light: #fee2e2; --danger-dark: #dc2626;
+            --whatsapp: #25D366; --whatsapp-dark: #128C7E;
+            --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+            --slate-400: #94a3b8; --slate-500: #64748b; --slate-600: #475569; --slate-800: #1e293b;
+            --radius: 16px; --radius-sm: 12px;
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--slate-800); 
+            line-height: 1.6; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+        }
+        
+        .header { 
+            background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(10px);
+            padding: 1rem; 
+            text-align: center; 
+            border-bottom: 1px solid var(--slate-200);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo { 
+            font-size: 1.5rem; 
+            font-weight: 700; 
+            color: var(--slate-800); 
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .main { 
+            flex: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 1.5rem;
+        }
+        
+        .card { 
+            background: white; 
+            border-radius: var(--radius); 
+            padding: 2rem; 
+            width: 100%; 
+            max-width: 480px; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        
+        .card-header { text-align: center; margin-bottom: 1.5rem; }
+        .card-icon { font-size: 4rem; margin-bottom: 1rem; display: block; }
+        .card-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--slate-800); }
+        .card-subtitle { color: var(--slate-500); font-size: 1rem; }
+        
+        .status-badge { 
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.75rem 1.25rem; border-radius: 30px; 
+            font-weight: 600; font-size: 0.95rem; margin-bottom: 1.5rem;
+        }
+        .status-badge.pending { background: var(--warning-light); color: #92400e; }
+        .status-badge.confirmed { background: var(--success-light); color: #065f46; }
+        .status-badge.cancelled { background: var(--danger-light); color: #991b1b; }
+        .status-badge.expired { background: var(--slate-100); color: var(--slate-600); }
+        .status-badge.coming { background: #dbeafe; color: #1e40af; }
+        
+        .detail-box { background: var(--slate-50); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.5rem; }
+        .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--slate-200); }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: var(--slate-500); display: flex; align-items: center; gap: 0.5rem; }
+        .detail-value { font-weight: 600; text-align: right; }
+        
+        .btn { 
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem; 
+            width: 100%; padding: 1rem 1.5rem; border: none; border-radius: var(--radius-sm); 
+            font-size: 1rem; font-weight: 600; cursor: pointer; margin-bottom: 0.75rem; 
+            transition: all 0.2s; text-decoration: none;
+        }
+        .btn:active { transform: scale(0.98); }
+        
+        .btn-success { background: linear-gradient(135deg, var(--success), var(--success-dark)); color: white; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); }
+        .btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); transform: translateY(-2px); }
+        
+        .btn-danger { background: white; color: var(--danger); border: 2px solid var(--danger); }
+        .btn-danger:hover { background: var(--danger-light); }
+        
+        .btn-whatsapp { background: linear-gradient(135deg, var(--whatsapp), var(--whatsapp-dark)); color: white; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3); }
+        .btn-whatsapp:hover { box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4); transform: translateY(-2px); }
+        
+        .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-outline:hover { background: var(--primary-light); }
+        
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+        
+        .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+        .action-buttons .btn { margin-bottom: 0; }
+        .action-buttons .btn-full { grid-column: 1 / -1; }
+        
+        .info-box { border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; font-size: 0.9rem; display: flex; align-items: flex-start; gap: 0.75rem; }
+        .info-box-icon { font-size: 1.25rem; }
+        .warning-box { background: var(--warning-light); border: 1px solid var(--warning); color: #92400e; }
+        .success-box { background: var(--success-light); border: 1px solid var(--success); color: #065f46; }
+        .error-box { background: var(--danger-light); border: 1px solid var(--danger); color: #991b1b; }
+        
+        .countdown { text-align: center; padding: 1rem; background: var(--slate-50); border-radius: var(--radius-sm); margin-bottom: 1rem; }
+        .countdown-label { font-size: 0.85rem; color: var(--slate-500); margin-bottom: 0.25rem; }
+        .countdown-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        
+        .add-calendar { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.875rem; background: var(--slate-50); border-radius: var(--radius-sm); color: var(--slate-600); text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; }
+        .add-calendar:hover { background: var(--slate-100); color: var(--primary); }
+        
+        .loading { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 3rem 0; }
+        .spinner { width: 48px; height: 48px; border: 4px solid var(--slate-200); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .salon-info { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--slate-50); border-radius: var(--radius-sm); margin-bottom: 1.5rem; }
+        .salon-avatar { width: 56px; height: 56px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; }
+        .salon-details h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.125rem; }
+        .salon-details p { font-size: 0.85rem; color: var(--slate-500); }
+        
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal { background: white; border-radius: var(--radius); padding: 2rem; max-width: 360px; width: 100%; text-align: center; transform: scale(0.9); transition: transform 0.3s; }
+        .modal-overlay.active .modal { transform: scale(1); }
+        .modal-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .modal-text { color: var(--slate-500); margin-bottom: 1.5rem; }
+        .modal-buttons { display: flex; gap: 0.75rem; }
+        .modal-buttons .btn { flex: 1; margin: 0; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="/" class="logo">💈 Zamanlı</a>
+    </header>
+    
+    <main class="main">
+        <div class="card">
+            <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+                <p>Randevu yükleniyor...</p>
+            </div>
+            <div id="contentState" style="display: none;"></div>
+            <div id="errorState" style="display: none;">
+                <div class="card-header">
+                    <span class="card-icon">❌</span>
+                    <h2 class="card-title">Randevu Bulunamadı</h2>
+                    <p class="card-subtitle">Bu link geçersiz veya randevu silinmiş olabilir.</p>
+                </div>
+                <a href="/" class="btn btn-success">Ana Sayfaya Dön</a>
+            </div>
+        </div>
+    </main>
+    
+    <div class="modal-overlay" id="cancelModal">
+        <div class="modal">
+            <div class="modal-icon">⚠️</div>
+            <h3 class="modal-title">Randevuyu İptal Et?</h3>
+            <p class="modal-text">Bu işlem geri alınamaz. Randevunuz iptal edilecektir.</p>
+            <div class="modal-buttons">
+                <button class="btn btn-outline" onclick="closeCancelModal()">Vazgeç</button>
+                <button class="btn btn-danger" onclick="confirmCancel()">İptal Et</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="/config.js"></script>
+    <script src="/whatsapp-automation.js"></script>
+    <script>
+        let db, appointment = null, salon = null;
+        const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        const DAYS_TR = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+        
+        async function init() {
+            if (typeof firebase === 'undefined') { setTimeout(init, 100); return; }
+            firebase.initializeApp(FIREBASE_CONFIG);
+            db = firebase.firestore();
+            
+            const params = new URLSearchParams(window.location.search);
+            const appointmentId = params.get('id');
+            const action = params.get('action');
+            
+            if (!appointmentId) { showError(); return; }
+            
+            try {
+                const aptDoc = await db.collection('appointments').doc(appointmentId).get();
+                if (!aptDoc.exists) { showError(); return; }
+                
+                appointment = { id: aptDoc.id, ...aptDoc.data() };
+                
+                if (appointment.salonId) {
+                    const salonDoc = await db.collection('salons').doc(appointment.salonId).get();
+                    if (salonDoc.exists) salon = { id: salonDoc.id, ...salonDoc.data() };
+                }
+                
+                if (action === 'confirm') await confirmAppointment(true);
+                else if (action === 'cancel') showCancelModal();
+                
+                renderAppointment();
+            } catch (e) { console.error(e); showError(); }
+        }
+        
+        function showError() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+        }
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getDate()} ${MONTHS_TR[date.getMonth()]} ${date.getFullYear()}, ${DAYS_TR[date.getDay()]}`;
+        }
+        
+        function getMinutesUntil() {
+            return Math.floor((new Date(`${appointment.date}T${appointment.time}`) - new Date()) / 60000);
+        }
+        
+        function formatTimeRemaining(minutes) {
+            if (minutes < 0) return 'Geçti';
+            if (minutes < 60) return `${minutes} dakika`;
+            const hours = Math.floor(minutes / 60), mins = minutes % 60;
+            if (hours < 24) return `${hours} saat ${mins > 0 ? mins + ' dk' : ''}`;
+            const days = Math.floor(hours / 24);
+            return `${days} gün ${hours % 24 > 0 ? (hours % 24) + ' saat' : ''}`;
+        }
+        
+        function renderAppointment() {
+            document.getElementById('loadingState').style.display = 'none';
+            const contentEl = document.getElementById('contentState');
+            contentEl.style.display = 'block';
+            
+            const cancelDeadline = APP_CONFIG?.appointment?.cancelDeadlineMinutes || 90;
+            const minutesUntil = getMinutesUntil();
+            const canCancel = minutesUntil > cancelDeadline;
+            const isPast = minutesUntil <= 0;
+            
+            let status = 'pending', statusText = '⏳ Bekliyor', statusClass = 'pending';
+            
+            if (appointment.customerResponse === 'coming') { status = 'coming'; statusText = '✓ Geliyorum Dediniz'; statusClass = 'coming'; }
+            else if (appointment.customerResponse === 'cancelled' || appointment.status === 'cancelled') { status = 'cancelled'; statusText = '✕ İptal Edildi'; statusClass = 'cancelled'; }
+            else if (appointment.status === 'confirmed') { status = 'confirmed'; statusText = '✓ Onaylandı'; statusClass = 'confirmed'; }
+            else if (appointment.status === 'completed') { status = 'completed'; statusText = '✓ Tamamlandı'; statusClass = 'confirmed'; }
+            else if (isPast) { status = 'expired'; statusText = '⏰ Süre Doldu'; statusClass = 'expired'; }
+            
+            let html = `
+                <div class="card-header">
+                    <span class="card-icon">📅</span>
+                    <h2 class="card-title">Randevu Detayı</h2>
+                </div>
+                ${salon ? `<div class="salon-info"><div class="salon-avatar">💈</div><div class="salon-details"><h3>${escapeHtml(salon.name)}</h3><p>${escapeHtml(salon.district || '')}${salon.city ? ', ' + salon.city : ''}</p></div></div>` : ''}
+                <div style="text-align: center;"><span class="status-badge ${statusClass}">${statusText}</span></div>
+                <div class="detail-box">
+                    <div class="detail-row"><span class="detail-label">👤 Müşteri</span><span class="detail-value">${escapeHtml(appointment.customerName)}</span></div>
+                    <div class="detail-row"><span class="detail-label">✂️ Hizmet</span><span class="detail-value">${escapeHtml(appointment.service)}</span></div>
+                    <div class="detail-row"><span class="detail-label">📅 Tarih</span><span class="detail-value">${formatDate(appointment.date)}</span></div>
+                    <div class="detail-row"><span class="detail-label">⏰ Saat</span><span class="detail-value">${appointment.time}</span></div>
+                    <div class="detail-row"><span class="detail-label">💰 Tutar</span><span class="detail-value">${appointment.servicePrice || 0} ₺</span></div>
+                    ${appointment.staffName ? `<div class="detail-row"><span class="detail-label">💈 Personel</span><span class="detail-value">${escapeHtml(appointment.staffName)}</span></div>` : ''}
+                </div>`;
+            
+            if (status === 'cancelled') {
+                html += `<div class="info-box error-box"><span class="info-box-icon">❌</span><span>Bu randevu iptal edilmiştir.</span></div>
+                    <a href="${salon ? '/berber/salon/?slug=' + salon.slug : '/berber/'}" class="btn btn-success">Yeni Randevu Al</a>`;
+            } else if (status === 'expired' || status === 'completed') {
+                html += `<div class="info-box ${status === 'completed' ? 'success-box' : 'warning-box'}"><span class="info-box-icon">${status === 'completed' ? '✅' : '⏰'}</span><span>${status === 'completed' ? 'Randevunuz tamamlanmıştır.' : 'Randevu saati geçmiştir.'}</span></div>
+                    ${salon ? `<a href="/berber/salon/?slug=${salon.slug}#reviews" class="btn btn-outline">⭐ Yorum Yap</a>` : ''}`;
+            } else if (status === 'coming') {
+                html += `<div class="info-box success-box"><span class="info-box-icon">✅</span><span>Katılacağınızı bildirdiniz. Sizi bekliyoruz!</span></div>
+                    <div class="countdown"><div class="countdown-label">Randevunuza kalan süre</div><div class="countdown-value">${formatTimeRemaining(minutesUntil)}</div></div>
+                    ${salon?.address ? `<a href="https://maps.google.com/?q=${encodeURIComponent(salon.address)}" target="_blank" class="btn btn-outline" style="margin-bottom: 0.75rem;">📍 Yol Tarifi Al</a>` : ''}
+                    ${salon?.phone ? `<a href="tel:${salon.phone}" class="btn btn-outline" style="margin-bottom: 0.75rem;">📞 Salonu Ara</a>` : ''}`;
+            } else {
+                html += `<div class="countdown"><div class="countdown-label">Randevunuza kalan süre</div><div class="countdown-value">${formatTimeRemaining(minutesUntil)}</div></div>
+                    <div class="action-buttons">
+                        <button class="btn btn-success btn-full" onclick="confirmAppointment()">✓ Geliyorum</button>
+                        ${canCancel ? `<button class="btn btn-danger btn-full" onclick="showCancelModal()">✕ İptal Et</button>` : 
+                        `<div class="info-box warning-box btn-full" style="margin:0;"><span class="info-box-icon">⚠️</span><span>Randevuya ${cancelDeadline} dk'dan az kaldığı için iptal edilemez.</span></div>`}
+                    </div>
+                    ${salon?.phone ? `<a href="${generateWhatsAppLink()}" target="_blank" class="btn btn-whatsapp">💬 Salona WhatsApp Mesajı</a>` : ''}`;
+            }
+            
+            if (status !== 'cancelled' && !isPast) {
+                html += `<a href="${generateGoogleCalendarUrl()}" target="_blank" class="add-calendar">📆 Google Takvime Ekle</a>`;
+            }
+            
+            contentEl.innerHTML = html;
+        }
+        
+        async function confirmAppointment(silent = false) {
+            try {
+                await db.collection('appointments').doc(appointment.id).update({
+                    customerResponse: 'coming',
+                    customerResponseTime: new Date().toISOString()
+                });
+                appointment.customerResponse = 'coming';
+                renderAppointment();
+            } catch (e) { console.error(e); alert('Bir hata oluştu.'); }
+        }
+        
+        function showCancelModal() { document.getElementById('cancelModal').classList.add('active'); }
+        function closeCancelModal() { document.getElementById('cancelModal').classList.remove('active'); }
+        
+        async function confirmCancel() {
+            const cancelDeadline = APP_CONFIG?.appointment?.cancelDeadlineMinutes || 90;
+            if (getMinutesUntil() <= cancelDeadline) {
+                alert(`Randevunuza ${cancelDeadline} dakikadan az kaldığı için iptal edemezsiniz.`);
+                closeCancelModal(); renderAppointment(); return;
+            }
+            try {
+                await db.collection('appointments').doc(appointment.id).update({
+                    customerResponse: 'cancelled', status: 'cancelled',
+                    cancelledBy: 'customer', cancelledAt: new Date().toISOString()
+                });
+                appointment.customerResponse = 'cancelled';
+                appointment.status = 'cancelled';
+                closeCancelModal(); renderAppointment();
+            } catch (e) { console.error(e); alert('Bir hata oluştu.'); }
+        }
+        
+        function generateWhatsAppLink() {
+            if (!salon?.phone) return '#';
+            const message = `Merhaba! Zamanlı üzerinden randevu aldım.\n\n📅 Tarih: ${formatDate(appointment.date)}\n⏰ Saat: ${appointment.time}\n✂️ Hizmet: ${appointment.service}\n\nBilgi almak istiyorum.`;
+            const phone = salon.phone.replace(/\D/g, '');
+            const formattedPhone = phone.startsWith('90') ? phone : (phone.startsWith('0') ? '90' + phone.slice(1) : '90' + phone);
+            return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+        }
+        
+        function generateGoogleCalendarUrl() {
+            const title = encodeURIComponent(`${appointment.service} - ${salon?.name || 'Randevu'}`);
+            const startDate = new Date(`${appointment.date}T${appointment.time}`);
+            const endDate = new Date(startDate.getTime() + (appointment.serviceDuration || 30) * 60000);
+            const formatGoogleDate = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            const details = encodeURIComponent(`Hizmet: ${appointment.service}\nTutar: ${appointment.servicePrice || 0} ₺`);
+            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}&details=${details}&location=${encodeURIComponent(salon?.address || '')}`;
+        }
+        
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text || ''; return div.innerHTML; }
+        
+        init();
+    </script>
+</body>
+</html>

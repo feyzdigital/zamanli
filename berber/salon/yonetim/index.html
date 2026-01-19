@@ -1,0 +1,4817 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salon Yönetimi - Zamanlı</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Zamanlı Panel">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon.svg">
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --radius: 0.75rem;
+            --radius-lg: 1rem;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--slate-100);
+            color: var(--slate-800);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        /* Login Screen */
+        .login-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-logo-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        .login-title {
+            text-align: center;
+            font-size: 1.25rem;
+            color: var(--slate-600);
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--slate-700);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .form-input.error {
+            border-color: var(--danger);
+        }
+        
+        .form-error {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: inherit;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-outline {
+            background: white;
+            color: var(--slate-700);
+            border: 2px solid var(--slate-200);
+        }
+        
+        .btn-outline:hover {
+            border-color: var(--slate-300);
+            background: var(--slate-50);
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .btn-icon {
+            padding: 0.5rem;
+            min-width: 36px;
+            height: 36px;
+        }
+        
+        .btn-icon-sm {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid var(--slate-200);
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-icon-sm:hover {
+            background: var(--slate-100);
+            border-color: var(--slate-300);
+        }
+        
+        .staff-pin-section {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: var(--slate-50);
+            border-radius: 6px;
+        }
+        
+        .staff-card.owner-card {
+            border: 2px solid var(--primary);
+            background: linear-gradient(to bottom, rgba(99, 102, 241, 0.05), white);
+        }
+        
+        .staff-mode-banner {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+            border-radius: var(--radius);
+            margin: 1rem;
+        }
+        
+        .staff-mode-banner .btn-outline {
+            background: white;
+            color: var(--primary);
+            border-color: white;
+        }
+        
+        /* Dashboard Layout */
+        .dashboard {
+            display: none;
+        }
+        
+        .dashboard.active {
+            display: block;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--slate-200);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--slate-900);
+        }
+        
+        .header-salon {
+            padding-left: 1rem;
+            border-left: 2px solid var(--slate-200);
+        }
+        
+        .header-salon-name {
+            font-weight: 600;
+            color: var(--slate-800);
+        }
+        
+        .header-salon-type {
+            font-size: 0.8rem;
+            color: var(--slate-500);
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .header-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        
+        /* Main Content */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .stat-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .stat-icon.primary { background: rgba(99, 102, 241, 0.1); }
+        .stat-icon.success { background: rgba(16, 185, 129, 0.1); }
+        .stat-icon.warning { background: rgba(245, 158, 11, 0.1); }
+        .stat-icon.danger { background: rgba(239, 68, 68, 0.1); }
+        
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--slate-900);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--slate-500);
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            border: none;
+            background: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--slate-600);
+        }
+        
+        .tab:hover {
+            background: var(--slate-100);
+        }
+        
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Appointments */
+        .appointments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .appointments-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .appointments-filters {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--slate-200);
+            background: white;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn.active {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+            color: var(--primary);
+        }
+        
+        .appointment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .appointment-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        @media (max-width: 700px) {
+            .appointment-card {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .appointment-date {
+            text-align: center;
+            padding: 0.75rem 1rem;
+            background: var(--slate-100);
+            border-radius: var(--radius);
+            min-width: 80px;
+        }
+        
+        .appointment-day {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .appointment-month {
+            font-size: 0.8rem;
+            color: var(--slate-500);
+        }
+        
+        .appointment-time {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--slate-700);
+            margin-top: 0.25rem;
+        }
+        
+        .appointment-info h4 {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .appointment-details {
+            font-size: 0.9rem;
+            color: var(--slate-600);
+        }
+        
+        .appointment-details span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-right: 1rem;
+        }
+        
+        .appointment-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        
+        .status-pending {
+            background: var(--warning-light);
+            color: #b45309;
+        }
+        
+        .status-confirmed {
+            background: var(--success-light);
+            color: #047857;
+        }
+        
+        .status-cancelled {
+            background: var(--danger-light);
+            color: #b91c1c;
+        }
+        
+        .status-completed {
+            background: var(--slate-200);
+            color: var(--slate-600);
+        }
+        
+        .appointment-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: white;
+            border-radius: var(--radius);
+        }
+        
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .empty-text {
+            color: var(--slate-500);
+        }
+        
+        /* Settings Sections */
+        .settings-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .settings-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Services Management */
+        .service-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            margin-bottom: 0.75rem;
+        }
+        
+        .service-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .service-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .service-icon {
+            width: 45px;
+            height: 45px;
+            background: var(--slate-100);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .service-name {
+            font-weight: 600;
+        }
+        
+        .service-duration {
+            font-size: 0.85rem;
+            color: var(--slate-500);
+        }
+        
+        .service-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .service-price {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        /* Staff Management */
+        .staff-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .staff-card {
+            background: var(--slate-50);
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            text-align: center;
+        }
+        
+        .staff-avatar {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 0.75rem;
+        }
+        
+        .staff-name {
+            font-weight: 600;
+        }
+        
+        .staff-title {
+            font-size: 0.85rem;
+            color: var(--slate-500);
+            margin-bottom: 0.75rem;
+        }
+        
+        /* Working Hours */
+        .hours-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .hours-row {
+            display: grid;
+            grid-template-columns: 120px 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--slate-50);
+            border-radius: var(--radius);
+        }
+        
+        @media (max-width: 600px) {
+            .hours-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+        }
+        
+        .hours-day {
+            font-weight: 600;
+        }
+        
+        .hours-inputs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .hours-input {
+            padding: 0.5rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-family: inherit;
+            width: 100px;
+        }
+        
+        .hours-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Toggle Switch */
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: var(--slate-300);
+            border-radius: 9999px;
+            transition: 0.3s;
+        }
+        
+        .toggle-slider:before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        
+        .toggle input:checked + .toggle-slider {
+            background: var(--success);
+        }
+        
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+        
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--slate-400);
+            padding: 0.25rem;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--slate-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--slate-800);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1100;
+        }
+        
+        .toast.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.success {
+            background: var(--success);
+        }
+        
+        .toast.error {
+            background: var(--danger);
+        }
+        
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--slate-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-overlay p {
+            margin-top: 1rem;
+            color: var(--slate-600);
+        }
+        
+        /* ========== HAFTALIK TAKVİM STİLLERİ ========== */
+        .view-toggle {
+            display: flex;
+            gap: 0;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        
+        .view-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-right: 1px solid var(--slate-200);
+        }
+        
+        .view-btn:last-child {
+            border-right: none;
+        }
+        
+        .view-btn:hover {
+            background: var(--slate-50);
+        }
+        
+        .view-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .gcal-export-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--success);
+            background: white;
+            color: var(--success);
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        
+        .gcal-export-btn:hover {
+            background: var(--success);
+            color: white;
+        }
+        
+        .view-container {
+            display: none;
+        }
+        
+        .view-container.active {
+            display: block;
+        }
+        
+        .staff-filter-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: var(--slate-50);
+            border-radius: var(--radius);
+        }
+        
+        .staff-filter-row label {
+            font-weight: 500;
+            color: var(--slate-600);
+            font-size: 0.9rem;
+        }
+        
+        .staff-filter-row select {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            background: white;
+            min-width: 150px;
+        }
+        
+        .calendar-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .cal-nav-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--slate-200);
+            background: white;
+            border-radius: var(--radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .cal-nav-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .cal-today-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: var(--primary);
+            color: white;
+            border-radius: var(--radius);
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .week-range {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--slate-800);
+        }
+        
+        .weekly-calendar {
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+            gap: 1px;
+            background: var(--slate-200);
+            border-radius: var(--radius);
+            overflow: hidden;
+            min-height: 500px;
+        }
+        
+        .cal-header {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 0.25rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        
+        .cal-header.today {
+            background: var(--success);
+        }
+        
+        .cal-header-date {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .cal-time-header {
+            background: var(--slate-100);
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            text-align: center;
+        }
+        
+        .cal-time-slot {
+            background: var(--slate-50);
+            padding: 0.25rem;
+            font-size: 0.7rem;
+            color: var(--slate-500);
+            text-align: center;
+            border-bottom: 1px solid var(--slate-200);
+            min-height: 40px;
+        }
+        
+        .cal-cell {
+            background: white;
+            padding: 2px;
+            min-height: 40px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .cal-cell:hover {
+            background: var(--slate-50);
+        }
+        
+        .cal-cell.past {
+            background: var(--slate-100);
+            cursor: not-allowed;
+        }
+        
+        .cal-appointment {
+            background: var(--primary);
+            color: white;
+            padding: 3px 5px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            margin-bottom: 2px;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .cal-appointment.pending {
+            background: var(--warning);
+        }
+        
+        .cal-appointment.confirmed {
+            background: var(--success);
+        }
+        
+        .cal-appointment.cancelled {
+            background: var(--danger);
+            opacity: 0.6;
+        }
+        
+        .cal-appointment:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* Sürükle-Bırak stilleri */
+        .cal-appointment.dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+        }
+        
+        .cal-cell.drag-over {
+            background: rgba(99, 102, 241, 0.1);
+            border: 2px dashed var(--primary);
+        }
+        
+        /* ========== MOBILE RESPONSIVE ========== */
+        .btn-icon-only { display: none; }
+        .btn-text { display: inline; }
+        .header-user-name { display: none; }
+        .btn-logout { display: inline-flex; }
+        
+        @media (max-width: 768px) {
+            /* Header */
+            .header {
+                padding: 0.75rem 1rem;
+            }
+            
+            .header-container {
+                gap: 0.5rem;
+            }
+            
+            .header-left {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+            }
+            
+            .header-logo {
+                font-size: 1rem;
+                flex-shrink: 0;
+            }
+            
+            .header-logo span:last-child {
+                display: none;
+            }
+            
+            .header-salon {
+                padding-left: 0.5rem;
+                margin-left: 0.5rem;
+                border-left: 2px solid var(--slate-200);
+                overflow: hidden;
+            }
+            
+            .header-salon-name {
+                font-size: 0.8rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 80px;
+            }
+            
+            .header-salon-type {
+                display: none;
+            }
+            
+            .header-right {
+                gap: 0.5rem;
+                flex-shrink: 0;
+            }
+            
+            .btn-icon-only { display: inline; }
+            .btn-text { display: none; }
+            
+            .header-user {
+                display: none;
+            }
+            
+            .btn-logout {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.75rem;
+            }
+            
+            .btn-outline.btn-sm {
+                padding: 0.4rem 0.5rem;
+                font-size: 0.75rem;
+            }
+            
+            /* Main Content */
+            .main {
+                padding: 1rem;
+            }
+            
+            /* Stats Grid */
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+            
+            .stat-card {
+                padding: 0.75rem;
+                min-height: auto;
+            }
+            
+            .stat-header {
+                margin-bottom: 0.35rem;
+            }
+            
+            .stat-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+            }
+            
+            .stat-value {
+                font-size: 1.25rem;
+            }
+            
+            .stat-label {
+                font-size: 0.7rem;
+            }
+            
+            /* Tabs */
+            .tabs {
+                padding: 0.35rem;
+                gap: 0.25rem;
+            }
+            
+            .tab {
+                padding: 0.6rem 0.9rem;
+                font-size: 0.85rem;
+            }
+            
+            /* Cards */
+            .card {
+                border-radius: var(--radius);
+            }
+            
+            .card-header {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .card-header .btn {
+                width: 100%;
+            }
+            
+            /* Appointments */
+            .appointment-card {
+                padding: 1rem;
+            }
+            
+            .appointment-main {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .appointment-left {
+                width: 100%;
+            }
+            
+            .appointment-right {
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .appointment-actions {
+                flex-wrap: wrap;
+            }
+            
+            /* Services */
+            .service-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.875rem;
+            }
+            
+            .service-left {
+                width: 100%;
+            }
+            
+            .service-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .service-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+            
+            /* Staff */
+            .staff-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            
+            .staff-card {
+                padding: 1rem;
+            }
+            
+            .staff-avatar {
+                width: 50px;
+                height: 50px;
+                font-size: 1.25rem;
+            }
+            
+            /* Settings */
+            .settings-section {
+                padding: 1rem;
+            }
+            
+            /* Hours Grid */
+            .hours-grid {
+                gap: 0.5rem;
+            }
+            
+            .hours-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+                padding: 0.75rem;
+            }
+            
+            .hours-inputs {
+                width: 100%;
+            }
+            
+            .hours-input {
+                flex: 1;
+            }
+            
+            /* Modal */
+            .modal {
+                margin: 0.5rem;
+                max-height: calc(100vh - 1rem);
+            }
+            
+            .modal-header {
+                padding: 1rem;
+            }
+            
+            .modal-title {
+                font-size: 1.1rem;
+            }
+            
+            .modal-body {
+                padding: 1rem;
+            }
+            
+            .modal-footer {
+                padding: 1rem;
+                flex-direction: column;
+            }
+            
+            .modal-footer .btn {
+                width: 100%;
+            }
+            
+            /* Form */
+            .form-row {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .form-row > * {
+                width: 100%;
+            }
+            
+            /* Toast */
+            .toast {
+                left: 1rem;
+                right: 1rem;
+                bottom: 1rem;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .stats-grid {
+                gap: 0.35rem;
+            }
+            
+            .stat-card {
+                padding: 0.6rem;
+            }
+            
+            .stat-icon {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+            }
+            
+            .stat-value {
+                font-size: 1.1rem;
+            }
+            
+            .stat-label {
+                font-size: 0.65rem;
+            }
+            
+            .staff-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tab {
+                padding: 0.5rem 0.6rem;
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* Logo ve Galeri Yükleme */
+        .logo-upload-area {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--radius);
+            background: var(--slate-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            overflow: hidden;
+        }
+        
+        .logo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .logo-upload-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .gallery-upload-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+        }
+        
+        @media (max-width: 600px) {
+            .gallery-upload-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .gallery-item-upload {
+            aspect-ratio: 1;
+            border-radius: var(--radius);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .gallery-item-upload img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .gallery-item-upload .remove-gallery-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        
+        /* QR Kod */
+        .qr-code-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--slate-50);
+            border-radius: var(--radius);
+        }
+        
+        .qr-code-display {
+            width: 200px;
+            height: 200px;
+            background: white;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qr-code-display canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .qr-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .settings-desc {
+            color: var(--slate-500);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Müşteri Listesi */
+        .customer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .customer-card {
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius);
+            padding: 1rem;
+        }
+        
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .customer-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .customer-info p {
+            font-size: 0.85rem;
+            color: var(--slate-500);
+        }
+        
+        .customer-stats {
+            display: flex;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .customer-stat {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+        }
+        
+        .customer-stat strong {
+            display: block;
+            font-size: 1rem;
+            color: var(--slate-800);
+        }
+        
+        .customer-history {
+            background: var(--slate-50);
+            border-radius: var(--radius);
+            padding: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        
+        .customer-history h5 {
+            font-size: 0.8rem;
+            color: var(--slate-600);
+            margin-bottom: 0.5rem;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid var(--slate-200);
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .customer-note {
+            margin-top: 0.75rem;
+        }
+        
+        .customer-note textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 0.85rem;
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .empty-text {
+            color: var(--slate-500);
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-top: 0.25rem;
+        }
+        
+        /* ========== RAPORLAR STİLLERİ ========== */
+        .reports-container {
+            padding: 1rem 0;
+        }
+        
+        .reports-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .reports-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--slate-800);
+        }
+        
+        .report-period-selector {
+            display: flex;
+            gap: 0;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        
+        .period-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-right: 1px solid var(--slate-200);
+        }
+        
+        .period-btn:last-child {
+            border-right: none;
+        }
+        
+        .period-btn:hover {
+            background: var(--slate-50);
+        }
+        
+        .period-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .report-summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .report-card {
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .report-card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .report-card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--slate-800);
+        }
+        
+        .report-card-label {
+            font-size: 0.85rem;
+            color: var(--slate-500);
+        }
+        
+        .report-section {
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .report-section h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--slate-800);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--slate-100);
+        }
+        
+        .staff-performance-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .staff-performance-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: var(--slate-50);
+            border-radius: var(--radius);
+        }
+        
+        .staff-performance-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .staff-performance-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .staff-performance-stats {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .staff-performance-stats span {
+            color: var(--slate-600);
+        }
+        
+        .staff-performance-stats strong {
+            color: var(--slate-800);
+        }
+        
+        .popular-services-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .popular-service-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: var(--slate-50);
+            border-radius: var(--radius);
+        }
+        
+        .popular-service-bar {
+            height: 8px;
+            background: var(--slate-200);
+            border-radius: 4px;
+            flex: 1;
+            margin: 0 1rem;
+            overflow: hidden;
+        }
+        
+        .popular-service-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+        }
+        
+        .daily-distribution {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .daily-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .daily-bar-fill {
+            width: 100%;
+            background: var(--slate-200);
+            border-radius: 4px;
+            min-height: 100px;
+            position: relative;
+        }
+        
+        .daily-bar-value {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: height 0.3s;
+        }
+        
+        .daily-bar-label {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            font-weight: 500;
+        }
+        
+        .daily-bar-count {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--slate-700);
+        }
+        
+        /* ========== CHART.JS GRAFİK STİLLERİ ========== */
+        .chart-section {
+            padding: 1.25rem;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--slate-100);
+        }
+        
+        .chart-header h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--slate-800);
+            margin: 0;
+            border: none;
+            padding: 0;
+        }
+        
+        .chart-legend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--slate-500);
+        }
+        
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 900px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .comparison-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .comparison-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            padding: 1rem;
+            background: var(--slate-50);
+            border-radius: var(--radius);
+        }
+        
+        .comparison-label {
+            font-size: 0.85rem;
+            color: var(--slate-500);
+        }
+        
+        .comparison-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        /* Finance Period Buttons (opsiyonel ayrı selector) */
+        .finance-period-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-right: 1px solid var(--slate-200);
+        }
+        
+        .finance-period-btn:last-child {
+            border-right: none;
+        }
+        
+        .finance-period-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+    </style>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Loading -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Yükleniyor...</p>
+    </div>
+    
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen" style="display: none;">
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="login-logo-icon">💈</div>
+                <div class="login-logo-text">Zamanlı</div>
+            </div>
+            <h2 class="login-title">Salon Yönetim Paneli</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Telefon Numarası</label>
+                    <input type="tel" id="loginPhone" class="form-input" placeholder="05XX XXX XX XX" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">PIN Kodu</label>
+                    <input type="password" id="loginPin" class="form-input" placeholder="4 haneli PIN" maxlength="6" required>
+                    <p id="loginError" class="form-error" style="display: none;"></p>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    Giriş Yap
+                </button>
+            </form>
+            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--slate-500);">
+                PIN kodunuzu unuttunuz mu?<br>
+                <a href="mailto:destek@zamanli.com" style="color: var(--primary);">Destek ile iletişime geçin</a>
+            </p>
+        </div>
+    </div>
+    
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-container">
+                <div class="header-left">
+                    <a href="/" class="header-logo">
+                        <span>💈</span>
+                        <span>Zamanlı</span>
+                    </a>
+                    <div class="header-salon">
+                        <div id="headerSalonName" class="header-salon-name">Salon Adı</div>
+                        <div class="header-salon-type">Yönetim Paneli</div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <a href="#" id="viewSalonBtn" class="btn btn-outline btn-sm" target="_blank">
+                        <span class="btn-icon-only">👁️</span>
+                        <span class="btn-text">Salonu Görüntüle</span>
+                    </a>
+                    <div class="header-user">
+                        <div id="headerAvatar" class="header-avatar">S</div>
+                        <span class="header-user-name">Çıkış</span>
+                    </div>
+                    <button onclick="logout()" class="btn btn-outline btn-sm btn-logout">
+                        Çıkış
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon primary">📅</div>
+                    </div>
+                    <div id="statToday" class="stat-value">0</div>
+                    <div class="stat-label">Bugünkü Randevu</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon warning">⏳</div>
+                    </div>
+                    <div id="statPending" class="stat-value">0</div>
+                    <div class="stat-label">Onay Bekleyen</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon success">✓</div>
+                    </div>
+                    <div id="statConfirmed" class="stat-value">0</div>
+                    <div class="stat-label">Onaylanan</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon danger">💰</div>
+                    </div>
+                    <div id="statRevenue" class="stat-value">0 ₺</div>
+                    <div class="stat-label">Bu Ay Gelir</div>
+                </div>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="appointments">📅 Randevular</button>
+                <button class="tab" data-tab="customers">👥 Müşteriler</button>
+                <button class="tab" data-tab="services">✂️ Hizmetler</button>
+                <button class="tab" data-tab="staff">👤 Personel</button>
+                <button class="tab" data-tab="hours">🕐 Saatler</button>
+                <button class="tab" data-tab="reports">📊 Raporlar</button>
+                <button class="tab" data-tab="settings">⚙️ Ayarlar</button>
+            </div>
+            
+            <!-- Appointments Tab -->
+            <div id="tab-appointments" class="tab-content active">
+                <div class="appointments-header">
+                    <h3 class="appointments-title">Randevular</h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button class="gcal-export-btn" onclick="exportToGoogleCalendar()" title="Randevuları Google Takvime Aktar">
+                            📅 Google Takvime Aktar
+                        </button>
+                        <div class="view-toggle">
+                            <button class="view-btn active" data-view="list" onclick="switchView('list')">📋 Liste</button>
+                            <button class="view-btn" data-view="calendar" onclick="switchView('calendar')">📅 Takvim</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Liste Görünümü -->
+                <div id="listView" class="view-container active">
+                    <div class="appointments-filters">
+                        <button class="filter-btn active" data-filter="all">Tümü</button>
+                        <button class="filter-btn" data-filter="pending">Bekleyen</button>
+                        <button class="filter-btn" data-filter="confirmed">Onaylı</button>
+                        <button class="filter-btn" data-filter="today">Bugün</button>
+                    </div>
+                    <div class="staff-filter-row">
+                        <label>Personel:</label>
+                        <select id="staffFilterSelect" onchange="filterByStaff()">
+                            <option value="all">Tüm Personel</option>
+                        </select>
+                    </div>
+                    <div id="appointmentList" class="appointment-list">
+                        <!-- Appointments will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Haftalık Takvim Görünümü -->
+                <div id="calendarView" class="view-container">
+                    <div class="calendar-controls">
+                        <button class="cal-nav-btn" onclick="changeWeek(-1)">← Önceki</button>
+                        <span id="weekRange" class="week-range">Tarih</span>
+                        <button class="cal-nav-btn" onclick="changeWeek(1)">Sonraki →</button>
+                        <button class="cal-today-btn" onclick="goToToday()">Bugün</button>
+                    </div>
+                    <div class="staff-filter-row">
+                        <label>Personel:</label>
+                        <select id="calendarStaffFilter" onchange="renderWeeklyCalendar()">
+                            <option value="all">Tüm Personel</option>
+                        </select>
+                    </div>
+                    <div id="weeklyCalendar" class="weekly-calendar">
+                        <!-- Calendar will be rendered here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Customers Tab (Müşteri Geçmişi) -->
+            <div id="tab-customers" class="tab-content">
+                <div class="settings-section">
+                    <div class="settings-title">
+                        👥 Müşteri Geçmişi
+                        <div class="customer-search" style="margin-left: auto;">
+                            <input type="text" id="customerSearch" class="form-input" placeholder="Müşteri ara..." style="width: 200px; padding: 0.5rem 0.75rem;" onkeyup="searchCustomers()">
+                        </div>
+                    </div>
+                    <div id="customerList" class="customer-list">
+                        <!-- Müşteriler burada listelenecek -->
+                        <p class="empty-text">Müşteri verisi yükleniyor...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Services Tab -->
+            <div id="tab-services" class="tab-content">
+                <div class="settings-section">
+                    <div class="settings-title">
+                        ✂️ Hizmetler
+                        <button class="btn btn-primary btn-sm" style="margin-left: auto;" onclick="openServiceModal()">
+                            + Hizmet Ekle
+                        </button>
+                    </div>
+                    <div id="serviceList">
+                        <!-- Services will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Staff Tab -->
+            <div id="tab-staff" class="tab-content">
+                <div class="settings-section">
+                    <div class="settings-title">
+                        👥 Personel
+                        <div id="addStaffBtnContainer" style="margin-left: auto;">
+                            <button class="btn btn-primary btn-sm" onclick="openStaffModal()">
+                                + Personel Ekle
+                            </button>
+                        </div>
+                    </div>
+                    <div id="staffList" class="staff-grid">
+                        <!-- Staff will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Working Hours Tab -->
+            <div id="tab-hours" class="tab-content">
+                <div class="settings-section">
+                    <div class="settings-title">🕐 Çalışma Saatleri</div>
+                    <div id="hoursList" class="hours-grid">
+                        <!-- Hours will be loaded here -->
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="saveWorkingHours()">
+                        Kaydet
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Reports Tab -->
+            <div id="tab-reports" class="tab-content">
+                <div class="reports-container">
+                    <div class="reports-header">
+                        <h3>📊 Raporlar</h3>
+                        <div class="report-period-selector">
+                            <button class="period-btn active" data-period="week" onclick="changeReportPeriod('week')">Bu Hafta</button>
+                            <button class="period-btn" data-period="month" onclick="changeReportPeriod('month')">Bu Ay</button>
+                            <button class="period-btn" data-period="year" onclick="changeReportPeriod('year')">Bu Yıl</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Özet Kartları -->
+                    <div class="report-summary-cards">
+                        <div class="report-card">
+                            <div class="report-card-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">📅</div>
+                            <div class="report-card-content">
+                                <div class="report-card-value" id="reportTotalAppointments">0</div>
+                                <div class="report-card-label">Toplam Randevu</div>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-card-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success);">✅</div>
+                            <div class="report-card-content">
+                                <div class="report-card-value" id="reportCompletedAppointments">0</div>
+                                <div class="report-card-label">Tamamlanan</div>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-card-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">❌</div>
+                            <div class="report-card-content">
+                                <div class="report-card-value" id="reportCancelledAppointments">0</div>
+                                <div class="report-card-label">İptal Edilen</div>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-card-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">💰</div>
+                            <div class="report-card-content">
+                                <div class="report-card-value" id="reportTotalRevenue">0 ₺</div>
+                                <div class="report-card-label">Toplam Ciro</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Finans Grafikleri Container -->
+                    <div id="financeChartsContainer">
+                        
+                        <!-- Ciro Grafiği -->
+                        <div class="report-section chart-section">
+                            <div class="chart-header">
+                                <h4>💰 Ciro Grafiği</h4>
+                                <div class="chart-legend">
+                                    <span class="legend-dot" style="background: #6366f1;"></span>
+                                    <span>Günlük Ciro</span>
+                                </div>
+                            </div>
+                            <div class="chart-container" style="height: 280px;">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- İki sütunlu grafik alanı -->
+                        <div class="charts-row">
+                            <!-- Hizmet Dağılımı -->
+                            <div class="report-section chart-section">
+                                <h4>🥧 Hizmet Dağılımı</h4>
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="servicesChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- Saatlik Yoğunluk -->
+                            <div class="report-section chart-section">
+                                <h4>⏰ Saatlik Yoğunluk</h4>
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="hourlyChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Karşılaştırma İstatistikleri -->
+                        <div class="report-section">
+                            <h4>📊 Dönem Karşılaştırması</h4>
+                            <div id="comparisonStats" class="comparison-stats">
+                                <!-- Karşılaştırma verileri buraya yüklenecek -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Personel Performansı -->
+                    <div class="report-section">
+                        <h4>👥 Personel Performansı</h4>
+                        <div id="staffPerformanceList" class="staff-performance-list">
+                            <!-- Personel performansı buraya yüklenecek -->
+                        </div>
+                    </div>
+                    
+                    <!-- Popüler Hizmetler -->
+                    <div class="report-section">
+                        <h4>⭐ Popüler Hizmetler</h4>
+                        <div id="popularServicesList" class="popular-services-list">
+                            <!-- Popüler hizmetler buraya yüklenecek -->
+                        </div>
+                    </div>
+                    
+                    <!-- Günlük Dağılım -->
+                    <div class="report-section">
+                        <h4>📈 Günlere Göre Dağılım</h4>
+                        <div id="dailyDistribution" class="daily-distribution">
+                            <!-- Günlük dağılım buraya yüklenecek -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div id="tab-settings" class="tab-content">
+                <div class="settings-section">
+                    <div class="settings-title">📍 Salon Bilgileri</div>
+                    <form id="settingsForm" onsubmit="saveSettings(event)">
+                        <div class="form-group">
+                            <label class="form-label">Salon Adı</label>
+                            <input type="text" id="settingName" class="form-input" required>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">İl</label>
+                                <input type="text" id="settingCity" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">İlçe</label>
+                                <input type="text" id="settingDistrict" class="form-input" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Adres</label>
+                            <input type="text" id="settingAddress" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Telefon</label>
+                            <input type="tel" id="settingPhone" class="form-input" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Kaydet
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Logo ve Galeri -->
+                <div class="settings-section">
+                    <div class="settings-title">📸 Logo ve Galeri</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Salon Logosu</label>
+                        <div class="logo-upload-area">
+                            <div id="logoPreview" class="logo-preview">
+                                <span>💈</span>
+                            </div>
+                            <div class="logo-upload-actions">
+                                <input type="file" id="logoInput" accept="image/*" onchange="uploadLogo(event)" style="display:none;">
+                                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('logoInput').click()">
+                                    📤 Logo Yükle
+                                </button>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="removeLogo()" id="removeLogoBtn" style="display:none;">
+                                    🗑️ Kaldır
+                                </button>
+                            </div>
+                        </div>
+                        <p class="form-hint">📐 <strong>Boyut:</strong> 200x200 piksel (kare) • <strong>Max:</strong> 2MB • <strong>Format:</strong> JPG, PNG</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Galeri (max 5 görsel)</label>
+                        <div id="galleryGrid" class="gallery-upload-grid">
+                            <!-- Galeri görselleri -->
+                        </div>
+                        <input type="file" id="galleryInput" accept="image/*" multiple onchange="uploadGalleryImages(event)" style="display:none;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('galleryInput').click()" id="addGalleryBtn" style="margin-top: 0.5rem;">
+                            ➕ Görsel Ekle
+                        </button>
+                        <p class="form-hint">📐 <strong>Boyut:</strong> 800x600 piksel (yatay) • <strong>Max:</strong> 5MB/görsel • <strong>Format:</strong> JPG, PNG</p>
+                    </div>
+                </div>
+                
+                <!-- QR Kod -->
+                <div class="settings-section">
+                    <div class="settings-title">📱 Salon QR Kodu</div>
+                    <p class="settings-desc">Müşterileriniz bu QR kodu okutarak doğrudan salon sayfanıza erişebilir.</p>
+                    
+                    <div class="qr-code-area">
+                        <div id="qrCodeDisplay" class="qr-code-display">
+                            <div class="qr-loading">⏳ QR kod yükleniyor...</div>
+                        </div>
+                        <div class="qr-actions">
+                            <button class="btn btn-primary btn-sm" onclick="downloadQRCode()">
+                                📥 QR Kodu İndir
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="printQRCode()">
+                                🖨️ Yazdır
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Google Business Link -->
+                <div class="settings-section">
+                    <div class="settings-title">⭐ Google Business</div>
+                    <p class="settings-desc">Google Business yorum linkinizi ekleyerek müşterilerinizin sizi değerlendirmesini kolaylaştırın.</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Google Business Yorum Linki</label>
+                        <input type="url" id="settingGoogleBusiness" class="form-input" placeholder="https://g.page/r/...">
+                        <p class="form-hint">Google Maps'te işletmenize gidin > "Yorum yaz" butonuna sağ tıklayın > Link adresini kopyalayın</p>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveGoogleBusinessLink()">
+                        Kaydet
+                    </button>
+                </div>
+                
+                <!-- PIN Değiştir -->
+                <div class="settings-section">
+                    <div class="settings-title">🔐 PIN Değiştir</div>
+                    <form onsubmit="changePin(event)">
+                        <div class="form-group">
+                            <label class="form-label">Mevcut PIN</label>
+                            <input type="password" id="currentPin" class="form-input" maxlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Yeni PIN</label>
+                            <input type="password" id="newPin" class="form-input" maxlength="6" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            PIN Değiştir
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Notification Choice Modal -->
+    <div id="notificationModal" class="modal-overlay">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header" id="notifyModalHeader" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h3 class="modal-title" id="notifyModalTitle">✅ Randevu Onaylandı</h3>
+                <button class="modal-close" onclick="closeNotificationModal()" style="color: white;">×</button>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 2rem;">
+                <div style="margin-bottom: 1.5rem;">
+                    <div id="notifyModalIcon" style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2rem; background: linear-gradient(135deg, #10b981, #059669); color: white;">✅</div>
+                    <p id="notifyModalMessage" style="color: var(--slate-600); font-size: 0.95rem;">Müşteriye WhatsApp ile onay bildirimi göndermek ister misiniz?</p>
+                </div>
+                
+                <div style="background: var(--slate-50); border-radius: var(--radius); padding: 1rem; text-align: left; margin-bottom: 1rem;">
+                    <div style="font-weight: 600; color: var(--slate-800); margin-bottom: 0.25rem;" id="notifyCustomerName">-</div>
+                    <div style="font-size: 0.85rem; color: var(--slate-500);" id="notifyCustomerPhone">-</div>
+                    <div style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.25rem;" id="notifyAppointmentInfo">-</div>
+                </div>
+                
+                <p style="font-size: 0.8rem; color: var(--warning); margin-bottom: 0; background: var(--warning-light); padding: 0.5rem; border-radius: 6px;">⚠️ Müşterinin haberi olması için bildirim göndermeniz önerilir.</p>
+            </div>
+            <div class="modal-footer" style="justify-content: center; gap: 1rem;">
+                <button class="btn btn-success" id="notifySendBtn" onclick="sendWhatsAppFromModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+                    📱 Onay Mesajı Gönder
+                </button>
+                <button class="btn btn-outline" onclick="closeNotificationModal()">Hayır, Kapat</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Service Modal -->
+    <div id="serviceModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="serviceModalTitle">Hizmet Ekle</h3>
+                <button class="modal-close" onclick="closeServiceModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="serviceForm" onsubmit="saveService(event)">
+                    <input type="hidden" id="serviceIndex">
+                    <div class="form-group">
+                        <label class="form-label">Hizmet Adı</label>
+                        <input type="text" id="serviceName" class="form-input" required placeholder="Saç Kesimi">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Süre (dakika)</label>
+                            <input type="number" id="serviceDuration" class="form-input" required placeholder="30" min="5" step="5">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fiyat (₺)</label>
+                            <input type="number" id="servicePrice" class="form-input" required placeholder="150" min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">İkon (emoji)</label>
+                        <input type="text" id="serviceIcon" class="form-input" placeholder="✂️">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeServiceModal()">İptal</button>
+                <button class="btn btn-primary" onclick="document.getElementById('serviceForm').requestSubmit()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upgrade Modal -->
+    <div id="upgradeModal" class="modal-overlay">
+        <div class="modal" style="max-width: 420px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h3 class="modal-title">⬆️ Paketi Yükselt</h3>
+                <button class="modal-close" onclick="closeUpgradeModal()" style="color: white;">×</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">📈</div>
+                    <p style="color: var(--slate-600);">Daha fazla personel eklemek için paketinizi yükseltmeniz gerekiyor.</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: var(--slate-100); border-radius: var(--radius); padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--slate-500); margin-bottom: 0.25rem;">Mevcut Paket</div>
+                        <div style="font-weight: 700; color: var(--slate-700);" id="currentPackageName">-</div>
+                        <div style="font-size: 0.85rem; color: var(--slate-500);" id="currentPackageLimit">-</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: var(--radius); padding: 1rem; text-align: center; border: 2px solid #f59e0b;">
+                        <div style="font-size: 0.75rem; color: #92400e; margin-bottom: 0.25rem;">Önerilen</div>
+                        <div style="font-weight: 700; color: #92400e;" id="suggestedPackageName">-</div>
+                        <div style="font-size: 0.85rem; color: #b45309;" id="suggestedPackagePrice">-</div>
+                    </div>
+                </div>
+                
+                <div style="background: #f0fdf4; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;">
+                    <div style="font-weight: 600; color: #166534; margin-bottom: 0.5rem;">✨ Yükseltme ile:</div>
+                    <ul style="color: #15803d; font-size: 0.9rem; margin: 0; padding-left: 1.25rem;">
+                        <li>Daha fazla personel ekleyin</li>
+                        <li>Gelişmiş raporlar</li>
+                        <li>Öncelikli destek</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: center; gap: 1rem;">
+                <button class="btn" onclick="sendUpgradeRequest()" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                    📩 Yükseltme Talebi Gönder
+                </button>
+                <button class="btn btn-outline" onclick="closeUpgradeModal()">Şimdilik Vazgeç</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Staff Modal -->
+    <div id="staffModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="staffModalTitle">Personel Ekle</h3>
+                <button class="modal-close" onclick="closeStaffModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="staffForm" onsubmit="saveStaff(event)">
+                    <input type="hidden" id="staffIndex">
+                    <div class="form-group">
+                        <label class="form-label">Ad Soyad</label>
+                        <input type="text" id="staffName" class="form-input" required placeholder="Ahmet Yılmaz">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ünvan</label>
+                        <input type="text" id="staffTitle" class="form-input" placeholder="Usta">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefon <span style="color: var(--danger);">*</span></label>
+                        <input type="tel" id="staffPhone" class="form-input" required placeholder="05XX XXX XX XX">
+                        <p class="form-hint">Giriş için zorunlu</p>
+                    </div>
+                    <div class="form-group" id="staffPinGroup" style="display: none;">
+                        <label class="form-label">Giriş PIN Kodu</label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="password" id="staffPinInput" class="form-input" style="flex: 1; font-family: monospace; letter-spacing: 2px;" maxlength="6" placeholder="••••••">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="toggleStaffPinVisibility()" id="staffPinToggleBtn">👁️</button>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="generateNewStaffPin()" title="Yeni PIN Oluştur">🔄</button>
+                        </div>
+                        <p class="form-hint">6 haneli PIN kodu (giriş için gerekli)</p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeStaffModal()">İptal</button>
+                <button class="btn btn-primary" onclick="document.getElementById('staffForm').requestSubmit()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="/config.js"></script>
+    
+    <script>
+        let db;
+        let salon = null;
+        let appointments = [];
+        let currentFilter = 'all';
+        let currentStaffFilter = 'all';
+        let currentView = 'list';
+        let currentWeekStart = getWeekStart(new Date());
+        
+        const DAYS_TR = {
+            mon: 'Pazartesi',
+            tue: 'Salı',
+            wed: 'Çarşamba',
+            thu: 'Perşembe',
+            fri: 'Cuma',
+            sat: 'Cumartesi',
+            sun: 'Pazar'
+        };
+        
+        const DAYS_SHORT = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+        const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        
+        const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        
+        // Paket Limitleri
+        const PACKAGE_LIMITS = {
+            starter: { name: 'Başlangıç', maxStaff: 1, price: 249 },
+            pro: { name: 'Profesyonel', maxStaff: 3, price: 499 },
+            premium: { name: 'Premium', maxStaff: 999, price: 799 }
+        };
+        
+        function getPackageLimit() {
+            const pkg = salon?.package || 'starter';
+            return PACKAGE_LIMITS[pkg] || PACKAGE_LIMITS.starter;
+        }
+        
+        function canAddStaff() {
+            const limit = getPackageLimit();
+            const currentStaff = (salon?.staff || []).length;
+            return currentStaff < limit.maxStaff;
+        }
+        
+        // Get slug from URL
+        function getSlugFromUrl() {
+            // Önce URL parametresinden slug'ı al
+            const urlParams = new URLSearchParams(window.location.search);
+            const slugParam = urlParams.get('slug');
+            if (slugParam) return slugParam;
+            
+            // Path'den slug'ı al (tüm kategoriler için)
+            const path = window.location.pathname;
+            // /berber/slug/yonetim, /kuafor/slug/yonetim, /beauty/slug/yonetim formatlarını destekle
+            const match = path.match(/\/(berber|kuafor|beauty)\/([^\/]+)\/yonetim/);
+            return match ? match[2] : null;
+        }
+        
+        // Süper admin kontrolü
+        function isSuperAdmin() {
+            const adminSession = localStorage.getItem('zamanli_admin');
+            if (adminSession) {
+                try {
+                    const { pin, expiry } = JSON.parse(adminSession);
+                    // Admin config'den PIN kontrolü
+                    if (pin && new Date(expiry) > new Date()) {
+                        return true;
+                    }
+                } catch (e) {
+                    return false;
+                }
+            }
+            return false;
+        }
+        
+        // Süper admin olarak salona giriş
+        let isSuperAdminMode = false;
+        
+        // Personel modu kontrolü
+        let isStaffMode = false;
+        let currentStaffId = null;
+        let currentStaffName = null;
+        
+        async function init() {
+            if (typeof firebase !== 'undefined') {
+                db = firebase.firestore();
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const slug = getSlugFromUrl();
+                
+                // 1. Süper Admin kontrolü - admin=true parametresi ve geçerli admin session'ı varsa
+                const adminParam = urlParams.get('admin');
+                if (adminParam === 'true' && isSuperAdmin()) {
+                    isSuperAdminMode = true;
+                    if (slug) {
+                        await loadSalonData(slug);
+                        if (salon) {
+                            showDashboard();
+                            return;
+                        }
+                    }
+                }
+                
+                // 2. Personel modu kontrolü
+                const staffParam = urlParams.get('staff');
+                if (staffParam) {
+                    const staffSession = sessionStorage.getItem('staffSession');
+                    if (staffSession) {
+                        try {
+                            const session = JSON.parse(staffSession);
+                            if (session.staffId === staffParam) {
+                                isStaffMode = true;
+                                currentStaffId = session.staffId;
+                                currentStaffName = session.staffName;
+                                await loadSalonData(session.salonSlug);
+                                if (salon) {
+                                    showDashboard();
+                                    return;
+                                }
+                            }
+                        } catch (e) {
+                            sessionStorage.removeItem('staffSession');
+                        }
+                    }
+                    window.location.href = '/berber/';
+                    return;
+                }
+                
+                // 3. Normal salon sahibi girişi
+                const savedSession = localStorage.getItem('salonSession');
+                if (savedSession) {
+                    try {
+                        const session = JSON.parse(savedSession);
+                        
+                        if (session.slug === slug && session.expires > Date.now()) {
+                            await loadSalonData(slug);
+                            if (salon) {
+                                showDashboard();
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        localStorage.removeItem('salonSession');
+                    }
+                }
+                
+                showLoginScreen();
+            }
+        }
+        
+        // Show Login Screen
+        function showLoginScreen() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').classList.remove('active');
+        }
+        
+        // Show Dashboard
+        function showDashboard() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').classList.add('active');
+            
+            // Süper admin modu ise özel banner göster
+            if (isSuperAdminMode) {
+                document.getElementById('headerSalonName').textContent = salon.name + ' (Admin)';
+                document.getElementById('headerAvatar').textContent = '👑';
+                showSuperAdminBanner();
+            }
+            // Personel modu ise kısıtlı görünüm
+            else if (isStaffMode) {
+                document.getElementById('headerSalonName').textContent = currentStaffName + ' (Personel)';
+                document.getElementById('headerAvatar').textContent = currentStaffName.charAt(0).toUpperCase();
+                
+                // Personel modunda gizlenecek sekmeler
+                const restrictedTabs = ['settings-tab', 'staff-section', 'services-section'];
+                restrictedTabs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                
+                // Sadece "Randevularım" tab'ını göster
+                const tabBtns = document.querySelectorAll('.tab-btn');
+                tabBtns.forEach(btn => {
+                    if (btn.dataset.tab !== 'appointments') {
+                        btn.style.display = 'none';
+                    }
+                });
+                
+                // Personel banner'ı göster
+                showStaffBanner();
+            } else {
+                document.getElementById('headerSalonName').textContent = salon.name;
+                document.getElementById('headerAvatar').textContent = salon.name.charAt(0).toUpperCase();
+            }
+            
+            document.getElementById('viewSalonBtn').href = `/berber/salon/?slug=${salon.slug}`;
+            
+            // Load data
+            loadAppointments();
+            renderServices();
+            renderStaff();
+            renderWorkingHours();
+            loadSettings();
+            
+            // Setup tabs
+            setupTabs();
+            setupFilters();
+            
+            // Raporları yükle (appointments yüklendikten sonra)
+            setTimeout(() => loadReports(), 500);
+        }
+        
+        // Süper Admin modu banner'ı
+        function showSuperAdminBanner() {
+            const banner = document.createElement('div');
+            banner.className = 'staff-mode-banner';
+            banner.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            banner.innerHTML = `
+                <span>👑 <strong>Süper Admin Modu</strong> - Tüm yetkilere sahipsiniz</span>
+                <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                    <button onclick="window.location.href='/admin/'" class="btn btn-sm btn-outline" style="background: white; color: #d97706; border-color: white;">Admin Paneli</button>
+                    <button onclick="logoutSuperAdmin()" class="btn btn-sm btn-outline" style="background: transparent; border-color: white; color: white;">Çıkış</button>
+                </div>
+            `;
+            document.querySelector('.dashboard').insertBefore(banner, document.querySelector('.dashboard').firstChild);
+        }
+        
+        // Süper admin çıkışı
+        function logoutSuperAdmin() {
+            // Sadece bu salon'dan çık, admin session'ı koru
+            window.location.href = '/admin/';
+        }
+        
+        // Personel modu banner'ı
+        function showStaffBanner() {
+            const banner = document.createElement('div');
+            banner.className = 'staff-mode-banner';
+            banner.innerHTML = `
+                <span>👤 Personel Modu - Sadece kendi randevularınızı görebilirsiniz</span>
+                <button onclick="logoutStaff()" class="btn btn-sm btn-outline" style="margin-left: auto;">Çıkış</button>
+            `;
+            document.querySelector('.dashboard').insertBefore(banner, document.querySelector('.dashboard').firstChild);
+        }
+        
+        // Personel çıkışı
+        function logoutStaff() {
+            sessionStorage.removeItem('staffSession');
+            window.location.href = '/berber/';
+        }
+        
+        // Handle Login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const phone = document.getElementById('loginPhone').value.trim();
+            const pin = document.getElementById('loginPin').value.trim();
+            const slug = getSlugFromUrl();
+            
+            if (!slug) {
+                showLoginError('Geçersiz salon URL\'si');
+                return;
+            }
+            
+            try {
+                // Find salon by slug
+                const snapshot = await db.collection('salons')
+                    .where('slug', '==', slug)
+                    .limit(1)
+                    .get();
+                
+                if (snapshot.empty) {
+                    showLoginError('Salon bulunamadı');
+                    return;
+                }
+                
+                const salonData = snapshot.docs[0].data();
+                const salonId = snapshot.docs[0].id;
+                
+                // Verify phone and PIN
+                const salonPhone = (salonData.phone || '').replace(/\D/g, '');
+                const inputPhone = phone.replace(/\D/g, '');
+                
+                if (!salonPhone.includes(inputPhone.slice(-10)) && inputPhone !== salonPhone) {
+                    showLoginError('Telefon numarası eşleşmiyor');
+                    return;
+                }
+                
+                if (salonData.pin !== pin) {
+                    showLoginError('PIN kodu yanlış');
+                    return;
+                }
+                
+                // Save session
+                const session = {
+                    slug: slug,
+                    salonId: salonId,
+                    expires: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+                };
+                localStorage.setItem('salonSession', JSON.stringify(session));
+                
+                salon = { id: salonId, ...salonData };
+                showDashboard();
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showLoginError('Bir hata oluştu. Lütfen tekrar deneyin.');
+            }
+        }
+        
+        // Show Login Error
+        function showLoginError(message) {
+            const errorEl = document.getElementById('loginError');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+        
+        // Load Salon Data
+        async function loadSalonData(slug) {
+            try {
+                const snapshot = await db.collection('salons')
+                    .where('slug', '==', slug)
+                    .limit(1)
+                    .get();
+                
+                if (!snapshot.empty) {
+                    salon = {
+                        id: snapshot.docs[0].id,
+                        ...snapshot.docs[0].data()
+                    };
+                }
+            } catch (error) {
+                console.error('Error loading salon:', error);
+            }
+        }
+        
+        // Load Appointments
+        async function loadAppointments() {
+            try {
+                const snapshot = await db.collection('appointments')
+                    .where('salonId', '==', salon.id)
+                    .orderBy('date', 'desc')
+                    .limit(100)
+                    .get();
+                
+                appointments = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // Personel modunda sadece kendi randevularını göster
+                if (isStaffMode && currentStaffId) {
+                    appointments = appointments.filter(a => a.staffId === currentStaffId || a.staffName === currentStaffName);
+                }
+                
+                updateStats();
+                renderAppointments();
+                
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                // Try without ordering (index might not exist)
+                try {
+                    const snapshot = await db.collection('appointments')
+                        .where('salonId', '==', salon.id)
+                        .get();
+                    
+                    appointments = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })).sort((a, b) => b.date?.localeCompare(a.date));
+                    
+                    // Personel modunda sadece kendi randevularını göster
+                    if (isStaffMode && currentStaffId) {
+                        appointments = appointments.filter(a => a.staffId === currentStaffId || a.staffName === currentStaffName);
+                    }
+                    
+                    updateStats();
+                    renderAppointments();
+                } catch (e) {
+                    console.error('Fallback also failed:', e);
+                }
+            }
+        }
+        
+        // Update Stats
+        function updateStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const thisMonth = today.slice(0, 7);
+            
+            const todayAppointments = appointments.filter(a => a.date === today);
+            const pendingAppointments = appointments.filter(a => a.status === 'pending');
+            const confirmedAppointments = appointments.filter(a => a.status === 'confirmed');
+            const monthRevenue = appointments
+                .filter(a => a.date?.startsWith(thisMonth) && (a.status === 'confirmed' || a.status === 'completed'))
+                .reduce((sum, a) => sum + (a.servicePrice || 0), 0);
+            
+            document.getElementById('statToday').textContent = todayAppointments.length;
+            document.getElementById('statPending').textContent = pendingAppointments.length;
+            document.getElementById('statConfirmed').textContent = confirmedAppointments.length;
+            document.getElementById('statRevenue').textContent = `${monthRevenue.toLocaleString('tr-TR')} ₺`;
+        }
+        
+        // Render Appointments
+        function renderAppointments() {
+            const container = document.getElementById('appointmentList');
+            const today = new Date().toISOString().split('T')[0];
+            
+            let filtered = [...appointments];
+            
+            if (currentFilter === 'pending') {
+                filtered = filtered.filter(a => a.status === 'pending');
+            } else if (currentFilter === 'confirmed') {
+                filtered = filtered.filter(a => a.status === 'confirmed');
+            } else if (currentFilter === 'today') {
+                filtered = filtered.filter(a => a.date === today);
+            }
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📅</div>
+                        <h3 class="empty-title">Randevu Yok</h3>
+                        <p class="empty-text">Bu kriterlere uygun randevu bulunamadı.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(apt => {
+                const date = new Date(apt.date);
+                const statusClass = `status-${apt.status}`;
+                const statusText = {
+                    pending: 'Bekliyor',
+                    confirmed: 'Onaylandı',
+                    cancelled: 'İptal',
+                    completed: 'Tamamlandı'
+                }[apt.status] || apt.status;
+                
+                const showActions = apt.status === 'pending';
+                
+                return `
+                    <div class="appointment-card">
+                        <div class="appointment-date">
+                            <div class="appointment-day">${date.getDate()}</div>
+                            <div class="appointment-month">${MONTHS_TR[date.getMonth()]}</div>
+                            <div class="appointment-time">${apt.time}</div>
+                        </div>
+                        <div class="appointment-info">
+                            <h4>${escapeHtml(apt.customerName)}</h4>
+                            <div class="appointment-details">
+                                <span>📞 ${escapeHtml(apt.customerPhone)}</span>
+                                <span>✂️ ${escapeHtml(apt.service)}</span>
+                                <span>💰 ${apt.servicePrice || 0} ₺</span>
+                            </div>
+                            ${apt.customerNote ? `<div class="appointment-details" style="margin-top: 0.25rem;"><span>📝 ${escapeHtml(apt.customerNote)}</span></div>` : ''}
+                            <span class="appointment-status ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="appointment-actions">
+                            ${showActions ? `
+                                <button class="btn btn-success btn-sm" onclick="updateAppointmentStatus('${apt.id}', 'confirmed')">
+                                    ✓ Onayla
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="updateAppointmentStatus('${apt.id}', 'cancelled')">
+                                    ✗ İptal
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-outline btn-sm" onclick="addSingleToGoogleCalendar('${apt.id}')" title="Google Takvime Ekle">
+                                📅
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="openWhatsApp('${apt.customerPhone}', '${apt.customerName}')">
+                                📱
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Update Appointment Status
+        async function updateAppointmentStatus(id, status) {
+            try {
+                await db.collection('appointments').doc(id).update({ status });
+                
+                // Update local data
+                const apt = appointments.find(a => a.id === id);
+                if (apt) apt.status = status;
+                
+                updateStats();
+                renderAppointments();
+                
+                // Onaylandıysa WhatsApp seçeneği sun
+                if (status === 'confirmed' && apt) {
+                    showNotificationModal(apt, 'confirmed');
+                } else if (status === 'cancelled' && apt) {
+                    // İptal için de modal göster
+                    showNotificationModal(apt, 'cancelled');
+                } else {
+                    showToast('Randevu güncellendi', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Error updating appointment:', error);
+                showToast('Bir hata oluştu', 'error');
+            }
+        }
+        
+        // Show notification choice modal
+        function showNotificationModal(apt, status = 'confirmed') {
+            const modal = document.getElementById('notificationModal');
+            const customerName = document.getElementById('notifyCustomerName');
+            const customerPhone = document.getElementById('notifyCustomerPhone');
+            const appointmentInfo = document.getElementById('notifyAppointmentInfo');
+            const modalTitle = document.getElementById('notifyModalTitle');
+            const modalIcon = document.getElementById('notifyModalIcon');
+            const modalMessage = document.getElementById('notifyModalMessage');
+            const sendBtn = document.getElementById('notifySendBtn');
+            
+            customerName.textContent = apt.customerName;
+            customerPhone.textContent = '0' + apt.customerPhone;
+            appointmentInfo.textContent = `${formatDateDisplay(apt.date)} - ${apt.time} - ${apt.service}`;
+            
+            // Status'a göre modal içeriğini değiştir
+            const modalHeader = document.getElementById('notifyModalHeader');
+            if (status === 'confirmed') {
+                modalTitle.textContent = '✅ Randevu Onaylandı';
+                modalHeader.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                modalIcon.innerHTML = '✅';
+                modalIcon.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                modalMessage.textContent = 'Müşteriye WhatsApp ile onay bildirimi göndermek ister misiniz?';
+                sendBtn.textContent = '📱 Onay Mesajı Gönder';
+                sendBtn.className = 'btn btn-success';
+            } else {
+                modalTitle.textContent = '❌ Randevu İptal Edildi';
+                modalHeader.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                modalIcon.innerHTML = '❌';
+                modalIcon.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                modalMessage.textContent = 'Müşteriye WhatsApp ile iptal bildirimi göndermek ister misiniz?';
+                sendBtn.textContent = '📱 İptal Mesajı Gönder';
+                sendBtn.className = 'btn btn-danger';
+            }
+            
+            // Store apt and status for later use
+            modal.dataset.aptId = apt.id;
+            modal.dataset.status = status;
+            modal.classList.add('active');
+        }
+        
+        function closeNotificationModal() {
+            const modal = document.getElementById('notificationModal');
+            const status = modal.dataset.status || 'confirmed';
+            modal.classList.remove('active');
+            showToast(status === 'confirmed' ? 'Randevu onaylandı' : 'Randevu iptal edildi', 'success');
+        }
+        
+        function sendWhatsAppFromModal() {
+            const modal = document.getElementById('notificationModal');
+            const aptId = modal.dataset.aptId;
+            const status = modal.dataset.status || 'confirmed';
+            const apt = appointments.find(a => a.id === aptId);
+            
+            if (apt) {
+                sendStatusNotification(apt, status);
+            }
+            
+            modal.classList.remove('active');
+            showToast(status === 'confirmed' ? 'Randevu onaylandı' : 'Randevu iptal edildi', 'success');
+        }
+        
+        // Send Status Notification via WhatsApp
+        function sendStatusNotification(apt, status) {
+            const customerPhone = (apt.customerPhone || '').replace(/\D/g, '');
+            if (!customerPhone) return;
+            
+            let message;
+            if (status === 'confirmed') {
+                message = `✅ Randevunuz Onaylandı!
+
+Merhaba ${apt.customerName},
+${salon.name} randevunuz onaylanmıştır.
+
+• Tarih: ${formatDateDisplay(apt.date)}
+• Saat: ${apt.time}
+• Hizmet: ${apt.service}
+• Ücret: ${apt.servicePrice} ₺
+
+• Adres: ${salon.address || `${salon.district}, ${salon.city}`}
+
+Görüşmek üzere!`;
+            } else {
+                message = `❌ Randevunuz İptal Edildi
+
+Merhaba ${apt.customerName},
+
+Maalesef ${formatDateDisplay(apt.date)} tarihli ${apt.time} saatindeki randevunuz iptal edilmiştir.
+
+Yeni bir randevu almak için:
+${window.location.origin}/berber/${salon.slug}/
+
+${salon.name}`;
+            }
+            
+            const whatsappUrl = `https://wa.me/90${customerPhone}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+        
+        // Format date for display
+        function formatDateDisplay(dateStr) {
+            const date = new Date(dateStr);
+            const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+            return `${date.getDate()} ${MONTHS_TR[date.getMonth()]} ${days[date.getDay()]}`;
+        }
+        
+        // Open WhatsApp
+        function openWhatsApp(phone, name) {
+            const cleanPhone = phone.replace(/\D/g, '');
+            const url = `https://wa.me/90${cleanPhone}`;
+            window.open(url, '_blank');
+        }
+        
+        // Render Services
+        function renderServices() {
+            const services = salon.services || APP_CONFIG.categories.berber.services;
+            const container = document.getElementById('serviceList');
+            
+            container.innerHTML = services.map((service, index) => `
+                <div class="service-item">
+                    <div class="service-left">
+                        <div class="service-icon">${service.icon || '✂️'}</div>
+                        <div>
+                            <div class="service-name">${escapeHtml(service.name)}</div>
+                            <div class="service-duration">${service.duration || 30} dakika</div>
+                        </div>
+                    </div>
+                    <div class="service-right">
+                        <div class="service-price">${service.price || 100} ₺</div>
+                        <button class="btn btn-outline btn-icon" onclick="editService(${index})">✏️</button>
+                        <button class="btn btn-outline btn-icon" onclick="deleteService(${index})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Service Modal
+        function openServiceModal(index = null) {
+            document.getElementById('serviceModalTitle').textContent = index !== null ? 'Hizmet Düzenle' : 'Hizmet Ekle';
+            document.getElementById('serviceIndex').value = index !== null ? index : '';
+            
+            if (index !== null) {
+                const services = salon.services || APP_CONFIG.categories.berber.services;
+                const service = services[index];
+                document.getElementById('serviceName').value = service.name;
+                document.getElementById('serviceDuration').value = service.duration || 30;
+                document.getElementById('servicePrice').value = service.price || 100;
+                document.getElementById('serviceIcon').value = service.icon || '';
+            } else {
+                document.getElementById('serviceForm').reset();
+            }
+            
+            document.getElementById('serviceModal').classList.add('active');
+        }
+        
+        function closeServiceModal() {
+            document.getElementById('serviceModal').classList.remove('active');
+        }
+        
+        function editService(index) {
+            openServiceModal(index);
+        }
+        
+        async function saveService(e) {
+            e.preventDefault();
+            
+            const index = document.getElementById('serviceIndex').value;
+            const service = {
+                id: document.getElementById('serviceName').value.toLowerCase().replace(/\s+/g, '-'),
+                name: document.getElementById('serviceName').value,
+                duration: parseInt(document.getElementById('serviceDuration').value),
+                price: parseInt(document.getElementById('servicePrice').value),
+                icon: document.getElementById('serviceIcon').value || '✂️'
+            };
+            
+            let services = salon.services || [...APP_CONFIG.categories.berber.services];
+            
+            if (index !== '') {
+                services[parseInt(index)] = service;
+            } else {
+                services.push(service);
+            }
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({ services });
+                salon.services = services;
+                renderServices();
+                closeServiceModal();
+                showToast('Hizmet kaydedildi', 'success');
+            } catch (error) {
+                console.error('Error saving service:', error);
+                showToast('Bir hata oluştu', 'error');
+            }
+        }
+        
+        async function deleteService(index) {
+            if (!confirm('Bu hizmeti silmek istediğinize emin misiniz?')) return;
+            
+            let services = salon.services || [...APP_CONFIG.categories.berber.services];
+            services.splice(index, 1);
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({ services });
+                salon.services = services;
+                renderServices();
+                showToast('Hizmet silindi', 'success');
+            } catch (error) {
+                console.error('Error deleting service:', error);
+                showToast('Bir hata oluştu', 'error');
+            }
+        }
+        
+        // Render Staff
+        function renderStaff() {
+            const container = document.getElementById('staffList');
+            const limit = getPackageLimit();
+            const canAdd = canAddStaff();
+            
+            // Salon sahibi personel listesinde yoksa otomatik ekle
+            let staff = salon.staff || [];
+            
+            // Salon sahibini kontrol et (telefon ile)
+            const ownerPhone = salon.phone?.slice(-10);
+            const ownerExists = staff.some(s => s.phone === ownerPhone);
+            
+            if (!ownerExists && ownerPhone) {
+                // Salon sahibini ilk personel olarak ekle (kaydetmeden, sadece gösterim için)
+                const ownerStaff = {
+                    name: salon.ownerName || 'Salon Sahibi',
+                    title: 'Salon Sahibi',
+                    phone: ownerPhone,
+                    pin: salon.pin, // Salon PIN'i ile aynı
+                    isOwner: true
+                };
+                staff = [ownerStaff, ...staff];
+                
+                // Veritabanına kaydet
+                db.collection('salons').doc(salon.id).update({ staff }).then(() => {
+                    salon.staff = staff;
+                }).catch(err => console.error('Owner staff save error:', err));
+            }
+            
+            let html = staff.map((person, index) => `
+                <div class="staff-card ${person.isOwner ? 'owner-card' : ''}">
+                    <div class="staff-avatar">${person.name?.charAt(0) || 'P'}</div>
+                    <div class="staff-name">${escapeHtml(person.name)} ${person.isOwner ? '<span style="font-size:0.7rem;background:var(--primary);color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">Patron</span>' : ''}</div>
+                    <div class="staff-title">${escapeHtml(person.title || 'Personel')}</div>
+                    ${person.phone ? `
+                        <div class="staff-pin-section">
+                            <div style="font-size: 0.75rem; color: var(--slate-500); margin-bottom: 0.25rem;">Giriş PIN</div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+                                <input type="password" id="staffPin-${index}" value="${person.pin || '------'}" readonly style="width: 70px; text-align: center; border: 1px solid var(--slate-200); border-radius: 4px; padding: 0.25rem; font-family: monospace; font-size: 0.9rem;">
+                                <button id="pinToggle-${index}" onclick="togglePinVisibility(${index})" class="btn-icon-sm">👁️</button>
+                                ${!person.isOwner ? `<button onclick="resetStaffPin(${index})" class="btn-icon-sm" title="PIN Sıfırla">🔄</button>` : ''}
+                            </div>
+                        </div>
+                    ` : `<div style="font-size: 0.75rem; color: var(--warning); margin: 0.5rem 0;">⚠️ Telefon ekleyin</div>`}
+                    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+                        ${!person.isOwner ? `<button class="btn btn-outline btn-icon" onclick="editStaff(${index})">✏️</button>` : ''}
+                        ${staff.length > 1 && !person.isOwner ? `<button class="btn btn-outline btn-icon" onclick="deleteStaff(${index})">🗑️</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+            
+            // Personel Ekle butonunu güncelle
+            updateAddStaffButton();
+        }
+        
+        function updateAddStaffButton() {
+            const limit = getPackageLimit();
+            const currentStaff = (salon?.staff || []).length;
+            const canAdd = currentStaff < limit.maxStaff;
+            
+            console.log('Package check:', { 
+                package: salon?.package, 
+                limit: limit.maxStaff, 
+                currentStaff, 
+                canAdd 
+            });
+            
+            const btnContainer = document.getElementById('addStaffBtnContainer');
+            if (!btnContainer) return;
+            
+            if (canAdd) {
+                const remaining = limit.maxStaff - currentStaff;
+                const remainingText = limit.maxStaff >= 999 ? 'Sınırsız' : `${remaining} hak kaldı`;
+                btnContainer.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <span style="font-size: 0.8rem; color: var(--slate-400);">
+                            ${limit.name} paketi • ${remainingText}
+                        </span>
+                        <button class="btn btn-primary btn-sm" onclick="openStaffModal()">
+                            + Personel Ekle
+                        </button>
+                    </div>
+                `;
+            } else {
+                btnContainer.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <span style="font-size: 0.85rem; color: var(--slate-500);">
+                            📊 ${limit.name} paketi: ${limit.maxStaff} personel limiti (dolu)
+                        </span>
+                        <button class="btn btn-sm" onclick="openUpgradeModal()" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                            ⬆️ Paketi Yükselt
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Staff Modal
+        function openStaffModal(index = null) {
+            // Yeni personel ekleme kontrolü
+            if (index === null && !canAddStaff()) {
+                openUpgradeModal();
+                return;
+            }
+            
+            document.getElementById('staffModalTitle').textContent = index !== null ? 'Personel Düzenle' : 'Personel Ekle';
+            document.getElementById('staffIndex').value = index !== null ? index : '';
+            
+            const pinGroup = document.getElementById('staffPinGroup');
+            const pinInput = document.getElementById('staffPinInput');
+            
+            if (index !== null) {
+                // Düzenleme modu
+                const staff = salon.staff || [];
+                const person = staff[index];
+                document.getElementById('staffName').value = person.name;
+                document.getElementById('staffTitle').value = person.title || '';
+                document.getElementById('staffPhone').value = person.phone || '';
+                
+                // PIN alanını göster ve doldur
+                pinGroup.style.display = 'block';
+                pinInput.value = person.pin || '';
+                pinInput.type = 'password'; // Başlangıçta gizli
+                
+                // Patron (isOwner) ise isim, ünvan ve telefon düzenlenemez
+                if (person.isOwner) {
+                    document.getElementById('staffName').disabled = true;
+                    document.getElementById('staffTitle').disabled = true;
+                    document.getElementById('staffPhone').disabled = true;
+                } else {
+                    document.getElementById('staffName').disabled = false;
+                    document.getElementById('staffTitle').disabled = false;
+                    document.getElementById('staffPhone').disabled = false;
+                }
+            } else {
+                // Yeni personel modu
+                document.getElementById('staffForm').reset();
+                pinGroup.style.display = 'block';
+                pinInput.value = generateStaffPin(); // Otomatik PIN oluştur
+                pinInput.type = 'password';
+                
+                document.getElementById('staffName').disabled = false;
+                document.getElementById('staffTitle').disabled = false;
+                document.getElementById('staffPhone').disabled = false;
+            }
+            
+            document.getElementById('staffModal').classList.add('active');
+        }
+        
+        // Staff PIN görünürlüğünü değiştir
+        function toggleStaffPinVisibility() {
+            const pinInput = document.getElementById('staffPinInput');
+            const btn = document.getElementById('staffPinToggleBtn');
+            
+            if (pinInput.type === 'password') {
+                pinInput.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                pinInput.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+        
+        // Yeni PIN oluştur (modal içinde)
+        function generateNewStaffPin() {
+            const pinInput = document.getElementById('staffPinInput');
+            pinInput.value = generateStaffPin();
+            pinInput.type = 'text'; // Yeni PIN'i göster
+            document.getElementById('staffPinToggleBtn').textContent = '🙈';
+        }
+        
+        // Upgrade Modal
+        function openUpgradeModal() {
+            document.getElementById('upgradeModal').classList.add('active');
+            
+            const limit = getPackageLimit();
+            const currentPkg = salon?.package || 'starter';
+            
+            // Önerilen paketi belirle
+            let suggestedPkg, suggestedName, suggestedPrice;
+            if (currentPkg === 'starter') {
+                suggestedPkg = 'pro';
+                suggestedName = 'Profesyonel';
+                suggestedPrice = '499 ₺/ay';
+            } else {
+                suggestedPkg = 'premium';
+                suggestedName = 'Premium';
+                suggestedPrice = '799 ₺/ay';
+            }
+            
+            document.getElementById('currentPackageName').textContent = limit.name;
+            document.getElementById('currentPackageLimit').textContent = `${limit.maxStaff} personel`;
+            document.getElementById('suggestedPackageName').textContent = suggestedName;
+            document.getElementById('suggestedPackagePrice').textContent = suggestedPrice;
+        }
+        
+        function closeUpgradeModal() {
+            document.getElementById('upgradeModal').classList.remove('active');
+        }
+        
+        function sendUpgradeRequest() {
+            const limit = getPackageLimit();
+            const currentPkg = salon?.package || 'starter';
+            const currentStaff = (salon?.staff || []).length;
+            
+            // Önerilen paketi belirle
+            let suggestedPkg = currentPkg === 'starter' ? 'Profesyonel' : 'Premium';
+            
+            // EmailJS ile mail gönder
+            if (typeof emailjs !== 'undefined' && typeof EMAILJS_CONFIG !== 'undefined') {
+                emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateNewSalon, {
+                    to_email: 'hello@feyzdigital.com',
+                    salon_name: salon.name,
+                    owner_name: salon.ownerName,
+                    phone: salon.phone,
+                    email: salon.email,
+                    city: salon.city,
+                    district: salon.district,
+                    slug: salon.slug,
+                    package_name: `PAKET YÜKSELTME TALEBİ: ${limit.name} → ${suggestedPkg}`,
+                    package_price: `Mevcut personel: ${currentStaff}, Limit: ${limit.maxStaff}`,
+                    setup_fee: '-',
+                    created_at: new Date().toLocaleString('tr-TR'),
+                    admin_url: window.location.origin + '/berber/salon/yonetim/?slug=' + salon.slug
+                }).then(() => {
+                    closeUpgradeModal();
+                    showToast('Yükseltme talebiniz gönderildi! En kısa sürede dönüş yapacağız.', 'success');
+                }).catch(err => {
+                    console.error('Email error:', err);
+                    showToast('Bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+                });
+            } else {
+                // EmailJS yoksa mailto kullan
+                const subject = encodeURIComponent(`Paket Yükseltme Talebi - ${salon.name}`);
+                const body = encodeURIComponent(`Salon: ${salon.name}
+Yetkili: ${salon.ownerName}
+Telefon: ${salon.phone}
+E-posta: ${salon.email}
+Konum: ${salon.district}, ${salon.city}
+
+Mevcut Paket: ${limit.name}
+Talep Edilen: ${suggestedPkg}
+Mevcut Personel: ${currentStaff}
+Personel Limiti: ${limit.maxStaff}
+
+Panel: ${window.location.href}`);
+                
+                window.open(`mailto:hello@feyzdigital.com?subject=${subject}&body=${body}`, '_blank');
+                closeUpgradeModal();
+                showToast('E-posta uygulamanız açılıyor...', 'success');
+            }
+        }
+        
+        function closeStaffModal() {
+            document.getElementById('staffModal').classList.remove('active');
+        }
+        
+        function editStaff(index) {
+            openStaffModal(index);
+        }
+        
+        // Rastgele 6 haneli PIN oluştur
+        function generateStaffPin() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+        
+        async function saveStaff(e) {
+            e.preventDefault();
+            
+            const index = document.getElementById('staffIndex').value;
+            const phone = document.getElementById('staffPhone').value.replace(/\D/g, '');
+            const pinFromModal = document.getElementById('staffPinInput').value;
+            
+            // Telefon zorunlu
+            if (!phone || phone.length < 10) {
+                showToast('Personel telefon numarası zorunludur', 'error');
+                return;
+            }
+            
+            // PIN zorunlu ve 6 haneli olmalı
+            if (!pinFromModal || pinFromModal.length !== 6) {
+                showToast('PIN kodu 6 haneli olmalıdır', 'error');
+                return;
+            }
+            
+            let staff = salon.staff || [];
+            
+            if (index !== '') {
+                // Mevcut personeli güncelle
+                const existingPerson = staff[parseInt(index)];
+                
+                // Patron ise sadece PIN değiştirilebilir
+                if (existingPerson.isOwner) {
+                    existingPerson.pin = pinFromModal;
+                    // Ayrıca salon PIN'ini de güncelle
+                    await db.collection('salons').doc(salon.id).update({ 
+                        pin: pinFromModal,
+                        staff: staff 
+                    });
+                    salon.pin = pinFromModal;
+                } else {
+                    staff[parseInt(index)] = {
+                        name: document.getElementById('staffName').value,
+                        title: document.getElementById('staffTitle').value || 'Personel',
+                        phone: phone.slice(-10),
+                        pin: pinFromModal,
+                        isOwner: existingPerson.isOwner || false
+                    };
+                    await db.collection('salons').doc(salon.id).update({ staff });
+                }
+            } else {
+                // Yeni personel ekle
+                const person = {
+                    name: document.getElementById('staffName').value,
+                    title: document.getElementById('staffTitle').value || 'Personel',
+                    phone: phone.slice(-10),
+                    pin: pinFromModal
+                };
+                staff.push(person);
+                await db.collection('salons').doc(salon.id).update({ staff });
+            }
+            
+            salon.staff = staff;
+            renderStaff();
+            closeStaffModal();
+            showToast('Personel kaydedildi', 'success');
+        }
+        
+        // Personel PIN'ini sıfırla
+        async function resetStaffPin(index) {
+            if (!confirm('Bu personelin PIN kodunu sıfırlamak istediğinize emin misiniz?')) return;
+            
+            let staff = salon.staff || [];
+            staff[index].pin = generateStaffPin();
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({ staff });
+                salon.staff = staff;
+                renderStaff();
+                showToast('PIN kodu sıfırlandı: ' + staff[index].pin, 'success');
+            } catch (error) {
+                console.error('Error resetting PIN:', error);
+                showToast('Bir hata oluştu', 'error');
+            }
+        }
+        
+        // PIN'i göster/gizle
+        function togglePinVisibility(index) {
+            const pinEl = document.getElementById(`staffPin-${index}`);
+            const btnEl = document.getElementById(`pinToggle-${index}`);
+            
+            if (pinEl.type === 'password') {
+                pinEl.type = 'text';
+                btnEl.textContent = '🙈';
+            } else {
+                pinEl.type = 'password';
+                btnEl.textContent = '👁️';
+            }
+        }
+        
+        async function deleteStaff(index) {
+            if (!confirm('Bu personeli silmek istediğinize emin misiniz?')) return;
+            
+            let staff = salon.staff || [];
+            staff.splice(index, 1);
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({ staff });
+                salon.staff = staff;
+                renderStaff();
+                showToast('Personel silindi', 'success');
+            } catch (error) {
+                console.error('Error deleting staff:', error);
+                showToast('Bir hata oluştu', 'error');
+            }
+        }
+        
+        // Render Working Hours
+        function renderWorkingHours() {
+            const hours = salon.workingHours || APP_CONFIG.workingHours.default;
+            const container = document.getElementById('hoursList');
+            const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            
+            container.innerHTML = dayOrder.map(day => {
+                const h = hours[day] || { open: '09:00', close: '20:00', active: true };
+                return `
+                    <div class="hours-row">
+                        <div class="hours-day">${DAYS_TR[day]}</div>
+                        <div class="hours-inputs">
+                            <input type="time" class="hours-input" id="hours-${day}-open" value="${h.open}" ${!h.active ? 'disabled' : ''}>
+                            <span>-</span>
+                            <input type="time" class="hours-input" id="hours-${day}-close" value="${h.close}" ${!h.active ? 'disabled' : ''}>
+                        </div>
+                        <div class="hours-toggle">
+                            <label class="toggle">
+                                <input type="checkbox" id="hours-${day}-active" ${h.active ? 'checked' : ''} onchange="toggleDay('${day}')">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>${h.active ? 'Açık' : 'Kapalı'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function toggleDay(day) {
+            const active = document.getElementById(`hours-${day}-active`).checked;
+            document.getElementById(`hours-${day}-open`).disabled = !active;
+            document.getElementById(`hours-${day}-close`).disabled = !active;
+            
+            // Update label
+            const row = document.getElementById(`hours-${day}-active`).closest('.hours-row');
+            row.querySelector('.hours-toggle span:last-child').textContent = active ? 'Açık' : 'Kapalı';
+        }
+        
+        async function saveWorkingHours() {
+            const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            const workingHours = {};
+            
+            dayOrder.forEach(day => {
+                workingHours[day] = {
+                    open: document.getElementById(`hours-${day}-open`).value,
+                    close: document.getElementById(`hours-${day}-close`).value,
+                    active: document.getElementById(`hours-${day}-active`).checked
+                };
+            });
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({ workingHours });
+                salon.workingHours = workingHours;
+                showToast('Çalışma saatleri kaydedildi', 'success');
+            } catch (error) {
+                console.error('Error saving hours:', error);
+                showToast('Bir hata oluştu', 'error');
+            }
+        }
+        
+        // Load Settings
+        function loadSettings() {
+            document.getElementById('settingName').value = salon.name || '';
+            document.getElementById('settingCity').value = salon.city || '';
+            document.getElementById('settingDistrict').value = salon.district || '';
+            document.getElementById('settingAddress').value = salon.address || '';
+            document.getElementById('settingPhone').value = salon.phone || '';
+            document.getElementById('settingGoogleBusiness').value = salon.googleBusinessUrl || '';
+            
+            // Logo
+            if (salon.logo) {
+                document.getElementById('logoPreview').innerHTML = `<img src="${salon.logo}" alt="Logo">`;
+                document.getElementById('removeLogoBtn').style.display = 'inline-flex';
+            }
+            
+            // Galeri
+            renderGallery();
+            
+            // QR Kod
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(location.origin + '/berber/salon/?slug=' + salon.slug)}`;
+            document.getElementById('qrCodeDisplay').innerHTML = `<img src="${qrUrl}" alt="QR Kod" id="qrImage" style="width:180px;height:180px;">`;
+        }
+        
+        // QR Kod İndir
+        function downloadQRCode() {
+            const salonUrl = `${location.origin}/berber/salon/?slug=${salon.slug}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=png&data=${encodeURIComponent(salonUrl)}`;
+            
+            // Fetch ile indirme
+            fetch(qrUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${salon.slug}-qr-code.png`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                })
+                .catch(() => {
+                    // Fallback: Yeni sekmede aç
+                    window.open(qrUrl, '_blank');
+                });
+        }
+        
+        function printQRCode() {
+            const salonUrl = `${location.origin}/berber/salon/?slug=${salon.slug}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(salonUrl)}`;
+            window.open(qrUrl, '_blank');
+        }
+        
+        // Logo Yükleme
+        async function uploadLogo(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('Logo maksimum 2MB olmalı', 'error');
+                return;
+            }
+            
+            showToast('Logo yükleniyor...', '');
+            
+            try {
+                const base64 = await fileToBase64(file);
+                await db.collection('salons').doc(salon.id).update({ logo: base64 });
+                salon.logo = base64;
+                document.getElementById('logoPreview').innerHTML = `<img src="${base64}" alt="Logo">`;
+                document.getElementById('removeLogoBtn').style.display = 'inline-flex';
+                showToast('Logo kaydedildi', 'success');
+            } catch (error) {
+                console.error('Logo upload error:', error);
+                showToast('Logo yüklenirken hata oluştu', 'error');
+            }
+        }
+        
+        async function removeLogo() {
+            if (!confirm('Logoyu kaldırmak istediğinize emin misiniz?')) return;
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({ logo: null });
+                salon.logo = null;
+                document.getElementById('logoPreview').innerHTML = '<span>💈</span>';
+                document.getElementById('removeLogoBtn').style.display = 'none';
+                showToast('Logo kaldırıldı', 'success');
+            } catch (error) {
+                showToast('Hata oluştu', 'error');
+            }
+        }
+        
+        // Galeri Yükleme
+        function renderGallery() {
+            const gallery = salon.gallery || [];
+            const container = document.getElementById('galleryGrid');
+            
+            container.innerHTML = gallery.map((img, idx) => `
+                <div class="gallery-item-upload">
+                    <img src="${img}" alt="Galeri ${idx + 1}">
+                    <button class="remove-gallery-btn" onclick="removeGalleryImage(${idx})">✕</button>
+                </div>
+            `).join('');
+            
+            // 5'ten az varsa ekleme butonunu göster
+            document.getElementById('addGalleryBtn').style.display = gallery.length >= 5 ? 'none' : 'inline-flex';
+        }
+        
+        async function uploadGalleryImages(event) {
+            const files = Array.from(event.target.files);
+            const gallery = salon.gallery || [];
+            
+            if (gallery.length + files.length > 5) {
+                showToast('Maksimum 5 görsel ekleyebilirsiniz', 'error');
+                return;
+            }
+            
+            showToast('Görseller yükleniyor...', '');
+            
+            try {
+                for (const file of files) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        showToast(`${file.name} çok büyük (max 5MB)`, 'error');
+                        continue;
+                    }
+                    const base64 = await fileToBase64(file);
+                    gallery.push(base64);
+                }
+                
+                await db.collection('salons').doc(salon.id).update({ gallery });
+                salon.gallery = gallery;
+                renderGallery();
+                showToast('Görseller kaydedildi', 'success');
+            } catch (error) {
+                console.error('Gallery upload error:', error);
+                showToast('Görseller yüklenirken hata oluştu', 'error');
+            }
+            
+            event.target.value = '';
+        }
+        
+        async function removeGalleryImage(index) {
+            if (!confirm('Bu görseli kaldırmak istediğinize emin misiniz?')) return;
+            
+            try {
+                const gallery = salon.gallery || [];
+                gallery.splice(index, 1);
+                await db.collection('salons').doc(salon.id).update({ gallery });
+                salon.gallery = gallery;
+                renderGallery();
+                showToast('Görsel kaldırıldı', 'success');
+            } catch (error) {
+                showToast('Hata oluştu', 'error');
+            }
+        }
+        
+        // Base64 dönüştürme
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+        
+        // Google Business Link Kaydet
+        async function saveGoogleBusinessLink() {
+            const url = document.getElementById('settingGoogleBusiness').value.trim();
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({ googleBusinessUrl: url });
+                salon.googleBusinessUrl = url;
+                showToast('Google Business linki kaydedildi', 'success');
+            } catch (error) {
+                showToast('Hata oluştu', 'error');
+            }
+        }
+        
+        // Müşteri Geçmişi
+        let allCustomers = [];
+        
+        async function loadCustomers() {
+            try {
+                // Tüm randevulardan müşterileri topla
+                const snap = await db.collection('appointments')
+                    .where('salonId', '==', salon.id)
+                    .get();
+                
+                const customerMap = {};
+                
+                snap.docs.forEach(doc => {
+                    const apt = doc.data();
+                    const phone = apt.customerPhone;
+                    
+                    if (!customerMap[phone]) {
+                        customerMap[phone] = {
+                            name: apt.customerName,
+                            phone: phone,
+                            appointments: [],
+                            totalSpent: 0,
+                            note: ''
+                        };
+                    }
+                    
+                    customerMap[phone].appointments.push({
+                        date: apt.date,
+                        time: apt.time,
+                        service: apt.service,
+                        price: apt.servicePrice || 0,
+                        status: apt.status
+                    });
+                    
+                    if (apt.status === 'completed') {
+                        customerMap[phone].totalSpent += (apt.servicePrice || 0);
+                    }
+                });
+                
+                allCustomers = Object.values(customerMap);
+                
+                // Son randevuya göre sırala
+                allCustomers.sort((a, b) => {
+                    const lastA = a.appointments[a.appointments.length - 1]?.date || '';
+                    const lastB = b.appointments[b.appointments.length - 1]?.date || '';
+                    return lastB.localeCompare(lastA);
+                });
+                
+                renderCustomers();
+                
+            } catch (error) {
+                console.error('Error loading customers:', error);
+            }
+        }
+        
+        function renderCustomers() {
+            const container = document.getElementById('customerList');
+            
+            if (allCustomers.length === 0) {
+                container.innerHTML = '<p class="empty-text">Henüz müşteri kaydı yok</p>';
+                return;
+            }
+            
+            container.innerHTML = allCustomers.map((customer, idx) => {
+                const lastApt = customer.appointments[customer.appointments.length - 1];
+                const completedCount = customer.appointments.filter(a => a.status === 'completed').length;
+                
+                return `
+                    <div class="customer-card">
+                        <div class="customer-header">
+                            <div class="customer-info">
+                                <h4>${escapeHtml(customer.name)}</h4>
+                                <p>📞 ${customer.phone}</p>
+                            </div>
+                            <div class="customer-stats">
+                                <div class="customer-stat">
+                                    <strong>${completedCount}</strong>
+                                    Randevu
+                                </div>
+                                <div class="customer-stat">
+                                    <strong>${customer.totalSpent} ₺</strong>
+                                    Toplam
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="customer-history">
+                            <h5>Son Randevular</h5>
+                            ${customer.appointments.slice(-3).reverse().map(apt => `
+                                <div class="history-item">
+                                    <span>${apt.date} ${apt.time}</span>
+                                    <span>${apt.service}</span>
+                                    <span>${apt.price} ₺</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="customer-note">
+                            <textarea placeholder="Müşteri notu ekleyin..." 
+                                      onchange="saveCustomerNote('${customer.phone}', this.value)">${customer.note || ''}</textarea>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function searchCustomers() {
+            const query = document.getElementById('customerSearch').value.toLowerCase();
+            const filtered = allCustomers.filter(c => 
+                c.name.toLowerCase().includes(query) || 
+                c.phone.includes(query)
+            );
+            
+            // Geçici olarak filtrelenmiş listeyi göster
+            const container = document.getElementById('customerList');
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="empty-text">Sonuç bulunamadı</p>';
+                return;
+            }
+            
+            // renderCustomers'ı filtered ile çağır
+            const originalCustomers = allCustomers;
+            allCustomers = filtered;
+            renderCustomers();
+            allCustomers = originalCustomers;
+        }
+        
+        async function saveCustomerNote(phone, note) {
+            // Müşteri notlarını ayrı bir collection'da sakla
+            try {
+                await db.collection('salons').doc(salon.id).collection('customerNotes').doc(phone).set({
+                    note: note,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+                
+                // Local update
+                const customer = allCustomers.find(c => c.phone === phone);
+                if (customer) customer.note = note;
+                
+            } catch (error) {
+                console.error('Error saving note:', error);
+            }
+        }
+        
+        // Save Settings
+        async function saveSettings(e) {
+            e.preventDefault();
+            
+            const updates = {
+                name: document.getElementById('settingName').value,
+                city: document.getElementById('settingCity').value,
+                district: document.getElementById('settingDistrict').value,
+                address: document.getElementById('settingAddress').value,
+                phone: document.getElementById('settingPhone').value
+            };
+            
+            try {
+                await db.collection('salons').doc(salon.id).update(updates);
+                Object.assign(salon, updates);
+                document.getElementById('headerSalonName').textContent = salon.name;
+                showToast('Ayarlar kaydedildi', 'success');
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showToast('Bir hata oluştu', 'error');
+            }
+        }
+        
+        // Change PIN
+        async function changePin(e) {
+            e.preventDefault();
+            
+            const currentPin = document.getElementById('currentPin').value;
+            const newPin = document.getElementById('newPin').value;
+            
+            if (salon.pin !== currentPin) {
+                showToast('Mevcut PIN yanlış', 'error');
+                return;
+            }
+            
+            if (newPin.length < 4) {
+                showToast('PIN en az 4 karakter olmalı', 'error');
+                return;
+            }
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({ pin: newPin });
+                salon.pin = newPin;
+                document.getElementById('currentPin').value = '';
+                document.getElementById('newPin').value = '';
+                showToast('PIN değiştirildi', 'success');
+            } catch (error) {
+                console.error('Error changing PIN:', error);
+                showToast('Bir hata oluştu', 'error');
+            }
+        }
+        
+        // Setup Tabs
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+                    
+                    // Müşteriler sekmesine geçildiğinde verileri yükle
+                    if (tab.dataset.tab === 'customers' && allCustomers.length === 0) {
+                        loadCustomers();
+                    }
+                });
+            });
+        }
+        
+        // Setup Filters
+        function setupFilters() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    renderAppointments();
+                });
+            });
+        }
+        
+        // ==================== HAFTALIK TAKVİM ====================
+        
+        function getWeekStart(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setDate(diff));
+        }
+        
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+            document.querySelectorAll('.view-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            document.getElementById(view === 'calendar' ? 'calendarView' : 'listView').classList.add('active');
+            
+            if (view === 'calendar') {
+                populateStaffFilter('calendarStaffFilter');
+                renderWeeklyCalendar();
+            } else {
+                populateStaffFilter('staffFilterSelect');
+            }
+        }
+        
+        function populateStaffFilter(selectId) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            
+            const staff = salon?.staff || [];
+            select.innerHTML = '<option value="all">Tüm Personel</option>';
+            staff.forEach(s => {
+                select.innerHTML += `<option value="${s.id || s.name}">${escapeHtml(s.name)}</option>`;
+            });
+        }
+        
+        function filterByStaff() {
+            currentStaffFilter = document.getElementById('staffFilterSelect')?.value || 'all';
+            renderAppointments();
+        }
+        
+        function changeWeek(direction) {
+            currentWeekStart.setDate(currentWeekStart.getDate() + (direction * 7));
+            renderWeeklyCalendar();
+        }
+        
+        function goToToday() {
+            currentWeekStart = getWeekStart(new Date());
+            renderWeeklyCalendar();
+        }
+        
+        function renderWeeklyCalendar() {
+            const container = document.getElementById('weeklyCalendar');
+            const weekRange = document.getElementById('weekRange');
+            if (!container) return;
+            
+            const staffFilter = document.getElementById('calendarStaffFilter')?.value || 'all';
+            
+            // Hafta tarihleri
+            const weekDays = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(currentWeekStart);
+                d.setDate(currentWeekStart.getDate() + i);
+                weekDays.push(d);
+            }
+            
+            // Başlık güncelle
+            const startStr = `${weekDays[0].getDate()} ${MONTHS_TR[weekDays[0].getMonth()]}`;
+            const endStr = `${weekDays[6].getDate()} ${MONTHS_TR[weekDays[6].getMonth()]}`;
+            weekRange.textContent = `${startStr} - ${endStr}`;
+            
+            // Çalışma saatleri
+            const defaultHours = { open: '09:00', close: '19:00' };
+            const hours = salon?.workingHours || {};
+            
+            // En erken ve en geç saatleri bul
+            let earliestHour = 9, latestHour = 19;
+            Object.values(hours).forEach(h => {
+                if (!h.closed && h.open) {
+                    const openH = parseInt(h.open.split(':')[0]);
+                    const closeH = parseInt(h.close.split(':')[0]);
+                    if (openH < earliestHour) earliestHour = openH;
+                    if (closeH > latestHour) latestHour = closeH;
+                }
+            });
+            
+            // Grid oluştur
+            const today = new Date().toISOString().split('T')[0];
+            
+            let html = '';
+            
+            // Header row
+            html += '<div class="cal-time-header"></div>';
+            weekDays.forEach(d => {
+                const dateStr = d.toISOString().split('T')[0];
+                const isToday = dateStr === today;
+                html += `
+                    <div class="cal-header ${isToday ? 'today' : ''}">
+                        <div>${DAYS_SHORT[d.getDay()]}</div>
+                        <div class="cal-header-date">${d.getDate()}</div>
+                    </div>
+                `;
+            });
+            
+            // Time rows
+            for (let hour = earliestHour; hour < latestHour; hour++) {
+                const timeStr = `${hour.toString().padStart(2, '0')}:00`;
+                html += `<div class="cal-time-slot">${timeStr}</div>`;
+                
+                weekDays.forEach(d => {
+                    const dateStr = d.toISOString().split('T')[0];
+                    const dayKey = DAY_KEYS[d.getDay()];
+                    const dayHours = hours[dayKey] || defaultHours;
+                    const isClosed = dayHours.closed || dayHours.active === false;
+                    const isPast = dateStr < today;
+                    
+                    // Bu saat için randevular
+                    const cellAppointments = appointments.filter(apt => {
+                        if (apt.date !== dateStr) return false;
+                        if (!['pending', 'confirmed'].includes(apt.status)) return false;
+                        
+                        const aptHour = parseInt(apt.time?.split(':')[0] || '0');
+                        if (aptHour !== hour) return false;
+                        
+                        // Personel filtresi
+                        if (staffFilter !== 'all' && apt.staffName !== staffFilter && apt.staffId !== staffFilter) {
+                            return false;
+                        }
+                        
+                        return true;
+                    });
+                    
+                    html += `
+                        <div class="cal-cell ${isPast || isClosed ? 'past' : ''}" 
+                             data-date="${dateStr}" 
+                             data-time="${timeStr}"
+                             ondrop="handleDrop(event)" 
+                             ondragover="handleDragOver(event)"
+                             ondragleave="handleDragLeave(event)">
+                    `;
+                    
+                    cellAppointments.forEach(apt => {
+                        html += `
+                            <div class="cal-appointment ${apt.status}" 
+                                 draggable="true"
+                                 ondragstart="handleDragStart(event, '${apt.id}')"
+                                 onclick="showAppointmentDetail('${apt.id}')"
+                                 title="${escapeHtml(apt.customerName)} - ${apt.service}">
+                                ${apt.time?.slice(0,5)} ${escapeHtml(apt.customerName?.split(' ')[0] || '')}
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // Sürükle-Bırak Fonksiyonları
+        let draggedAppointmentId = null;
+        
+        function handleDragStart(event, appointmentId) {
+            draggedAppointmentId = appointmentId;
+            event.target.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+        }
+        
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+        
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+        
+        async function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+            
+            if (!draggedAppointmentId) return;
+            
+            const newDate = event.currentTarget.dataset.date;
+            const newTime = event.currentTarget.dataset.time;
+            
+            if (!newDate || !newTime) return;
+            
+            // Geçmiş tarihe taşınamaz
+            const today = new Date().toISOString().split('T')[0];
+            if (newDate < today) {
+                showToast('Geçmiş tarihe randevu taşınamaz', 'error');
+                return;
+            }
+            
+            const apt = appointments.find(a => a.id === draggedAppointmentId);
+            if (!apt) return;
+            
+            const oldDate = apt.date;
+            const oldTime = apt.time;
+            
+            if (confirm(`Randevuyu taşımak istiyor musunuz?\n\n${apt.customerName}\n${oldDate} ${oldTime} → ${newDate} ${newTime}`)) {
+                try {
+                    await db.collection('appointments').doc(apt.id).update({
+                        date: newDate,
+                        time: newTime,
+                        updatedAt: new Date().toISOString(),
+                        rescheduledFrom: { date: oldDate, time: oldTime }
+                    });
+                    
+                    // Lokal güncelle
+                    apt.date = newDate;
+                    apt.time = newTime;
+                    
+                    showToast('Randevu taşındı!', 'success');
+                    renderWeeklyCalendar();
+                    
+                    // WhatsApp bildirim linki göster
+                    const customerPhone = apt.customerPhone?.replace(/\D/g, '');
+                    if (customerPhone) {
+                        const msg = `Merhaba ${apt.customerName},\n\nRandevunuz değiştirildi:\n\n📅 Yeni Tarih: ${formatDateTR(newDate)}\n⏰ Yeni Saat: ${newTime}\n\nBizi tercih ettiğiniz için teşekkürler!`;
+                        
+                        if (confirm('Müşteriye WhatsApp ile bildirim göndermek ister misiniz?')) {
+                            window.open(`https://wa.me/90${customerPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast('Hata oluştu', 'error');
+                }
+            }
+            
+            draggedAppointmentId = null;
+            document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+        }
+        
+        function formatDateTR(dateStr) {
+            const d = new Date(dateStr);
+            return `${d.getDate()} ${MONTHS_TR[d.getMonth()]} ${d.getFullYear()}`;
+        }
+        
+        function showAppointmentDetail(appointmentId) {
+            const apt = appointments.find(a => a.id === appointmentId);
+            if (!apt) return;
+            
+            // Modal veya alert ile detay göster
+            alert(`Randevu Detayı:\n\nMüşteri: ${apt.customerName}\nTelefon: ${apt.customerPhone}\nHizmet: ${apt.service}\nTarih: ${apt.date}\nSaat: ${apt.time}\nDurum: ${apt.status}`);
+        }
+        
+        // ==================== HAFTALIK TAKVİM SON ====================
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('salonSession');
+            window.location.reload();
+        }
+        
+        // Show Toast
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} active`;
+            
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+        
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+        
+        // ==================== GOOGLE TAKVİM EXPORT ====================
+        function exportToGoogleCalendar() {
+            // Bugünden itibaren onaylı/bekleyen randevuları al
+            const today = new Date().toISOString().split('T')[0];
+            const futureApts = appointments.filter(apt => 
+                apt.date >= today && 
+                (apt.status === 'confirmed' || apt.status === 'pending')
+            );
+            
+            if (futureApts.length === 0) {
+                showToast('Aktarılacak randevu yok', 'error');
+                return;
+            }
+            
+            // ICS dosyası oluştur
+            let icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Zamanlı//TR
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:${salon.name} Randevuları
+`;
+            
+            futureApts.forEach(apt => {
+                const startDate = new Date(apt.date + 'T' + apt.time + ':00');
+                const endDate = new Date(startDate.getTime() + (apt.serviceDuration || 30) * 60000);
+                
+                const formatICSDate = (d) => {
+                    return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                };
+                
+                const uid = apt.id + '@zamanli.com';
+                const summary = `${apt.customerName} - ${apt.service}`;
+                const description = `Müşteri: ${apt.customerName}\\nTelefon: ${apt.customerPhone}\\nHizmet: ${apt.service}\\nTutar: ${apt.servicePrice || '-'} TL`;
+                
+                icsContent += `BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${formatICSDate(new Date())}
+DTSTART:${formatICSDate(startDate)}
+DTEND:${formatICSDate(endDate)}
+SUMMARY:${summary}
+DESCRIPTION:${description}
+STATUS:${apt.status === 'confirmed' ? 'CONFIRMED' : 'TENTATIVE'}
+END:VEVENT
+`;
+            });
+            
+            icsContent += 'END:VCALENDAR';
+            
+            // İndir
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${salon.slug}-randevular.ics`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showToast(`${futureApts.length} randevu aktarıldı`, 'success');
+        }
+        
+        // Tek randevuyu Google Takvime ekle
+        function addSingleToGoogleCalendar(aptId) {
+            const apt = appointments.find(a => a.id === aptId);
+            if (!apt) return;
+            
+            const startDate = new Date(apt.date + 'T' + apt.time + ':00');
+            const endDate = new Date(startDate.getTime() + (apt.serviceDuration || 30) * 60000);
+            
+            const formatGoogleDate = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            
+            const title = encodeURIComponent(`${apt.customerName} - ${apt.service}`);
+            const details = encodeURIComponent(`Müşteri: ${apt.customerName}\nTelefon: ${apt.customerPhone}\nHizmet: ${apt.service}\nTutar: ${apt.servicePrice || '-'} TL`);
+            const location = encodeURIComponent(salon.address || `${salon.district}, ${salon.city}`);
+            const dates = `${formatGoogleDate(startDate)}/${formatGoogleDate(endDate)}`;
+            
+            const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+            window.open(url, '_blank');
+        }
+        
+        // PWA Install
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Banner mantığı: İlk seferde 5. saniyede, "Sonra" derse 10. saniyede tekrar
+            const dismissCount = parseInt(localStorage.getItem('pwa-panel-dismiss') || '0');
+            
+            if (dismissCount === 0) {
+                setTimeout(() => {
+                    if (deferredPrompt) document.getElementById('pwaBanner').classList.add('show');
+                }, 5000);
+            } else if (dismissCount === 1) {
+                setTimeout(() => {
+                    if (deferredPrompt) document.getElementById('pwaBanner').classList.add('show');
+                }, 10000);
+            }
+        });
+        
+        function installPWA() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(() => {
+                deferredPrompt = null;
+                document.getElementById('pwaBanner').classList.remove('show');
+                localStorage.setItem('pwa-panel-dismiss', '999');
+            });
+        }
+        
+        function closePWABanner() {
+            document.getElementById('pwaBanner').classList.remove('show');
+            const count = parseInt(localStorage.getItem('pwa-panel-dismiss') || '0');
+            localStorage.setItem('pwa-panel-dismiss', (count + 1).toString());
+        }
+        
+        // Service Worker - Yönetim panelinde devre dışı bırak ve mevcut SW'yi temizle
+        if ('serviceWorker' in navigator) {
+            // Mevcut service worker'ları kaldır (cache sorunlarını önlemek için)
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                registrations.forEach(registration => {
+                    registration.unregister();
+                });
+            });
+            // Cache'leri temizle
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name));
+                });
+            }
+        }
+        
+        // ========== RAPORLAR FONKSİYONLARI ==========
+        let currentReportPeriod = 'week';
+        
+        function changeReportPeriod(period) {
+            currentReportPeriod = period;
+            
+            // Buton stillerini güncelle
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.period === period);
+            });
+            
+            loadReports();
+        }
+        
+        function loadReports() {
+            const now = new Date();
+            let startDate;
+            
+            switch(currentReportPeriod) {
+                case 'week':
+                    startDate = new Date(now);
+                    startDate.setDate(now.getDate() - 7);
+                    break;
+                case 'month':
+                    startDate = new Date(now);
+                    startDate.setMonth(now.getMonth() - 1);
+                    break;
+                case 'year':
+                    startDate = new Date(now);
+                    startDate.setFullYear(now.getFullYear() - 1);
+                    break;
+            }
+            
+            const startDateStr = startDate.toISOString().split('T')[0];
+            const periodAppointments = appointments.filter(a => a.date >= startDateStr);
+            
+            // Özet istatistikler
+            const total = periodAppointments.length;
+            const completed = periodAppointments.filter(a => a.status === 'completed').length;
+            const cancelled = periodAppointments.filter(a => a.status === 'cancelled').length;
+            const revenue = periodAppointments
+                .filter(a => a.status === 'completed' || a.status === 'confirmed')
+                .reduce((sum, a) => sum + (a.servicePrice || 0), 0);
+            
+            document.getElementById('reportTotalAppointments').textContent = total;
+            document.getElementById('reportCompletedAppointments').textContent = completed;
+            document.getElementById('reportCancelledAppointments').textContent = cancelled;
+            document.getElementById('reportTotalRevenue').textContent = revenue.toLocaleString('tr-TR') + ' ₺';
+            
+            // Chart.js Finans Dashboard'u güncelle
+            if (typeof FinanceDashboard !== 'undefined') {
+                FinanceDashboard.currentPeriod = currentReportPeriod;
+                FinanceDashboard.appointments = appointments;
+                FinanceDashboard.render();
+            }
+            
+            // Personel performansı
+            renderStaffPerformance(periodAppointments);
+            
+            // Popüler hizmetler
+            renderPopularServices(periodAppointments);
+            
+            // Günlük dağılım
+            renderDailyDistribution(periodAppointments);
+        }
+        
+        function renderStaffPerformance(periodAppointments) {
+            const staffStats = {};
+            const staff = salon?.staff || [];
+            
+            // Her personel için istatistik hesapla
+            periodAppointments.forEach(apt => {
+                const staffName = apt.staffName || 'Belirtilmemiş';
+                if (!staffStats[staffName]) {
+                    staffStats[staffName] = { count: 0, revenue: 0 };
+                }
+                staffStats[staffName].count++;
+                if (apt.status === 'completed' || apt.status === 'confirmed') {
+                    staffStats[staffName].revenue += (apt.servicePrice || 0);
+                }
+            });
+            
+            const container = document.getElementById('staffPerformanceList');
+            
+            if (Object.keys(staffStats).length === 0) {
+                container.innerHTML = '<p style="color: var(--slate-500); text-align: center; padding: 1rem;">Bu dönemde randevu bulunmuyor</p>';
+                return;
+            }
+            
+            const html = Object.entries(staffStats)
+                .sort((a, b) => b[1].count - a[1].count)
+                .map(([name, stats]) => `
+                    <div class="staff-performance-item">
+                        <div class="staff-performance-info">
+                            <div class="staff-performance-avatar">${name.charAt(0)}</div>
+                            <span style="font-weight: 500;">${escapeHtml(name)}</span>
+                        </div>
+                        <div class="staff-performance-stats">
+                            <span>📅 <strong>${stats.count}</strong> randevu</span>
+                            <span>💰 <strong>${stats.revenue.toLocaleString('tr-TR')} ₺</strong></span>
+                        </div>
+                    </div>
+                `).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        function renderPopularServices(periodAppointments) {
+            const serviceStats = {};
+            
+            periodAppointments.forEach(apt => {
+                const serviceName = apt.serviceName || 'Belirtilmemiş';
+                if (!serviceStats[serviceName]) {
+                    serviceStats[serviceName] = 0;
+                }
+                serviceStats[serviceName]++;
+            });
+            
+            const container = document.getElementById('popularServicesList');
+            
+            if (Object.keys(serviceStats).length === 0) {
+                container.innerHTML = '<p style="color: var(--slate-500); text-align: center; padding: 1rem;">Bu dönemde randevu bulunmuyor</p>';
+                return;
+            }
+            
+            const maxCount = Math.max(...Object.values(serviceStats));
+            
+            const html = Object.entries(serviceStats)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([name, count]) => {
+                    const percentage = (count / maxCount) * 100;
+                    return `
+                        <div class="popular-service-item">
+                            <span style="font-weight: 500; min-width: 120px;">${escapeHtml(name)}</span>
+                            <div class="popular-service-bar">
+                                <div class="popular-service-fill" style="width: ${percentage}%"></div>
+                            </div>
+                            <span style="font-weight: 600; color: var(--slate-700);">${count}</span>
+                        </div>
+                    `;
+                }).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        function renderDailyDistribution(periodAppointments) {
+            const dayNames = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+            const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+            
+            periodAppointments.forEach(apt => {
+                if (apt.date) {
+                    const date = new Date(apt.date);
+                    const dayIndex = date.getDay();
+                    // JavaScript'te Pazar=0, bizde Pazartesi=0 olmalı
+                    const adjustedIndex = dayIndex === 0 ? 6 : dayIndex - 1;
+                    dayCounts[adjustedIndex]++;
+                }
+            });
+            
+            const maxCount = Math.max(...dayCounts, 1);
+            
+            const container = document.getElementById('dailyDistribution');
+            const html = dayNames.map((day, index) => {
+                const count = dayCounts[index];
+                const height = (count / maxCount) * 100;
+                return `
+                    <div class="daily-bar">
+                        <div class="daily-bar-count">${count}</div>
+                        <div class="daily-bar-fill">
+                            <div class="daily-bar-value" style="height: ${height}%"></div>
+                        </div>
+                        <div class="daily-bar-label">${day}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        // Start
+        init();
+    </script>
+    
+    <!-- PWA Install Banner -->
+    <style>
+        .pwa-banner {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            padding: 1rem;
+            z-index: 1100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .pwa-banner.show { display: flex; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .pwa-banner-content { display: flex; align-items: center; gap: 0.75rem; }
+        .pwa-banner-icon { font-size: 1.5rem; }
+        .pwa-banner-text h4 { font-size: 0.9rem; font-weight: 600; }
+        .pwa-banner-text p { font-size: 0.75rem; opacity: 0.9; }
+        .pwa-banner-actions { display: flex; gap: 0.5rem; }
+        .pwa-btn { padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; border: none; }
+        .pwa-btn-install { background: white; color: #6366f1; }
+        .pwa-btn-close { background: rgba(255,255,255,0.2); color: white; }
+        @media (max-width: 500px) {
+            .pwa-banner { flex-direction: column; text-align: center; }
+            .pwa-banner-content { flex-direction: column; }
+            .pwa-banner-actions { width: 100%; }
+            .pwa-btn { flex: 1; }
+        }
+    </style>
+    <div id="pwaBanner" class="pwa-banner">
+        <div class="pwa-banner-content">
+            <span class="pwa-banner-icon">📲</span>
+            <div class="pwa-banner-text">
+                <h4>Paneli Yükle</h4>
+                <p>Telefonuna ekle, hızlı eriş</p>
+            </div>
+        </div>
+        <div class="pwa-banner-actions">
+            <button class="pwa-btn pwa-btn-install" onclick="installPWA()">Yükle</button>
+            <button class="pwa-btn pwa-btn-close" onclick="closePWABanner()">Sonra</button>
+        </div>
+    </div>
+    
+    <!-- Finance Dashboard Module -->
+    <script src="/finance-dashboard.js"></script>
+</body>
+</html>

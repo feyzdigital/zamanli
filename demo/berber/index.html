@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Berber - Zamanlı</title>
+    <meta name="description" content="Demo Berber Salonu - Online randevu sistemi örneği">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+            --radius: 0.75rem;
+            --radius-lg: 1rem;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--slate-100);
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto 1rem;
+        }
+        
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .demo-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+        }
+        
+        .salon-name {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+        
+        .salon-info {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        /* Main */
+        .main {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        
+        /* Steps */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--slate-200);
+            color: var(--slate-500);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            position: relative;
+        }
+        
+        .step.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .step.completed {
+            background: var(--success);
+            color: white;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            width: 20px;
+            height: 2px;
+            background: var(--slate-200);
+        }
+        
+        .step.completed:not(:last-child)::after {
+            background: var(--success);
+        }
+        
+        /* Section */
+        .section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--slate-800);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Services */
+        .services-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .service-card {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .service-card:hover {
+            border-color: var(--slate-300);
+        }
+        
+        .service-card.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        .service-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+        
+        .service-info { flex: 1; }
+        
+        .service-name {
+            font-weight: 600;
+            color: var(--slate-800);
+        }
+        
+        .service-duration {
+            font-size: 0.85rem;
+            color: var(--slate-500);
+        }
+        
+        .service-price {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+        
+        /* Staff */
+        .staff-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+        
+        .staff-card {
+            padding: 1rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .staff-card:hover {
+            border-color: var(--slate-300);
+        }
+        
+        .staff-card.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        .staff-avatar {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .staff-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--slate-800);
+        }
+        
+        /* Calendar */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .calendar-nav button {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--slate-200);
+            background: white;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .calendar-month {
+            font-weight: 600;
+            color: var(--slate-800);
+        }
+        
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .day-label {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--slate-500);
+            padding: 0.5rem 0;
+        }
+        
+        .day-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius);
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .day-cell.other-month {
+            color: var(--slate-300);
+        }
+        
+        .day-cell.today {
+            background: var(--slate-100);
+        }
+        
+        .day-cell:not(.disabled):not(.other-month):hover {
+            border-color: var(--slate-300);
+        }
+        
+        .day-cell.selected {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .day-cell.disabled {
+            color: var(--slate-300);
+            cursor: not-allowed;
+        }
+        
+        /* Time Slots */
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .time-slot {
+            padding: 0.75rem;
+            text-align: center;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .time-slot:hover:not(.disabled) {
+            border-color: var(--slate-300);
+        }
+        
+        .time-slot.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .time-slot.disabled {
+            background: var(--slate-100);
+            color: var(--slate-400);
+            cursor: not-allowed;
+        }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--slate-700);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* Summary */
+        .summary {
+            background: var(--slate-50);
+            border-radius: var(--radius);
+            padding: 1rem;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            font-size: 0.95rem;
+        }
+        
+        .summary-row.total {
+            border-top: 1px solid var(--slate-200);
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-primary:disabled {
+            background: var(--slate-300);
+            cursor: not-allowed;
+        }
+        
+        .btn-outline {
+            background: white;
+            color: var(--slate-700);
+            border: 2px solid var(--slate-200);
+        }
+        
+        .btn-outline:hover {
+            border-color: var(--slate-300);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        /* Success */
+        .success-screen {
+            text-align: center;
+            padding: 3rem 1.5rem;
+        }
+        
+        .success-icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .success-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--slate-900);
+            margin-bottom: 0.5rem;
+        }
+        
+        .success-message {
+            color: var(--slate-600);
+            margin-bottom: 2rem;
+        }
+        
+        .appointment-card {
+            background: var(--slate-50);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+        
+        .appointment-card h4 {
+            font-size: 0.85rem;
+            color: var(--slate-500);
+            margin-bottom: 0.25rem;
+        }
+        
+        .appointment-card p {
+            font-weight: 600;
+            color: var(--slate-800);
+            margin-bottom: 1rem;
+        }
+        
+        /* Hidden */
+        .hidden { display: none !important; }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--slate-800);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        
+        @media (max-width: 480px) {
+            .staff-grid { grid-template-columns: repeat(2, 1fr); }
+            .time-slots { grid-template-columns: repeat(3, 1fr); }
+            .btn-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-top">
+            <a href="/" class="back-btn">← Ana Sayfa</a>
+            <span class="demo-badge">DEMO</span>
+        </div>
+        <div class="salon-name">💈 Demo Berber</div>
+        <div class="salon-info">Örnek berber salonu</div>
+    </header>
+    
+    <main class="main">
+        <!-- Steps -->
+        <div class="steps">
+            <div class="step active" data-step="1">1</div>
+            <div class="step" data-step="2">2</div>
+            <div class="step" data-step="3">3</div>
+            <div class="step" data-step="4">4</div>
+        </div>
+        
+        <!-- Step 1: Service Selection -->
+        <div id="step1" class="step-content">
+            <div class="section">
+                <h2 class="section-title">✂️ Hizmet Seçin</h2>
+                <div class="services-grid" id="servicesList"></div>
+            </div>
+            
+            <button class="btn btn-primary" id="toStep2" disabled>Devam Et</button>
+        </div>
+        
+        <!-- Step 2: Staff & Date -->
+        <div id="step2" class="step-content hidden">
+            <div class="section">
+                <h2 class="section-title">👤 Personel Seçin</h2>
+                <div class="staff-grid" id="staffList"></div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">📅 Tarih Seçin</h2>
+                <div class="calendar-header">
+                    <button class="calendar-nav" id="prevMonth">◀</button>
+                    <span class="calendar-month" id="currentMonth"></span>
+                    <button class="calendar-nav" id="nextMonth">▶</button>
+                </div>
+                <div class="calendar-days" id="calendarDays">
+                    <div class="day-label">Pzt</div>
+                    <div class="day-label">Sal</div>
+                    <div class="day-label">Çar</div>
+                    <div class="day-label">Per</div>
+                    <div class="day-label">Cum</div>
+                    <div class="day-label">Cmt</div>
+                    <div class="day-label">Paz</div>
+                </div>
+                <div id="calendarGrid"></div>
+            </div>
+            
+            <div class="section" id="timeSlotsSection" style="display:none">
+                <h2 class="section-title">🕐 Saat Seçin</h2>
+                <div class="time-slots" id="timeSlots"></div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-outline" id="backToStep1">Geri</button>
+                <button class="btn btn-primary" id="toStep3" disabled>Devam Et</button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Customer Info -->
+        <div id="step3" class="step-content hidden">
+            <div class="section">
+                <h2 class="section-title">📋 Bilgileriniz</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Ad Soyad *</label>
+                    <input type="text" class="form-input" id="customerName" placeholder="Adınız Soyadınız">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Telefon *</label>
+                    <input type="tel" class="form-input" id="customerPhone" placeholder="05XX XXX XX XX">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Not (Opsiyonel)</label>
+                    <input type="text" class="form-input" id="customerNote" placeholder="Eklemek istediğiniz not...">
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">📝 Randevu Özeti</h2>
+                <div class="summary" id="bookingSummary"></div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-outline" id="backToStep2">Geri</button>
+                <button class="btn btn-primary" id="confirmBooking">Randevu Oluştur</button>
+            </div>
+        </div>
+        
+        <!-- Step 4: Success -->
+        <div id="step4" class="step-content hidden">
+            <div class="success-screen">
+                <div class="success-icon">✅</div>
+                <h2 class="success-title">Randevunuz Oluşturuldu!</h2>
+                <p class="success-message">Randevu detaylarınız WhatsApp ile gönderilecektir.</p>
+                
+                <div class="appointment-card" id="appointmentDetails"></div>
+                
+                <button class="btn btn-primary" id="newBooking">Yeni Randevu Al</button>
+            </div>
+        </div>
+    </main>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // Demo Data
+        const DEMO_SALON = {
+            name: 'Demo Berber',
+            services: [
+                { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 30, price: 150 },
+                { id: 'sakal-trasi', name: 'Sakal Tıraşı', icon: '🪒', duration: 20, price: 100 },
+                { id: 'sac-sakal', name: 'Saç + Sakal', icon: '💈', duration: 45, price: 200 },
+                { id: 'sac-yikama', name: 'Saç Yıkama', icon: '💧', duration: 15, price: 50 },
+                { id: 'cilt-bakimi', name: 'Cilt Bakımı', icon: '🧴', duration: 30, price: 150 }
+            ],
+            staff: [
+                { id: 'usta-ali', name: 'Usta Ali', avatar: '👨‍🦱' },
+                { id: 'kalfa-mehmet', name: 'Mehmet', avatar: '👨' },
+                { id: 'cirak-ahmet', name: 'Ahmet', avatar: '👦' }
+            ],
+            workingHours: { open: '09:00', close: '20:00' }
+        };
+        
+        // State
+        const state = {
+            currentStep: 1,
+            selectedService: null,
+            selectedStaff: null,
+            selectedDate: null,
+            selectedTime: null,
+            currentMonth: new Date(),
+            customerName: '',
+            customerPhone: '',
+            customerNote: ''
+        };
+        
+        // DOM Elements
+        const elements = {
+            steps: document.querySelectorAll('.step'),
+            stepContents: document.querySelectorAll('.step-content'),
+            servicesList: document.getElementById('servicesList'),
+            staffList: document.getElementById('staffList'),
+            calendarGrid: document.getElementById('calendarGrid'),
+            currentMonth: document.getElementById('currentMonth'),
+            timeSlots: document.getElementById('timeSlots'),
+            timeSlotsSection: document.getElementById('timeSlotsSection'),
+            bookingSummary: document.getElementById('bookingSummary'),
+            appointmentDetails: document.getElementById('appointmentDetails'),
+            toast: document.getElementById('toast')
+        };
+        
+        // Initialize
+        function init() {
+            renderServices();
+            renderStaff();
+            renderCalendar();
+            setupEventListeners();
+        }
+        
+        // Render Services
+        function renderServices() {
+            elements.servicesList.innerHTML = DEMO_SALON.services.map(service => `
+                <div class="service-card" data-id="${service.id}">
+                    <span class="service-icon">${service.icon}</span>
+                    <div class="service-info">
+                        <div class="service-name">${service.name}</div>
+                        <div class="service-duration">${service.duration} dakika</div>
+                    </div>
+                    <div class="service-price">${service.price} ₺</div>
+                </div>
+            `).join('');
+            
+            elements.servicesList.querySelectorAll('.service-card').forEach(card => {
+                card.addEventListener('click', () => selectService(card.dataset.id));
+            });
+        }
+        
+        // Select Service
+        function selectService(id) {
+            state.selectedService = DEMO_SALON.services.find(s => s.id === id);
+            elements.servicesList.querySelectorAll('.service-card').forEach(card => {
+                card.classList.toggle('selected', card.dataset.id === id);
+            });
+            document.getElementById('toStep2').disabled = false;
+        }
+        
+        // Render Staff
+        function renderStaff() {
+            elements.staffList.innerHTML = DEMO_SALON.staff.map(staff => `
+                <div class="staff-card" data-id="${staff.id}">
+                    <div class="staff-avatar">${staff.avatar}</div>
+                    <div class="staff-name">${staff.name}</div>
+                </div>
+            `).join('');
+            
+            elements.staffList.querySelectorAll('.staff-card').forEach(card => {
+                card.addEventListener('click', () => selectStaff(card.dataset.id));
+            });
+        }
+        
+        // Select Staff
+        function selectStaff(id) {
+            state.selectedStaff = DEMO_SALON.staff.find(s => s.id === id);
+            elements.staffList.querySelectorAll('.staff-card').forEach(card => {
+                card.classList.toggle('selected', card.dataset.id === id);
+            });
+            checkStep2Complete();
+        }
+        
+        // Render Calendar
+        function renderCalendar() {
+            const year = state.currentMonth.getFullYear();
+            const month = state.currentMonth.getMonth();
+            
+            const monthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                               'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+            elements.currentMonth.textContent = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDay = (firstDay.getDay() + 6) % 7;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            let html = '<div class="calendar-days" style="display:grid;grid-template-columns:repeat(7,1fr);gap:0.5rem;">';
+            
+            // Previous month days
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            for (let i = startDay - 1; i >= 0; i--) {
+                html += `<div class="day-cell other-month">${prevMonthLastDay - i}</div>`;
+            }
+            
+            // Current month days
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const date = new Date(year, month, day);
+                const isToday = date.getTime() === today.getTime();
+                const isPast = date < today;
+                const isSunday = date.getDay() === 0;
+                const isSelected = state.selectedDate && 
+                    state.selectedDate.getTime() === date.getTime();
+                
+                let classes = 'day-cell';
+                if (isToday) classes += ' today';
+                if (isPast || isSunday) classes += ' disabled';
+                if (isSelected) classes += ' selected';
+                
+                html += `<div class="${classes}" data-date="${date.toISOString()}">${day}</div>`;
+            }
+            
+            // Next month days
+            const remainingDays = 42 - (startDay + lastDay.getDate());
+            for (let day = 1; day <= remainingDays; day++) {
+                html += `<div class="day-cell other-month">${day}</div>`;
+            }
+            
+            html += '</div>';
+            elements.calendarGrid.innerHTML = html;
+            
+            elements.calendarGrid.querySelectorAll('.day-cell:not(.disabled):not(.other-month)').forEach(cell => {
+                cell.addEventListener('click', () => selectDate(new Date(cell.dataset.date)));
+            });
+        }
+        
+        // Select Date
+        function selectDate(date) {
+            state.selectedDate = date;
+            state.selectedTime = null;
+            renderCalendar();
+            renderTimeSlots();
+            elements.timeSlotsSection.style.display = 'block';
+            checkStep2Complete();
+        }
+        
+        // Render Time Slots
+        function renderTimeSlots() {
+            const slots = [];
+            const [openHour] = DEMO_SALON.workingHours.open.split(':').map(Number);
+            const [closeHour] = DEMO_SALON.workingHours.close.split(':').map(Number);
+            
+            for (let hour = openHour; hour < closeHour; hour++) {
+                slots.push(`${hour.toString().padStart(2, '0')}:00`);
+                slots.push(`${hour.toString().padStart(2, '0')}:30`);
+            }
+            
+            // Randomly disable some slots
+            const disabledSlots = new Set();
+            for (let i = 0; i < 5; i++) {
+                disabledSlots.add(slots[Math.floor(Math.random() * slots.length)]);
+            }
+            
+            elements.timeSlots.innerHTML = slots.map(slot => {
+                const isDisabled = disabledSlots.has(slot);
+                const isSelected = state.selectedTime === slot;
+                return `<div class="time-slot${isDisabled ? ' disabled' : ''}${isSelected ? ' selected' : ''}" 
+                            data-time="${slot}">${slot}</div>`;
+            }).join('');
+            
+            elements.timeSlots.querySelectorAll('.time-slot:not(.disabled)').forEach(slot => {
+                slot.addEventListener('click', () => selectTime(slot.dataset.time));
+            });
+        }
+        
+        // Select Time
+        function selectTime(time) {
+            state.selectedTime = time;
+            elements.timeSlots.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.toggle('selected', slot.dataset.time === time);
+            });
+            checkStep2Complete();
+        }
+        
+        // Check Step 2 Complete
+        function checkStep2Complete() {
+            const isComplete = state.selectedStaff && state.selectedDate && state.selectedTime;
+            document.getElementById('toStep3').disabled = !isComplete;
+        }
+        
+        // Render Summary
+        function renderSummary() {
+            const dateStr = state.selectedDate.toLocaleDateString('tr-TR', { 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+            });
+            
+            elements.bookingSummary.innerHTML = `
+                <div class="summary-row">
+                    <span>Hizmet</span>
+                    <span>${state.selectedService.name}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Personel</span>
+                    <span>${state.selectedStaff.name}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tarih</span>
+                    <span>${dateStr}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Saat</span>
+                    <span>${state.selectedTime}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Süre</span>
+                    <span>${state.selectedService.duration} dakika</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Toplam</span>
+                    <span>${state.selectedService.price} ₺</span>
+                </div>
+            `;
+        }
+        
+        // Go to Step
+        function goToStep(step) {
+            state.currentStep = step;
+            
+            elements.steps.forEach(s => {
+                const stepNum = parseInt(s.dataset.step);
+                s.classList.remove('active', 'completed');
+                if (stepNum < step) s.classList.add('completed');
+                if (stepNum === step) s.classList.add('active');
+            });
+            
+            document.querySelectorAll('.step-content').forEach((content, i) => {
+                content.classList.toggle('hidden', i + 1 !== step);
+            });
+            
+            if (step === 3) renderSummary();
+        }
+        
+        // Confirm Booking
+        function confirmBooking() {
+            const name = document.getElementById('customerName').value.trim();
+            const phone = document.getElementById('customerPhone').value.trim();
+            
+            if (!name || !phone) {
+                showToast('Lütfen ad ve telefon bilgilerinizi girin', 'error');
+                return;
+            }
+            
+            state.customerName = name;
+            state.customerPhone = phone;
+            state.customerNote = document.getElementById('customerNote').value.trim();
+            
+            // Show success
+            const dateStr = state.selectedDate.toLocaleDateString('tr-TR', { 
+                weekday: 'long', day: 'numeric', month: 'long' 
+            });
+            
+            elements.appointmentDetails.innerHTML = `
+                <h4>Hizmet</h4>
+                <p>${state.selectedService.icon} ${state.selectedService.name}</p>
+                <h4>Tarih & Saat</h4>
+                <p>📅 ${dateStr} - ${state.selectedTime}</p>
+                <h4>Personel</h4>
+                <p>${state.selectedStaff.avatar} ${state.selectedStaff.name}</p>
+                <h4>Tutar</h4>
+                <p>💰 ${state.selectedService.price} ₺</p>
+            `;
+            
+            goToStep(4);
+            showToast('Randevunuz başarıyla oluşturuldu!', 'success');
+        }
+        
+        // Reset Booking
+        function resetBooking() {
+            state.selectedService = null;
+            state.selectedStaff = null;
+            state.selectedDate = null;
+            state.selectedTime = null;
+            state.customerName = '';
+            state.customerPhone = '';
+            state.customerNote = '';
+            
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerPhone').value = '';
+            document.getElementById('customerNote').value = '';
+            document.getElementById('toStep2').disabled = true;
+            document.getElementById('toStep3').disabled = true;
+            elements.timeSlotsSection.style.display = 'none';
+            
+            elements.servicesList.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
+            elements.staffList.querySelectorAll('.staff-card').forEach(c => c.classList.remove('selected'));
+            
+            renderCalendar();
+            goToStep(1);
+        }
+        
+        // Show Toast
+        function showToast(message, type = 'info') {
+            elements.toast.textContent = message;
+            elements.toast.className = 'toast show ' + type;
+            setTimeout(() => elements.toast.className = 'toast', 3000);
+        }
+        
+        // Setup Event Listeners
+        function setupEventListeners() {
+            document.getElementById('toStep2').addEventListener('click', () => goToStep(2));
+            document.getElementById('toStep3').addEventListener('click', () => goToStep(3));
+            document.getElementById('backToStep1').addEventListener('click', () => goToStep(1));
+            document.getElementById('backToStep2').addEventListener('click', () => goToStep(2));
+            document.getElementById('confirmBooking').addEventListener('click', confirmBooking);
+            document.getElementById('newBooking').addEventListener('click', resetBooking);
+            
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                state.currentMonth.setMonth(state.currentMonth.getMonth() - 1);
+                renderCalendar();
+            });
+            
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                state.currentMonth.setMonth(state.currentMonth.getMonth() + 1);
+                renderCalendar();
+            });
+        }
+        
+        // Start
+        init();
+    </script>
+</body>
+</html>

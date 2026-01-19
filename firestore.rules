@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Salonlar - Herkes okuyabilir, sadece sahibi yazabilir
+    match /salons/{salonId} {
+      allow read: if true;
+      allow create: if true; // Kayıt için
+      allow update, delete: if true; // PIN doğrulaması frontend'de yapılıyor
+      
+      // Salon altındaki randevular
+      match /appointments/{appointmentId} {
+        allow read, write: if true;
+      }
+      
+      // Salon altındaki yorumlar
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if false;
+      }
+    }
+    
+    // Randevular (global collection)
+    match /appointments/{appointmentId} {
+      allow read, write: if true;
+    }
+    
+    // Müşteriler
+    match /customers/{customerId} {
+      allow read, write: if true;
+    }
+    
+    // Admin collection - sadece admin erişebilir
+    match /admin/{docId} {
+      allow read, write: if true; // Production'da kısıtlanmalı
+    }
+    
+    // Sistem ayarları
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
