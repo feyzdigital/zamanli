@@ -1,11 +1,11 @@
 const ADMIN_CONFIG = {
     firebase: {
-        apiKey: "AIzaSyCa8jPQbymhS1XYUDCsw7B2gqlrygw1JDo",
-        authDomain: "berber-zamanli.firebaseapp.com",
-        projectId: "berber-zamanli",
-        storageBucket: "berber-zamanli.firebasestorage.app",
-        messagingSenderId: "17054574072",
-        appId: "1:17054574072:web:5a0af6b40a66171c64220d"
+        apiKey: "AIzaSyCCaSmLE9Ww3GTUqdeAINua3vNrmqNV-TQ",
+        authDomain: "zamanli.firebaseapp.com",
+        projectId: "zamanli",
+        storageBucket: "zamanli.firebasestorage.app",
+        messagingSenderId: "889448554414",
+        appId: "1:889448554414:web:3e97049c75c713c13e723f"
     },
     emailjs: {
         serviceId: 'service_nltn6di',
