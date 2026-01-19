@@ -836,7 +836,7 @@ const ZamanliUX = {
             .toast-success .toast-icon { background: #d1fae5; color: #059669; }
             .toast-error .toast-icon { background: #fee2e2; color: #dc2626; }
             .toast-warning .toast-icon { background: #fef3c7; color: #d97706; }
-            .toast-info .toast-icon { background: #e0e7ff; color: #4f46e5; }
+            .toast-info .toast-icon { background: #e0e7ff; color: #0EA371; }
             
             .toast-message { flex: 1; font-size: 14px; font-weight: 500; color: #1e293b; }
             .toast-close { background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer; padding: 4px; }
@@ -868,7 +868,7 @@ const ZamanliUX = {
                 transition: all 0.2s;
             }
             
-            .bottom-nav-item.active { color: #6366f1; }
+            .bottom-nav-item.active { color: #10B981; }
             .bottom-nav-item:active { background: #f1f5f9; }
             .bottom-nav-icon { font-size: 22px; }
             
@@ -931,7 +931,7 @@ const ZamanliUX = {
             .ux-btn-primary {
                 display: inline-block;
                 padding: 12px 24px;
-                background: #6366f1; color: white;
+                background: #10B981; color: white;
                 text-decoration: none;
                 border-radius: 10px; font-weight: 600;
             }
@@ -958,7 +958,7 @@ const ZamanliUX = {
                 border-radius: 12px;
                 padding: 14px;
                 margin-bottom: 10px;
-                border-left: 4px solid #6366f1;
+                border-left: 4px solid #10B981;
             }
             
             .ux-appointment-card.confirmed { border-left-color: #10b981; }
@@ -975,7 +975,7 @@ const ZamanliUX = {
                 font-size: 12px;
                 padding: 4px 8px;
                 border-radius: 6px;
-                background: #e0e7ff; color: #4f46e5;
+                background: #e0e7ff; color: #0EA371;
             }
             
             .ux-appointment-card.confirmed .ux-apt-status { background: #d1fae5; color: #059669; }
@@ -989,7 +989,7 @@ const ZamanliUX = {
             
             .ux-apt-link {
                 display: block; margin-top: 10px;
-                color: #6366f1;
+                color: #10B981;
                 font-size: 13px; font-weight: 500;
                 text-decoration: none;
             }
@@ -1004,7 +1004,7 @@ const ZamanliUX = {
                 white-space: nowrap;
             }
             
-            .breadcrumb-link { color: #6366f1; text-decoration: none; }
+            .breadcrumb-link { color: #10B981; text-decoration: none; }
             .breadcrumb-link:hover { text-decoration: underline; }
             .breadcrumb-sep { color: #cbd5e1; }
             .breadcrumb-current { color: #64748b; }
@@ -1018,7 +1018,7 @@ const ZamanliUX = {
             }
             .remember-label input[type="checkbox"] {
                 width: 16px; height: 16px;
-                accent-color: #6366f1;
+                accent-color: #10B981;
             }
             
             /* ========== PWA BANNER ========== */
@@ -1027,7 +1027,7 @@ const ZamanliUX = {
                 bottom: 75px;
                 left: 10px;
                 right: 10px;
-                background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                background: linear-gradient(135deg, #10B981, #0EA371);
                 color: white;
                 border-radius: 16px;
                 padding: 14px 16px;
@@ -1089,7 +1089,7 @@ const ZamanliUX = {
             
             .ux-pwa-install {
                 background: white;
-                color: #6366f1;
+                color: #10B981;
                 border: none;
                 padding: 8px 16px;
                 border-radius: 8px;
@@ -1134,7 +1134,7 @@ const ZamanliUX = {
             .ios-step-number {
                 width: 32px;
                 height: 32px;
-                background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                background: linear-gradient(135deg, #10B981, #0EA371);
                 color: white;
                 border-radius: 50%;
                 display: flex;
@@ -1161,7 +1161,7 @@ const ZamanliUX = {
                 align-items: center;
                 justify-content: center;
                 background: #f1f5f9;
-                color: #6366f1;
+                color: #10B981;
                 padding: 8px 12px;
                 border-radius: 8px;
                 font-size: 18px;
@@ -1202,7 +1202,7 @@ const ZamanliUX = {
                 justify-content: center;
                 gap: 12px;
                 font-size: 18px;
-                color: #6366f1;
+                color: #10B981;
                 background: #f1f5f9;
                 padding: 16px;
                 border-radius: 10px;
