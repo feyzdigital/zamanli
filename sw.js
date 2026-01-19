@@ -1,25 +1,25 @@
-// Zamanli Service Worker v3.4
-// Cache stratejisi: HTML/JS = Network Only, Diğer = Network First
-const CACHE_VERSION = 'v3.4';
+// Zamanli Service Worker v3.5
+// Cache stratejisi: HTML/JS/CSS = Network Only, Diğer = Network First
+const CACHE_VERSION = 'v3.5';
 const CACHE_NAME = `zamanli-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
-// Cache edilecek statik dosyalar (sadece assets)
+// Cache edilecek statik dosyalar (sadece kritik offline assets)
 const STATIC_ASSETS = [
     '/offline.html',
     '/icons/logo.png',
     '/icons/favicon.ico',
     '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png',
-    '/styles.css',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
+    '/icons/icon-512x512.png'
 ];
 
-// ASLA cache'lenMEyecek dosyalar (her zaman network)
+// ASLA cache'lenMEyecek dosyalar (her zaman network'ten al)
 const NEVER_CACHE = [
     '.html',
     '.js',
+    '.css',
     'index.html',
+    'styles.css',
     'ux-enhancements',
     'config.js',
     'sw.js'
@@ -43,7 +43,6 @@ self.addEventListener('install', (event) => {
         caches.open(CACHE_NAME)
             .then((cache) => {
                 console.log('[SW] Caching static assets');
-                // Her dosyayı ayrı ayrı ekle, hata olursa devam et
                 return Promise.allSettled(
                     STATIC_ASSETS.map(url => 
                         cache.add(url).catch(err => {
@@ -53,8 +52,8 @@ self.addEventListener('install', (event) => {
                 );
             })
             .then(() => {
-                console.log('[SW] Install complete');
-                return self.skipWaiting();
+                console.log('[SW] Install complete, skipping waiting');
+                return self.skipWaiting(); // Hemen aktif ol
             })
     );
 });
@@ -64,11 +63,12 @@ self.addEventListener('activate', (event) => {
     console.log('[SW] Activating v' + CACHE_VERSION);
     
     event.waitUntil(
+        // TÜM eski cache'leri temizle
         caches.keys()
             .then((cacheNames) => {
                 return Promise.all(
                     cacheNames
-                        .filter((name) => name.startsWith('zamanli-') && name !== CACHE_NAME)
+                        .filter((name) => name !== CACHE_NAME)
                         .map((name) => {
                             console.log('[SW] Deleting old cache:', name);
                             return caches.delete(name);
@@ -76,8 +76,32 @@ self.addEventListener('activate', (event) => {
                 );
             })
             .then(() => {
-                console.log('[SW] Claiming clients');
-                return self.clients.claim();
+                console.log('[SW] Claiming all clients');
+                return self.clients.claim(); // Tüm sekmeleri hemen kontrol al
+            })
+            .then(() => {
+                // Tüm client'lara reload mesajı gönder
+                return self.clients.matchAll().then(clients => {
+                    clients.forEach(client => {
+                        client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+                    });
+                });
+            })
+    );
+});
+
+// ==================== MESSAGE (Cache temizleme komutu) ====================
+self.addEventListener('message', (event) => {
+    if (event.data === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+    if (event.data === 'CLEAR_CACHE') {
+        caches.keys().then(names => {
+            names.forEach(name => caches.delete(name));
+        });
+        console.log('[SW] All caches cleared by request');
+    }
+});
             })
     );
 });

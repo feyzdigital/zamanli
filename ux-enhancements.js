@@ -841,11 +841,11 @@ const ZamanliUX = {
             .toast-message { flex: 1; font-size: 14px; font-weight: 500; color: #1e293b; }
             .toast-close { background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer; padding: 4px; }
             
-            /* ========== BOTTOM NAV - PROFESSIONAL ========== */
+            /* ========== BOTTOM NAV - COMPACT ========== */
             .bottom-nav {
                 position: fixed;
                 bottom: 0; left: 0; right: 0;
-                height: 60px;
+                height: 52px;
                 background: #ffffff;
                 border-top: 1px solid #e2e8f0;
                 display: flex;
@@ -853,7 +853,6 @@ const ZamanliUX = {
                 align-items: center;
                 z-index: 1000;
                 padding-bottom: env(safe-area-inset-bottom);
-                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
             }
             
             @media (min-width: 769px) { .bottom-nav { display: none; } }
@@ -862,34 +861,30 @@ const ZamanliUX = {
                 display: flex; 
                 flex-direction: column; 
                 align-items: center;
-                gap: 2px;
+                gap: 1px;
                 text-decoration: none;
                 color: #94a3b8;
-                font-size: 10px; 
+                font-size: 9px; 
                 font-weight: 500;
-                padding: 6px 14px;
-                border-radius: 10px;
-                transition: all 0.2s;
-                min-width: 56px;
+                padding: 4px 10px;
+                border-radius: 8px;
+                transition: all 0.15s;
+                min-width: 48px;
             }
             
             .bottom-nav-item.active { 
                 color: #10B981;
-            }
-            .bottom-nav-item.active .bottom-nav-icon {
-                transform: scale(1.1);
             }
             .bottom-nav-item:active { 
                 background: #f1f5f9; 
                 transform: scale(0.95);
             }
             .bottom-nav-icon { 
-                font-size: 20px;
+                font-size: 18px;
                 line-height: 1;
-                transition: transform 0.2s;
             }
             .bottom-nav-label {
-                letter-spacing: -0.01em;
+                letter-spacing: -0.02em;
             }
             
             /* ========== FAVORİ BUTONU ========== */

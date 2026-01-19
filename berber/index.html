@@ -801,6 +801,104 @@
             }
         }
         
+        /* ============ MOBİL MİNİMAL TASARIM ============ */
+        @media (max-width: 768px) {
+            .mobile-menu-btn { display: block; }
+            
+            /* Header - Kompakt */
+            .header { 
+                border-bottom: none;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+            .header-container { height: 52px; }
+            .logo-image { height: 32px; }
+            .logo-text { font-size: 1.2rem; }
+            
+            /* Hero - Çok Kompakt */
+            .hero {
+                padding: 1rem 1rem 1.25rem;
+                background: linear-gradient(135deg, #10B981, #0EA371);
+            }
+            .hero h1 {
+                font-size: 1.1rem;
+                margin-bottom: 0.15rem;
+                font-weight: 700;
+            }
+            .hero p {
+                font-size: 0.8rem;
+                margin-bottom: 0.75rem;
+                opacity: 0.9;
+            }
+            
+            /* Arama - Tek Satır, Kompakt */
+            .search-box {
+                flex-direction: row;
+                padding: 0.25rem;
+                border-radius: 10px;
+                gap: 0.25rem;
+            }
+            .search-input {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.85rem;
+                border-radius: 8px;
+            }
+            .search-btn {
+                padding: 0.6rem 1rem;
+                border-radius: 8px;
+                font-size: 0.85rem;
+            }
+            .search-btn span:last-child { display: none; } /* "Ara" yazısını gizle */
+            
+            /* Main */
+            .main {
+                padding: 0.75rem 1rem 5rem;
+            }
+            
+            /* Gelişmiş Arama - Daha Küçük */
+            .advanced-search {
+                margin-bottom: 0.75rem;
+                border-radius: 8px;
+            }
+            .advanced-search-header {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+                color: var(--slate-500);
+            }
+            
+            /* Filtreler - Tek Satır Scroll */
+            .filters-bar {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+            .results-count {
+                font-size: 0.8rem;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .filters {
+                display: flex;
+                gap: 0.35rem;
+                overflow-x: auto;
+                flex: 1;
+                padding: 0.25rem 0;
+            }
+            .filter-btn {
+                padding: 0.35rem 0.6rem;
+                font-size: 0.7rem;
+                border-radius: 6px;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            
+            /* Şehir dropdown - Gizle (filtre içinde var) */
+            .city-filter-wrapper {
+                display: none;
+            }
+        }
+        
         /* Mobile Menu - styles.css'i kullan, sadece responsive override */
         @media (max-width: 768px) {
             .mobile-menu-btn { display: block; }

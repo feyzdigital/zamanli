@@ -4,8 +4,27 @@
 /*.html
   Cache-Control: no-cache, no-store, must-revalidate
 
+/*.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/*.css
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /berber/*
   Cache-Control: no-cache, no-store, must-revalidate
 
 /admin/*
   Cache-Control: no-cache, no-store, must-revalidate
+
+/fiyatlandirma/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/randevu/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Sadece ikonlar ve görseller cache'lenebilir
+/icons/*
+  Cache-Control: public, max-age=86400
