@@ -54,7 +54,7 @@ const APP_CONFIG = {
         berber: {
             name: 'Berber',
             icon: '💈',
-            color: '#6366f1',
+            color: '#10B981',
             description: 'Erkek berber salonları',
             services: [
                 { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 30, price: 150 },
