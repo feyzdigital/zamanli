@@ -224,9 +224,20 @@ async function approveSalon(id) {
         const doc = await ref.get(); const data = doc.data();
         const pin = data.pin || Math.floor(1000 + Math.random() * 9000).toString();
         
+        // Slug yoksa oluştur
+        let slug = data.slug;
+        if (!slug) {
+            slug = (data.name || 'salon').toLowerCase()
+                .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+                .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+                + '-' + id.slice(-4);
+            await ref.update({ slug: slug });
+        }
+        
         // Salon URL'leri - Yeni format
-        const panelUrl = 'https://zamanli.com/berber/salon/yonetim/?slug=' + data.slug;
-        const salonUrl = 'https://zamanli.com/' + (data.category || 'berber') + '/' + data.slug + '/';
+        const panelUrl = 'https://zamanli.com/berber/salon/yonetim/?slug=' + slug;
+        const salonUrl = 'https://zamanli.com/berber/salon/?slug=' + slug;
         
         // QR Kod URL'leri (harici API)
         const qrCodeUrl = generateQRCodeUrl(salonUrl, 256);
@@ -264,9 +275,11 @@ async function approveSalon(id) {
                     to_email: data.email, 
                     salon_name: data.name, 
                     owner_name: data.ownerName || 'Degerli Isletme Sahibi', 
+                    salon_slug: slug,
                     salon_url: salonUrl, 
                     panel_url: panelUrl, 
-                    phone: data.phone || '', 
+                    phone: data.mobilePhone || data.phone || '', 
+                    pin: pin,
                     admin_pin: pin,
                     qr_code_url: qrCodeUrl,
                     qr_card_url: qrCardUrl
