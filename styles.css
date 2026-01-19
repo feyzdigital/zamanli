@@ -744,7 +744,13 @@ a:hover { color: var(--link-hover); }
 .footer {
     background: var(--brand-deep-forest);
     color: var(--text-inverse);
-    padding: 3rem 0 1.5rem;
+    padding: 3rem 1.5rem 1.5rem;
+}
+
+.footer .container,
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .footer-content {
@@ -755,11 +761,11 @@ a:hover { color: var(--link-hover); }
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.footer-brand { display: flex; align-items: center; gap: 0.5rem; }
-.footer-brand .logo-text,
-.footer-brand .logo {
+.footer-brand { display: flex; align-items: center; gap: 0.75rem; }
+.footer-brand .logo-image { height: 36px; }
+.footer-brand .logo-text {
     font-family: var(--font-heading);
-    font-size: 1.25rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: var(--white);
 }
