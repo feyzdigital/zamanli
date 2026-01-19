@@ -144,6 +144,8 @@
     }
 }
 
+html.dark-mode,
+body.dark-mode,
 .dark-mode {
     --bg-page: #0B2B26;
     --bg-section: #0F3A33;
@@ -168,6 +170,139 @@
     --success: #34D399;
     --success-bg: #11453D;
     --success-text: #EAF4F1;
+    
+    /* Direct overrides for elements that don't use variables */
+    background-color: #0B2B26 !important;
+    color: #EAF4F1;
+}
+
+/* Dark mode element overrides */
+.dark-mode body,
+body.dark-mode {
+    background-color: #0B2B26 !important;
+    color: #EAF4F1 !important;
+}
+
+.dark-mode .header,
+.dark-mode .hero,
+.dark-mode .features,
+.dark-mode .for-salons,
+.dark-mode .categories {
+    background-color: #0B2B26 !important;
+}
+
+.dark-mode .header {
+    background-color: #0F3A33 !important;
+    border-bottom-color: #1B5A50 !important;
+}
+
+.dark-mode .hero {
+    background: linear-gradient(180deg, #0F3A33 0%, #0B2B26 100%) !important;
+}
+
+.dark-mode .features {
+    background-color: #0F3A33 !important;
+}
+
+.dark-mode .categories {
+    background-color: #11453D !important;
+}
+
+.dark-mode .feature-card,
+.dark-mode .category-card,
+.dark-mode .card,
+.dark-mode .phone-screen,
+.dark-mode .dashboard-preview,
+.dark-mode .login-modal,
+.dark-mode .mobile-menu {
+    background-color: #0F3A33 !important;
+    border-color: #1B5A50 !important;
+}
+
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode .logo,
+.dark-mode .stat-value,
+.dark-mode .feature-card h3,
+.dark-mode .category-card h3,
+.dark-mode .salon-cta-content h2 {
+    color: #EAF4F1 !important;
+}
+
+.dark-mode p,
+.dark-mode .hero-desc,
+.dark-mode .feature-card p,
+.dark-mode .salon-cta-content p,
+.dark-mode .cta-features li,
+.dark-mode .nav-link,
+.dark-mode .stat-label {
+    color: #BFD3CD !important;
+}
+
+.dark-mode .hero-badge {
+    background-color: #11453D !important;
+    border-color: #34D399 !important;
+    color: #EAF4F1 !important;
+}
+
+.dark-mode .btn-outline {
+    background-color: #0F3A33 !important;
+    border-color: #2A7367 !important;
+    color: #EAF4F1 !important;
+}
+
+.dark-mode .btn-outline:hover {
+    border-color: #10B981 !important;
+    color: #10B981 !important;
+}
+
+.dark-mode .mock-service {
+    background-color: #0B2B26 !important;
+    border-color: #1B5A50 !important;
+    color: #EAF4F1 !important;
+}
+
+.dark-mode .mock-service.active {
+    background-color: #11453D !important;
+    border-color: #10B981 !important;
+}
+
+.dark-mode .mock-day {
+    background-color: #11453D !important;
+    color: #BFD3CD !important;
+}
+
+.dark-mode .mock-day.active {
+    background-color: #10B981 !important;
+    color: #06211D !important;
+}
+
+.dark-mode .dash-stat {
+    background-color: #11453D !important;
+}
+
+.dark-mode .dash-apt {
+    background-color: #11453D !important;
+    color: #EAF4F1 !important;
+}
+
+.dark-mode .category-status.soon {
+    background-color: #11453D !important;
+    color: #93ADA6 !important;
+}
+
+.dark-mode .login-form-group input {
+    background-color: #0B2B26 !important;
+    border-color: #1B5A50 !important;
+    color: #EAF4F1 !important;
+}
+
+.dark-mode .login-modal-desc,
+.dark-mode .login-register-link {
+    color: #93ADA6 !important;
+}
     --warning: #FBBF24;
     --error: #F87171;
     --info: #60A5FA;
