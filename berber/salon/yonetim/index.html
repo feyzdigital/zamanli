@@ -6,7 +6,7 @@
     <title>Salon Yönetimi - Zamanli</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#0B2B26">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Zamanli Panel">
@@ -14,17 +14,26 @@
     <link rel="apple-touch-icon" href="/icons/icon.svg">
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <!-- Fonts: Satoshi + Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #a5b4fc;
+            /* Brand Core */
+            --brand-deep-forest: #0B2B26;
+            --brand-emerald: #10B981;
+            --brand-emerald-hover: #0EA371;
+            --brand-gold: #C5A065;
+            
+            --primary: #10B981;
+            --primary-dark: #0EA371;
+            --primary-light: #34D399;
             --success: #10b981;
-            --success-light: #d1fae5;
+            --success-light: #ECFDF5;
             --warning: #f59e0b;
             --warning-light: #fef3c7;
             --danger: #ef4444;
@@ -41,16 +50,24 @@
             --slate-900: #0f172a;
             --radius: 0.75rem;
             --radius-lg: 1rem;
-            --shadow: 0 1px 3px rgba(0,0,0,0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow: 0 1px 3px rgba(11,43,38,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(11,43,38,0.1);
+            
+            /* Typography */
+            --font-heading: 'Satoshi', 'Inter', system-ui, sans-serif;
+            --font-body: 'Inter', system-ui, sans-serif;
         }
         
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: var(--font-body);
             background: var(--slate-100);
             color: var(--slate-800);
             line-height: 1.6;
             min-height: 100vh;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
         }
         
         /* Login Screen */
