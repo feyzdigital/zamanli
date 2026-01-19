@@ -1,6 +1,6 @@
-// Zamanli Service Worker v3.3
+// Zamanli Service Worker v3.4
 // Cache stratejisi: HTML/JS = Network Only, Diğer = Network First
-const CACHE_VERSION = 'v3.3';
+const CACHE_VERSION = 'v3.4';
 const CACHE_NAME = `zamanli-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
@@ -8,6 +8,7 @@ const OFFLINE_URL = '/offline.html';
 const STATIC_ASSETS = [
     '/offline.html',
     '/icons/logo.png',
+    '/icons/favicon.ico',
     '/icons/icon-192x192.png',
     '/icons/icon-512x512.png',
     '/styles.css',
