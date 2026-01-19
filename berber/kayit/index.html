@@ -5,21 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Salon Kayıt - Zamanli</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <!-- Fonts: Satoshi + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --primary: #6366f1; --primary-dark: #4f46e5; --success: #10b981;
+            --brand-deep-forest: #0B2B26;
+            --brand-emerald: #10B981;
+            --brand-emerald-hover: #0EA371;
+            --brand-gold: #C5A065;
+            --primary: #10B981; --primary-dark: #0EA371; --success: #10b981;
             --warning: #f59e0b; --danger: #ef4444;
             --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
             --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
             --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
             --slate-900: #0f172a; --radius: 0.75rem; --radius-lg: 1rem;
+            --font-heading: 'Satoshi', 'Inter', system-ui, sans-serif;
+            --font-body: 'Inter', system-ui, sans-serif;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--slate-100); color: var(--slate-800); line-height: 1.6; min-height: 100vh; }
+        body { font-family: var(--font-body); background: var(--slate-100); color: var(--slate-800); line-height: 1.6; min-height: 100vh; }
+        h1, h2, h3, h4 { font-family: var(--font-heading); }
         .header { background: white; border-bottom: 1px solid var(--slate-200); position: sticky; top: 0; z-index: 100; }
         .header-container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; height: 60px; }
-        .logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; font-weight: 700; font-size: 1.25rem; color: var(--slate-900); }
+        .logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; font-family: var(--font-heading); font-weight: 700; font-size: 1.25rem; color: var(--slate-900); }
         .back-link { color: var(--slate-600); text-decoration: none; font-weight: 500; }
         .back-link:hover { color: var(--primary); }
         .main { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
@@ -35,8 +46,8 @@
         .step-item.active .step-label { color: var(--primary); font-weight: 600; }
         .step-line { width: 40px; height: 2px; background: var(--slate-200); }
         .step-line.completed { background: var(--success); }
-        .form-card { background: white; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; }
-        .form-section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .form-card { background: white; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: 0 1px 3px rgba(11,43,38,0.08); margin-bottom: 1rem; }
+        .form-section-title { font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
         @media (max-width: 500px) { 
             .form-row { grid-template-columns: 1fr; } 
@@ -118,12 +129,12 @@
         .package-card.selected { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
         .package-card.starter.selected { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
         .package-card.pro.selected { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
-        .package-card.premium.selected { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.05); }
+        .package-card.premium.selected { border-color: #C5A065; background: rgba(139, 92, 246, 0.05); }
         .package-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .package-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
         .package-card.starter .package-name { color: var(--success); }
         .package-card.pro .package-name { color: #3b82f6; }
-        .package-card.premium .package-name { color: #8b5cf6; }
+        .package-card.premium .package-name { color: #C5A065; }
         .package-desc { font-size: 0.8rem; color: var(--slate-500); margin-bottom: 0.5rem; }
         .package-price { font-size: 1.25rem; font-weight: 800; }
         .package-price span { font-size: 0.85rem; font-weight: 500; color: var(--slate-500); }
@@ -132,7 +143,7 @@
         .package-card.selected .package-check { display: flex; }
         .package-card.starter.selected .package-check { background: var(--success); }
         .package-card.pro.selected .package-check { background: #3b82f6; }
-        .package-card.premium.selected .package-check { background: #8b5cf6; }
+        .package-card.premium.selected .package-check { background: #C5A065; }
         .package-suggestion { background: #fffbeb; border: 1px solid #f59e0b; border-radius: var(--radius); padding: 0.75rem 1rem; margin-top: 0.75rem; display: none; }
         .package-suggestion.show { display: block; }
         .package-suggestion p { font-size: 0.9rem; color: #92400e; margin: 0; }
@@ -963,10 +974,10 @@
                 rec.innerHTML = '👤 <strong>1 personeliniz</strong> var. Tüm paketleri seçebilirsiniz.';
                 selectPackage('starter');
             } else if (staffCount <= 3) {
-                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. <span style="color: #3b82f6;">Profesyonel</span> veya <span style="color: #8b5cf6;">Premium</span> paket seçebilirsiniz.`;
+                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. <span style="color: #3b82f6;">Profesyonel</span> veya <span style="color: #C5A065;">Premium</span> paket seçebilirsiniz.`;
                 selectPackage('pro');
             } else {
-                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. Sadece <span style="color: #8b5cf6;">Premium paket</span> seçebilirsiniz.`;
+                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. Sadece <span style="color: #C5A065;">Premium paket</span> seçebilirsiniz.`;
                 selectPackage('premium');
             }
         }
@@ -1117,7 +1128,7 @@
             ).join('');
             
             document.getElementById('reviewContent').innerHTML = `
-                <div class="review-card" style="border-left: 4px solid ${selectedPackage === 'starter' ? '#10b981' : selectedPackage === 'pro' ? '#3b82f6' : '#8b5cf6'};">
+                <div class="review-card" style="border-left: 4px solid ${selectedPackage === 'starter' ? '#10b981' : selectedPackage === 'pro' ? '#3b82f6' : '#C5A065'};">
                     <h4>SEÇİLEN PAKET</h4>
                     <p>${pkg.name}</p>
                     <p class="sub">${pkg.price} ₺/ay${pkg.setup > 0 ? ` • Kurulum: ${pkg.setup} ₺` : ' • Kurulum Ücretsiz'}</p>
