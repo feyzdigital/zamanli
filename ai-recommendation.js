@@ -596,7 +596,7 @@ aiStyles.textContent = `
     }
     
     .ai-prediction-card {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        background: linear-gradient(135deg, #10B981, #0EA371);
         border-radius: 12px;
         padding: 1.5rem;
         color: white;
@@ -707,7 +707,7 @@ aiStyles.textContent = `
     }
     
     .ai-btn-primary {
-        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        background: linear-gradient(135deg, #10B981, #0EA371);
         color: white;
     }
     
@@ -731,7 +731,7 @@ aiStyles.textContent = `
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem 1rem;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        background: linear-gradient(135deg, #10B981, #0EA371);
         color: white;
         border: none;
         border-radius: 8px;
