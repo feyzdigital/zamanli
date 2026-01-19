@@ -37,13 +37,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
-    
 <body>
     <!-- Header -->
     <header class="header">
         <div class="container">
             <a href="/" class="logo">
-                <span class="logo-icon">💈</span>
+                <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
                 <span class="logo-text">Zamanli</span>
             </a>
             <nav class="nav desktop-nav">
@@ -58,7 +57,7 @@
     <!-- Mobile Menu -->
     <div id="mobileMenu" class="mobile-menu">
         <div class="mobile-menu-header">
-            <span class="logo">💈 Zamanli</span>
+            <span class="logo"><img src="/icons/logo.png" alt="Zamanli" style="height:24px;vertical-align:middle;margin-right:6px">Zamanli</span>
             <button class="mobile-menu-close" onclick="toggleMobileMenu()">✕</button>
         </div>
         <nav class="mobile-menu-nav">
@@ -252,7 +251,7 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <span class="logo-icon">💈</span>
+                    <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
                     <span class="logo-text">Zamanli</span>
                     <p>Online randevu sistemi</p>
                 </div>
@@ -425,6 +424,8 @@
     
     <!-- UX Enhancements -->
     <script src="/ux-enhancements.js"></script>
-
+    
+    <!-- Theme Toggle -->
+    <script src="/theme-toggle.js"></script>
 </body>
 </html>
