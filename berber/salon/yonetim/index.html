@@ -94,15 +94,18 @@
             margin-bottom: 2rem;
         }
         
-        .login-logo-icon {
-            font-size: 3rem;
+        .login-logo-image {
+            height: 48px;
+            width: auto;
             margin-bottom: 0.5rem;
         }
         
         .login-logo-text {
+            font-family: var(--font-heading);
             font-size: 1.5rem;
             font-weight: 700;
             color: var(--slate-900);
+            letter-spacing: -0.02em;
         }
         
         .login-title {
@@ -298,9 +301,24 @@
             align-items: center;
             gap: 0.5rem;
             text-decoration: none;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.35rem;
+            color: var(--slate-900);
+        }
+        
+        .header-logo .logo-image {
+            height: 28px;
+            width: auto;
+            object-fit: contain;
+        }
+        
+        .header-logo .logo-text {
+            font-family: var(--font-heading);
             font-weight: 700;
             font-size: 1.25rem;
             color: var(--slate-900);
+            letter-spacing: -0.02em;
         }
         
         .header-salon {
@@ -2008,7 +2026,7 @@
     <div id="loginScreen" class="login-screen" style="display: none;">
         <div class="login-card">
             <div class="login-logo">
-                <div class="login-logo-icon">💈</div>
+                <img src="/icons/logo.png" alt="Zamanli" class="login-logo-image">
                 <div class="login-logo-text">Zamanli</div>
             </div>
             <h2 class="login-title">Salon Yönetim Paneli</h2>
@@ -2040,8 +2058,8 @@
             <div class="header-container">
                 <div class="header-left">
                     <a href="/" class="header-logo">
-                        <span>💈</span>
-                        <span>Zamanli</span>
+                        <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
+                        <span class="logo-text">Zamanli</span>
                     </a>
                     <div class="header-salon">
                         <div id="headerSalonName" class="header-salon-name">Salon Adı</div>
@@ -4830,7 +4848,5 @@ END:VEVENT
     
     <!-- Finance Dashboard Module -->
     <script src="/finance-dashboard.js"></script>
-    <!-- Theme Toggle -->
-    <script src="/theme-toggle.js"></script>
 </body>
 </html>

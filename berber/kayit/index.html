@@ -30,7 +30,9 @@
         h1, h2, h3, h4 { font-family: var(--font-heading); }
         .header { background: white; border-bottom: 1px solid var(--slate-200); position: sticky; top: 0; z-index: 100; }
         .header-container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; height: 60px; }
-        .logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; font-family: var(--font-heading); font-weight: 700; font-size: 1.25rem; color: var(--slate-900); }
+        .logo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; font-family: var(--font-heading); font-weight: 700; font-size: 1.35rem; color: var(--slate-900); }
+        .logo-image { height: 28px; width: auto; object-fit: contain; }
+        .logo-text { font-family: var(--font-heading); font-weight: 700; font-size: 1.25rem; color: var(--slate-900); letter-spacing: -0.02em; }
         .back-link { color: var(--slate-600); text-decoration: none; font-weight: 500; }
         .back-link:hover { color: var(--primary); }
         .main { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
@@ -384,7 +386,7 @@
 <body>
     <header class="header">
         <div class="header-container">
-            <a href="/" class="logo"><span>💈</span><span>Zamanli</span></a>
+            <a href="/" class="logo"><img src="/icons/logo.png" alt="Zamanli" class="logo-image"><span class="logo-text">Zamanli</span></a>
             <a href="/fiyatlandirma/" class="back-link">← Paketler</a>
         </div>
     </header>
@@ -1492,7 +1494,5 @@
         
         init();
     </script>
-    <!-- Theme Toggle -->
-    <script src="/theme-toggle.js"></script>
 </body>
 </html>

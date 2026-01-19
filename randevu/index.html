@@ -68,6 +68,18 @@
             align-items: center;
             gap: 0.5rem;
         }
+        .logo-image {
+            height: 28px;
+            width: auto;
+            object-fit: contain;
+        }
+        .logo-text {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--slate-800);
+            letter-spacing: -0.02em;
+        }
         
         .main { 
             flex: 1; 
@@ -169,7 +181,10 @@
 </head>
 <body>
     <header class="header">
-        <a href="/" class="logo">💈 Zamanli</a>
+        <a href="/" class="logo">
+            <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
+            <span class="logo-text">Zamanli</span>
+        </a>
     </header>
     
     <main class="main">
@@ -377,7 +392,5 @@
         
         init();
     </script>
-    <!-- Theme Toggle -->
-    <script src="/theme-toggle.js"></script>
 </body>
 </html>

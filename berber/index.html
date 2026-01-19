@@ -86,12 +86,25 @@
             align-items: center;
             gap: 0.5rem;
             text-decoration: none;
+            font-family: var(--font-heading);
             font-weight: 700;
             font-size: 1.5rem;
             color: var(--slate-900);
         }
         
-        .logo-icon { font-size: 1.75rem; }
+        .logo-image {
+            height: 32px;
+            width: auto;
+            object-fit: contain;
+        }
+        
+        .logo-text {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.35rem;
+            color: var(--slate-900);
+            letter-spacing: -0.02em;
+        }
         
         .nav {
             display: flex;
@@ -690,6 +703,7 @@
         <div class="header-container">
             <a href="/" class="logo">
                 <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
+                <span class="logo-text">Zamanli</span>
                 <span>Zamanli</span>
             </a>
             <nav class="nav nav-desktop">
@@ -1604,7 +1618,5 @@
     
     <!-- UX Enhancements -->
     <script src="/ux-enhancements.js"></script>
-    <!-- Theme Toggle -->
-    <script src="/theme-toggle.js"></script>
 </body>
 </html>
