@@ -4,18 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Çevrimdışı - Zamanli</title>
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#0B2B26">
     <link rel="manifest" href="/manifest.json">
     <style>
+        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         
+        :root {
+            --brand-deep-forest: #0B2B26;
+            --brand-emerald: #10B981;
+            --brand-gold: #C5A065;
+            --font-heading: 'Satoshi', 'Inter', system-ui, sans-serif;
+            --font-body: 'Inter', system-ui, sans-serif;
+        }
+        
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, var(--brand-deep-forest) 0%, #0F3A33 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -30,7 +41,7 @@
             max-width: 400px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 25px 50px -12px rgba(11, 43, 38, 0.25);
         }
         
         .offline-icon {
@@ -45,7 +56,8 @@
         }
         
         h1 {
-            color: #1f2937;
+            font-family: var(--font-heading);
+            color: var(--brand-deep-forest);
             font-size: 24px;
             font-weight: 700;
             margin-bottom: 12px;
@@ -74,13 +86,13 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: var(--brand-emerald);
             color: white;
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
         }
         
         .btn-secondary {
