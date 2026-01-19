@@ -61,19 +61,24 @@
     <!-- Mobile Menu -->
     <div id="mobileMenu" class="mobile-menu">
         <div class="mobile-menu-header">
-            <span class="logo">
-                <img src="/icons/logo.png" alt="Zamanli" class="logo-image" style="height:24px">
-                <span class="logo-text" style="font-size:1.1rem">Zamanli</span>
-            </span>
-            <button class="mobile-menu-close" onclick="toggleMobileMenu()">✕</button>
+            <a href="/" class="logo">
+                <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
+                <span class="logo-text">Zamanli</span>
+            </a>
+            <button class="mobile-menu-close" onclick="toggleMobileMenu()" aria-label="Menüyü kapat">✕</button>
         </div>
         <nav class="mobile-menu-nav">
-            <a href="/">🏠 Ana Sayfa</a>
+            <a href="/" class="active">🏠 Ana Sayfa</a>
             <a href="/berber/">💈 Berber Bul</a>
-            <a href="/berber/kayit/" class="highlight">➕ Salonunu Ekle</a>
+            <a href="/fiyatlandirma/">💰 Fiyatlandırma</a>
+            <div class="mobile-menu-divider"></div>
             <a href="#" onclick="showLoginModal(); toggleMobileMenu(); return false;">🔑 Giriş Yap</a>
+            <a href="/berber/kayit/" class="highlight">✨ Salonunu Ekle</a>
             <a href="#" onclick="ZamanliUX.showInstallPrompt(); toggleMobileMenu(); return false;" id="mobileInstallBtn" class="pwa-hide-when-installed">📲 Uygulamayı İndir</a>
         </nav>
+        <div class="mobile-menu-footer">
+            <p>© 2026 Zamanli</p>
+        </div>
     </div>
 
     <!-- Hero Section -->

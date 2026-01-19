@@ -506,6 +506,8 @@
         
         @media (max-width: 768px) {
             .nav { display: none; }
+            .nav-cta { display: none; }
+            .mobile-menu-btn { display: block; }
             
             .hero h1 { font-size: 2rem; }
             .hero p { font-size: 1rem; }
@@ -536,9 +538,34 @@
                 <a href="/">Ana Sayfa</a>
                 <a href="/berber/">Berberler</a>
             </nav>
-            <a href="/berber/kayit/" class="btn btn-primary">Salonunu Ekle</a>
+            <a href="/berber/kayit/" class="btn btn-primary nav-cta">Salonunu Ekle</a>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
         </div>
     </header>
+    
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="mobile-menu">
+        <div class="mobile-menu-header">
+            <a href="/" class="logo">
+                <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
+                <span class="logo-text">Zamanli</span>
+            </a>
+            <button class="mobile-menu-close" onclick="toggleMobileMenu()" aria-label="Menüyü kapat">✕</button>
+        </div>
+        <nav class="mobile-menu-nav">
+            <a href="/">🏠 Ana Sayfa</a>
+            <a href="/berber/">💈 Berber Bul</a>
+            <a href="/fiyatlandirma/" class="active">💰 Fiyatlandırma</a>
+            <div class="mobile-menu-divider"></div>
+            <a href="/berber/kayit/" class="highlight">✨ Salonunu Ekle</a>
+        </nav>
+        <div class="mobile-menu-footer">
+            <p>© 2026 Zamanli</p>
+        </div>
+    </div>
+    
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileMenuOverlay" class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
     
     <section class="hero">
         <h1>İşletmenize Uygun Paketi Seçin</h1>
@@ -728,5 +755,13 @@
             </div>
         </div>
     </footer>
+    
+    <script>
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('active');
+            document.getElementById('mobileMenuOverlay').classList.toggle('active');
+            document.body.style.overflow = document.getElementById('mobileMenu').classList.contains('active') ? 'hidden' : '';
+        }
+    </script>
 </body>
 </html>
