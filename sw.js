@@ -1,4 +1,4 @@
-// Zamanlı Service Worker v3.2
+// Zamanli Service Worker v3.2
 // Cache stratejisi: HTML/JS = Network Only, Diğer = Network First
 const CACHE_VERSION = 'v3.2';
 const CACHE_NAME = `zamanli-${CACHE_VERSION}`;
@@ -145,7 +145,7 @@ self.addEventListener('push', (event) => {
     console.log('[SW] Push received');
     
     let data = {
-        title: 'Zamanlı',
+        title: 'Zamanli',
         body: 'Yeni bir bildiriminiz var',
         icon: '/icons/icon-192x192.png',
         badge: '/icons/icon-72x72.png',

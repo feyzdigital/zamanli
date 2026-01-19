@@ -556,7 +556,7 @@ const ZamanliUX = {
                 <div class="ux-modal-body" style="text-align: center; padding: 24px;">
                     <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
                     <p style="font-size: 16px; color: #334155; margin-bottom: 12px;"><strong>Uygulama zaten yüklü!</strong></p>
-                    <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Ana ekranınızda "Zamanlı" ikonunu arayın veya uygulama çekmecenize bakın.</p>
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Ana ekranınızda "Zamanli" ikonunu arayın veya uygulama çekmecenize bakın.</p>
                     <button class="ux-btn-primary" onclick="this.closest('.ux-modal-overlay').remove()" style="width: 100%;">Tamam</button>
                 </div>
             </div>
@@ -609,7 +609,7 @@ const ZamanliUX = {
                         </div>
                     </div>
                     <div class="ios-install-note">
-                        <p>💡 Bu işlem sonrasında Zamanlı ana ekranınızda bir uygulama gibi görünecek!</p>
+                        <p>💡 Bu işlem sonrasında Zamanli ana ekranınızda bir uygulama gibi görünecek!</p>
                     </div>
                     <button class="ux-btn-primary ios-done-btn" onclick="this.closest('.ux-modal-overlay').remove()">Anladım</button>
                 </div>
@@ -632,7 +632,7 @@ const ZamanliUX = {
             <div class="ux-pwa-content">
                 <span class="ux-pwa-icon">📲</span>
                 <div class="ux-pwa-text">
-                    <strong>Zamanlı'u Yükle</strong>
+                    <strong>Zamanli'u Yükle</strong>
                     <span>${isIOS ? 'Ana ekrana ekle' : 'Uygulama gibi kullan'}</span>
                 </div>
             </div>

@@ -84,7 +84,7 @@ function renderLogin() {
 
 function renderSidebar() {
     const p = AdminState.stats.pendingSalons;
-    return '<aside class="admin-sidebar"><div class="sidebar-header"><span class="sidebar-icon">&#128197;</span><span class="sidebar-title">Zamanlı</span></div><nav class="sidebar-nav"><a href="#" onclick="nav(\'dashboard\')" class="nav-item ' + (AdminState.currentView === 'dashboard' ? 'active' : '') + '"><span>&#128202;</span> Dashboard</a><a href="#" onclick="nav(\'salons\')" class="nav-item ' + (AdminState.currentView.includes('salon') ? 'active' : '') + '"><span>&#128136;</span> Salonlar' + (p > 0 ? '<span class="nav-badge">' + p + '</span>' : '') + '</a></nav><div class="sidebar-footer"><a href="#" onclick="logout()" class="nav-item logout"><span>&#128682;</span> Cikis</a></div></aside>';
+    return '<aside class="admin-sidebar"><div class="sidebar-header"><span class="sidebar-icon">&#128197;</span><span class="sidebar-title">Zamanli</span></div><nav class="sidebar-nav"><a href="#" onclick="nav(\'dashboard\')" class="nav-item ' + (AdminState.currentView === 'dashboard' ? 'active' : '') + '"><span>&#128202;</span> Dashboard</a><a href="#" onclick="nav(\'salons\')" class="nav-item ' + (AdminState.currentView.includes('salon') ? 'active' : '') + '"><span>&#128136;</span> Salonlar' + (p > 0 ? '<span class="nav-badge">' + p + '</span>' : '') + '</a></nav><div class="sidebar-footer"><a href="#" onclick="logout()" class="nav-item logout"><span>&#128682;</span> Cikis</a></div></aside>';
 }
 
 function renderView() {
@@ -592,7 +592,7 @@ async function generateSalonQRCard(salon) {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px Inter, Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('💈 Zamanlı', 200, 50);
+    ctx.fillText('💈 Zamanli', 200, 50);
     
     // Salon adı
     ctx.fillStyle = '#1e293b';

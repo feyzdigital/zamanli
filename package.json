@@ -1,7 +1,7 @@
 {
   "name": "zamanli",
   "version": "1.0.0",
-  "description": "Zamanlı - Online Randevu Sistemi",
+  "description": "Zamanli - Online Randevu Sistemi",
   "dependencies": {
     "twilio": "^5.0.0"
   }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Randevu Detayı - Zamanlı</title>
+    <title>Randevu Detayı - Zamanli</title>
     <meta name="theme-color" content="#6366f1">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -150,7 +150,7 @@
 </head>
 <body>
     <header class="header">
-        <a href="/" class="logo">💈 Zamanlı</a>
+        <a href="/" class="logo">💈 Zamanli</a>
     </header>
     
     <main class="main">
@@ -339,7 +339,7 @@
         
         function generateWhatsAppLink() {
             if (!salon?.phone) return '#';
-            const message = `Merhaba! Zamanlı üzerinden randevu aldım.\n\n📅 Tarih: ${formatDate(appointment.date)}\n⏰ Saat: ${appointment.time}\n✂️ Hizmet: ${appointment.service}\n\nBilgi almak istiyorum.`;
+            const message = `Merhaba! Zamanli üzerinden randevu aldım.\n\n📅 Tarih: ${formatDate(appointment.date)}\n⏰ Saat: ${appointment.time}\n✂️ Hizmet: ${appointment.service}\n\nBilgi almak istiyorum.`;
             const phone = salon.phone.replace(/\D/g, '');
             const formattedPhone = phone.startsWith('90') ? phone : (phone.startsWith('0') ? '90' + phone.slice(1) : '90' + phone);
             return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;

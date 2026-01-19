@@ -1,4 +1,4 @@
-// Firebase Configuration - Zamanlı
+// Firebase Configuration - Zamanli
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyCCaSmLE9Ww3GTUqdeAINua3vNrmqNV-TQ",
     authDomain: "zamanli.firebaseapp.com",

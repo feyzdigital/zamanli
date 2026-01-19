@@ -1,4 +1,4 @@
-// Zamanlı Push Notification Manager
+// Zamanli Push Notification Manager
 // Firebase Cloud Messaging entegrasyonu
 
 const PushManager = {

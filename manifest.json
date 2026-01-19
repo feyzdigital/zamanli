@@ -1,6 +1,6 @@
 {
-  "name": "Zamanlı - Berber Randevu Sistemi",
-  "short_name": "Zamanlı",
+  "name": "Zamanli - Berber Randevu Sistemi",
+  "short_name": "Zamanli",
   "description": "Online berber ve kuaför randevu sistemi. Kolayca randevu al, sıra bekleme!",
   "start_url": "/?source=pwa",
   "scope": "/",
