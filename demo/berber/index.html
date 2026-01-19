@@ -6,15 +6,24 @@
     <title>Demo Berber - Zamanli</title>
     <meta name="description" content="Demo Berber Salonu - Online randevu sistemi örneği">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💈</text></svg>">
+    <!-- Fonts: Satoshi + Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #a5b4fc;
+            /* Brand Core */
+            --brand-deep-forest: #0B2B26;
+            --brand-emerald: #10B981;
+            --brand-emerald-hover: #0EA371;
+            --brand-gold: #C5A065;
+            
+            --primary: #10B981;
+            --primary-dark: #0EA371;
+            --primary-light: #34D399;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
@@ -30,17 +39,25 @@
             --slate-900: #0f172a;
             --radius: 0.75rem;
             --radius-lg: 1rem;
+            
+            /* Typography */
+            --font-heading: 'Satoshi', 'Inter', system-ui, sans-serif;
+            --font-body: 'Inter', system-ui, sans-serif;
         }
         
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: var(--font-body);
             background: var(--slate-100);
             min-height: 100vh;
         }
         
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+        }
+        
         /* Header */
         .header {
-            background: var(--primary);
+            background: var(--brand-emerald);
             color: white;
             padding: 1.5rem;
             text-align: center;
