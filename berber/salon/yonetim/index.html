@@ -4986,211 +4986,336 @@ END:VEVENT
     <!-- Finance Dashboard Module -->
     <script src="/finance-dashboard.js"></script>
     
-    <!-- Real-time Bildirim Sistemi -->
+    <!-- Real-time Bildirim Sistemi (iOS dahil tüm platformlar) -->
     <script>
-        // Basit Real-time Bildirim Sistemi
-        let appointmentListener = null;
-        let lastKnownAppointments = new Set();
-        let notificationSound = null;
-        let notificationsEnabled = false;
+        // ============================================
+        // ZAMANLI BİLDİRİM SİSTEMİ v2.0
+        // Tüm platformlarda çalışır (iOS dahil)
+        // ============================================
         
-        // Bildirim sistemini başlat
-        function initNotificationSystem(salonId) {
-            console.log('[Notify] Initializing for salon:', salonId);
+        const ZamanliNotify = {
+            // Durum değişkenleri
+            listener: null,
+            knownAppointments: new Set(),
+            sound: null,
+            enabled: false,
+            isIOS: false,
+            isPWA: false,
+            salonId: null,
             
-            // Bildirim desteği var mı?
-            if (!('Notification' in window)) {
-                console.log('[Notify] Notifications not supported');
-                return;
-            }
-            
-            // Ses dosyası hazırla
-            notificationSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQAAS8HX0o9ZHRJHl9rq0Y5XGBB6z+zXkFlBOrbc3dB9Uh0wqdHu1nhLNzjAzevKf1gwOdTi6sZ4RzE86dno1H5JLjzh3erIeUcuPNrj6tGFTzJB3uHo0oBLMDzh5OfQgUosPOLl5tGASis94+Tl0YFKKz3l5OTRgEorPeXk5NGASis95eTk0YBKKz3l5OTRgEorPeXk5NGASis95eTk0YBKK0A=');
-            
-            // Mevcut randevuları kaydet (ilk yükleme)
-            appointments.forEach(a => lastKnownAppointments.add(a.id));
-            
-            // İzin durumunu kontrol et
-            if (Notification.permission === 'granted') {
-                notificationsEnabled = true;
-                startListening(salonId);
-                updateNotificationStatusUI(true);
-            } else if (Notification.permission === 'default') {
-                // Banner göster
-                setTimeout(() => {
-                    document.getElementById('pushBanner').style.display = 'block';
-                }, 3000);
-            } else {
-                updateNotificationStatusUI(false);
-            }
-        }
-        
-        // Real-time dinlemeyi başlat
-        function startListening(salonId) {
-            if (appointmentListener) {
-                appointmentListener(); // Önceki listener'ı kapat
-            }
-            
-            console.log('[Notify] Starting real-time listener...');
-            
-            appointmentListener = db.collection('appointments')
-                .where('salonId', '==', salonId)
-                .onSnapshot(snapshot => {
-                    snapshot.docChanges().forEach(change => {
-                        if (change.type === 'added') {
-                            const appointment = { id: change.doc.id, ...change.doc.data() };
-                            
-                            // Yeni mi yoksa sayfa yüklenirken mi geldi?
-                            if (!lastKnownAppointments.has(appointment.id)) {
-                                console.log('[Notify] New appointment detected:', appointment);
-                                lastKnownAppointments.add(appointment.id);
-                                showNewAppointmentNotification(appointment);
-                                
-                                // Listeyi güncelle
-                                loadAppointments();
-                            }
-                        }
-                    });
-                }, error => {
-                    console.error('[Notify] Listener error:', error);
-                });
-        }
-        
-        // Yeni randevu bildirimi göster
-        function showNewAppointmentNotification(appointment) {
-            // Ses çal
-            if (notificationSound) {
-                notificationSound.play().catch(e => console.log('Sound play failed:', e));
-            }
-            
-            // Tarayıcı bildirimi
-            if (notificationsEnabled && Notification.permission === 'granted') {
-                const notification = new Notification('🎉 Yeni Randevu!', {
-                    body: `${appointment.customerName} - ${appointment.service}\n${appointment.date} ${appointment.time}`,
-                    icon: '/icons/icon-192x192.png',
-                    badge: '/icons/icon-72x72.png',
-                    tag: 'new-appointment-' + appointment.id,
-                    requireInteraction: true
+            // Sistemi başlat
+            init: function(salonId) {
+                console.log('[Notify] Başlatılıyor...');
+                this.salonId = salonId;
+                
+                // Platform tespiti
+                this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                this.isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                             window.navigator.standalone === true;
+                
+                console.log('[Notify] Platform:', {
+                    isIOS: this.isIOS,
+                    isPWA: this.isPWA,
+                    userAgent: navigator.userAgent.substring(0, 50)
                 });
                 
-                notification.onclick = () => {
-                    window.focus();
-                    notification.close();
-                };
-            }
+                // Ses hazırla (her platformda çalışır)
+                this.initSound();
+                
+                // Mevcut randevuları kaydet
+                if (typeof appointments !== 'undefined' && appointments.length > 0) {
+                    appointments.forEach(a => this.knownAppointments.add(a.id));
+                }
+                
+                // Bildirim durumunu kontrol et
+                this.checkNotificationStatus();
+                
+                // Real-time dinlemeyi başlat (her durumda)
+                this.startListening();
+            },
+            
+            // Ses sistemini başlat
+            initSound: function() {
+                try {
+                    // Kısa bip sesi (base64)
+                    this.sound = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7v/////////////////////////////////' + 
+                    '/////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7UGQAD/AAADSAAAAANIAAAGkAAAAIAAANIAAAAAgAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//tQZB4P8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==');
+                    console.log('[Notify] Ses hazır');
+                } catch (e) {
+                    console.log('[Notify] Ses oluşturulamadı:', e);
+                }
+            },
+            
+            // Ses çal
+            playSound: function() {
+                if (this.sound) {
+                    this.sound.currentTime = 0;
+                    this.sound.play().catch(e => {
+                        console.log('[Notify] Ses çalınamadı (kullanıcı etkileşimi gerekli)');
+                    });
+                }
+            },
+            
+            // Bildirim durumunu kontrol et
+            checkNotificationStatus: function() {
+                // Notification API var mı?
+                if (!('Notification' in window)) {
+                    console.log('[Notify] Notification API desteklenmiyor');
+                    // iOS Safari (PWA değilse) - sadece popup göster
+                    if (this.isIOS && !this.isPWA) {
+                        this.showIOSInstallBanner();
+                    }
+                    return;
+                }
+                
+                // İzin durumu
+                if (Notification.permission === 'granted') {
+                    this.enabled = true;
+                    this.updateUI(true);
+                    console.log('[Notify] İzin verilmiş');
+                } else if (Notification.permission === 'denied') {
+                    this.updateUI(false);
+                    console.log('[Notify] İzin reddedilmiş');
+                } else {
+                    // İzin istenmemiş - banner göster
+                    this.showNotificationBanner();
+                }
+            },
+            
+            // Real-time dinlemeyi başlat
+            startListening: function() {
+                if (this.listener) {
+                    this.listener();
+                }
+                
+                if (!this.salonId) {
+                    console.log('[Notify] Salon ID yok, dinleme başlatılamadı');
+                    return;
+                }
+                
+                console.log('[Notify] Real-time dinleme başlatılıyor:', this.salonId);
+                
+                try {
+                    this.listener = db.collection('appointments')
+                        .where('salonId', '==', this.salonId)
+                        .onSnapshot(
+                            (snapshot) => {
+                                snapshot.docChanges().forEach(change => {
+                                    if (change.type === 'added') {
+                                        const apt = { id: change.doc.id, ...change.doc.data() };
+                                        
+                                        if (!this.knownAppointments.has(apt.id)) {
+                                            console.log('[Notify] YENİ RANDEVU:', apt);
+                                            this.knownAppointments.add(apt.id);
+                                            this.notifyNewAppointment(apt);
+                                        }
+                                    }
+                                });
+                            },
+                            (error) => {
+                                console.error('[Notify] Dinleme hatası:', error);
+                            }
+                        );
+                    
+                    console.log('[Notify] Dinleme aktif');
+                } catch (e) {
+                    console.error('[Notify] Dinleme başlatılamadı:', e);
+                }
+            },
+            
+            // Yeni randevu bildirimi
+            notifyNewAppointment: function(apt) {
+                console.log('[Notify] Bildirim gönderiliyor...');
+                
+                // 1. Ses çal
+                this.playSound();
+                
+                // 2. Tarayıcı bildirimi (izin varsa)
+                if (this.enabled && Notification.permission === 'granted') {
+                    try {
+                        const n = new Notification('🎉 Yeni Randevu!', {
+                            body: apt.customerName + ' - ' + apt.service + '\n' + apt.date + ' ' + apt.time,
+                            icon: '/icons/icon-192x192.png',
+                            badge: '/icons/icon-72x72.png',
+                            tag: 'apt-' + apt.id,
+                            requireInteraction: true,
+                            silent: false
+                        });
+                        
+                        n.onclick = function() {
+                            window.focus();
+                            n.close();
+                        };
+                    } catch (e) {
+                        console.log('[Notify] Bildirim oluşturulamadı:', e);
+                    }
+                }
+                
+                // 3. Sayfa içi popup (HER ZAMAN göster)
+                this.showPopup(apt);
+                
+                // 4. Listeyi güncelle
+                if (typeof loadAppointments === 'function') {
+                    loadAppointments();
+                }
+            },
             
             // Sayfa içi popup
-            showInPageNotification(appointment);
-        }
-        
-        // Sayfa içi bildirim popup'ı
-        function showInPageNotification(appointment) {
-            const popup = document.createElement('div');
-            popup.className = 'new-appointment-popup';
-            popup.innerHTML = `
-                <div class="popup-icon">🎉</div>
-                <div class="popup-content">
-                    <strong>Yeni Randevu!</strong>
-                    <p>${appointment.customerName}</p>
-                    <p>${appointment.service} - ${appointment.date} ${appointment.time}</p>
-                </div>
-                <button onclick="this.parentElement.remove()">✕</button>
-            `;
-            document.body.appendChild(popup);
-            
-            // 10 saniye sonra kapat
-            setTimeout(() => popup.remove(), 10000);
-        }
-        
-        // Bildirimleri aç
-        async function enablePushNotifications() {
-            const banner = document.getElementById('pushBanner');
-            const btn = banner.querySelector('.push-btn-enable');
-            btn.textContent = 'Açılıyor...';
-            btn.disabled = true;
-            
-            try {
-                const permission = await Notification.requestPermission();
+            showPopup: function(apt) {
+                // Önceki popup varsa kaldır
+                const old = document.querySelector('.zamanli-popup');
+                if (old) old.remove();
                 
-                if (permission === 'granted') {
-                    notificationsEnabled = true;
-                    banner.style.display = 'none';
-                    updateNotificationStatusUI(true);
-                    
-                    // Dinlemeyi başlat
-                    if (salon && salon.id) {
-                        startListening(salon.id);
-                    }
-                    
-                    // Test bildirimi
-                    new Notification('Bildirimler Açıldı! 🎉', {
-                        body: 'Artık yeni randevulardan haberdar olacaksınız.',
-                        icon: '/icons/icon-192x192.png'
-                    });
-                    
-                } else {
-                    alert('Bildirimlere izin verilmedi. Tarayıcı ayarlarından açabilirsiniz.');
-                    btn.textContent = 'Bildirimleri Aç';
-                    btn.disabled = false;
+                const popup = document.createElement('div');
+                popup.className = 'zamanli-popup';
+                popup.innerHTML = 
+                    '<div class="zp-icon">🎉</div>' +
+                    '<div class="zp-content">' +
+                        '<strong>Yeni Randevu!</strong>' +
+                        '<p>' + (apt.customerName || 'Müşteri') + '</p>' +
+                        '<p>' + (apt.service || 'Hizmet') + '</p>' +
+                        '<p>' + (apt.date || '') + ' ' + (apt.time || '') + '</p>' +
+                    '</div>' +
+                    '<button class="zp-close" onclick="this.parentElement.remove()">✕</button>';
+                
+                document.body.appendChild(popup);
+                
+                // 15 saniye sonra kapat
+                setTimeout(() => {
+                    if (popup.parentElement) popup.remove();
+                }, 15000);
+            },
+            
+            // Bildirim izni iste
+            requestPermission: async function() {
+                const banner = document.getElementById('pushBanner');
+                const btn = banner ? banner.querySelector('.push-btn-enable') : null;
+                
+                if (btn) {
+                    btn.textContent = 'Açılıyor...';
+                    btn.disabled = true;
                 }
-            } catch (error) {
-                console.error('[Notify] Error:', error);
-                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
-                btn.textContent = 'Bildirimleri Aç';
-                btn.disabled = false;
+                
+                try {
+                    const permission = await Notification.requestPermission();
+                    
+                    if (permission === 'granted') {
+                        this.enabled = true;
+                        if (banner) banner.style.display = 'none';
+                        this.updateUI(true);
+                        
+                        // Test bildirimi
+                        new Notification('✅ Bildirimler Açıldı!', {
+                            body: 'Artık yeni randevulardan haberdar olacaksınız.',
+                            icon: '/icons/icon-192x192.png'
+                        });
+                        
+                        console.log('[Notify] İzin verildi');
+                    } else {
+                        alert('Bildirimlere izin verilmedi.\nTarayıcı ayarlarından açabilirsiniz.');
+                        if (btn) {
+                            btn.textContent = 'Bildirimleri Aç';
+                            btn.disabled = false;
+                        }
+                    }
+                } catch (e) {
+                    console.error('[Notify] İzin hatası:', e);
+                    alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                    if (btn) {
+                        btn.textContent = 'Bildirimleri Aç';
+                        btn.disabled = false;
+                    }
+                }
+            },
+            
+            // Bildirim banner'ını göster
+            showNotificationBanner: function() {
+                // Daha önce kapatılmış mı?
+                const lastClosed = localStorage.getItem('notify-banner-closed');
+                if (lastClosed && Date.now() - parseInt(lastClosed) < 24 * 60 * 60 * 1000) {
+                    return;
+                }
+                
+                setTimeout(() => {
+                    const banner = document.getElementById('pushBanner');
+                    if (banner) banner.style.display = 'block';
+                }, 2000);
+            },
+            
+            // iOS için "Ana Ekrana Ekle" banner'ı
+            showIOSInstallBanner: function() {
+                // Daha önce kapatılmış mı?
+                const lastClosed = localStorage.getItem('ios-install-closed');
+                if (lastClosed && Date.now() - parseInt(lastClosed) < 7 * 24 * 60 * 60 * 1000) {
+                    return;
+                }
+                
+                setTimeout(() => {
+                    const banner = document.createElement('div');
+                    banner.id = 'iosInstallBanner';
+                    banner.className = 'ios-install-banner';
+                    banner.innerHTML = 
+                        '<div class="iib-content">' +
+                            '<div class="iib-icon">📱</div>' +
+                            '<div class="iib-text">' +
+                                '<strong>Bildirim almak için uygulamayı yükleyin</strong>' +
+                                '<p>Paylaş <span class="iib-share">⬆️</span> → "Ana Ekrana Ekle" seçin</p>' +
+                            '</div>' +
+                        '</div>' +
+                        '<button class="iib-close" onclick="ZamanliNotify.closeIOSBanner()">✕</button>';
+                    
+                    document.body.appendChild(banner);
+                }, 3000);
+            },
+            
+            // iOS banner'ını kapat
+            closeIOSBanner: function() {
+                const banner = document.getElementById('iosInstallBanner');
+                if (banner) banner.remove();
+                localStorage.setItem('ios-install-closed', Date.now().toString());
+            },
+            
+            // Banner'ı kapat
+            closeBanner: function() {
+                const banner = document.getElementById('pushBanner');
+                if (banner) banner.style.display = 'none';
+                localStorage.setItem('notify-banner-closed', Date.now().toString());
+            },
+            
+            // UI güncelle
+            updateUI: function(enabled) {
+                const statusEl = document.getElementById('notificationStatus');
+                if (statusEl) {
+                    if (enabled) {
+                        statusEl.className = 'notification-status enabled';
+                        statusEl.innerHTML = '🔔 Bildirimler Açık';
+                        statusEl.onclick = null;
+                    } else {
+                        statusEl.className = 'notification-status disabled';
+                        statusEl.innerHTML = '🔕 Bildirimler Kapalı';
+                        statusEl.onclick = () => this.requestPermission();
+                    }
+                }
             }
+        };
+        
+        // Global fonksiyonlar (HTML onclick için)
+        function enablePushNotifications() {
+            ZamanliNotify.requestPermission();
         }
         
         function closePushBanner() {
-            document.getElementById('pushBanner').style.display = 'none';
-            localStorage.setItem('push-banner-closed', Date.now().toString());
+            ZamanliNotify.closeBanner();
         }
         
-        function updateNotificationStatusUI(enabled) {
-            const statusEl = document.getElementById('notificationStatus');
-            if (statusEl) {
-                if (enabled) {
-                    statusEl.className = 'notification-status enabled';
-                    statusEl.innerHTML = '🔔 Bildirimler Açık';
-                } else {
-                    statusEl.className = 'notification-status disabled';
-                    statusEl.innerHTML = '🔕 Bildirimler Kapalı';
-                    statusEl.onclick = enablePushNotifications;
-                }
-            }
-        }
-        
-        // Banner daha önce kapatılmış mı kontrol et
         function checkAndShowPushBanner(salonId) {
-            // Zaten izin verilmişse listener'ı başlat
-            if (Notification.permission === 'granted') {
-                notificationsEnabled = true;
-                startListening(salonId);
-                updateNotificationStatusUI(true);
-                return;
-            }
-            
-            if (Notification.permission === 'denied') {
-                updateNotificationStatusUI(false);
-                return;
-            }
-            
-            // Banner daha önce kapatılmış mı? (24 saat içinde)
-            const lastClosed = localStorage.getItem('push-banner-closed');
-            if (lastClosed && Date.now() - parseInt(lastClosed) < 24 * 60 * 60 * 1000) {
-                return;
-            }
-            
-            // Banner'ı göster
-            setTimeout(() => {
-                document.getElementById('pushBanner').style.display = 'block';
-            }, 3000);
+            ZamanliNotify.init(salonId);
         }
     </script>
     
     <style>
         /* Yeni Randevu Popup */
-        .new-appointment-popup {
+        .zamanli-popup {
             position: fixed;
             top: 20px;
             right: 20px;
@@ -5201,46 +5326,124 @@ END:VEVENT
             box-shadow: 0 10px 40px rgba(16, 185, 129, 0.4);
             z-index: 10000;
             display: flex;
-            align-items: center;
-            gap: 1rem;
-            animation: slideIn 0.3s ease;
-            max-width: 350px;
+            align-items: flex-start;
+            gap: 0.75rem;
+            animation: zp-slide 0.3s ease;
+            max-width: 320px;
         }
         
-        @keyframes slideIn {
-            from { transform: translateX(100px); opacity: 0; }
+        @keyframes zp-slide {
+            from { transform: translateX(120%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
         
-        .new-appointment-popup .popup-icon {
-            font-size: 2rem;
+        .zamanli-popup .zp-icon {
+            font-size: 1.75rem;
+            line-height: 1;
         }
         
-        .new-appointment-popup .popup-content strong {
+        .zamanli-popup .zp-content {
+            flex: 1;
+        }
+        
+        .zamanli-popup .zp-content strong {
             display: block;
-            font-size: 1rem;
+            font-size: 0.95rem;
             margin-bottom: 4px;
         }
         
-        .new-appointment-popup .popup-content p {
+        .zamanli-popup .zp-content p {
             margin: 2px 0;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             opacity: 0.9;
         }
         
-        .new-appointment-popup button {
+        .zamanli-popup .zp-close {
             background: rgba(255,255,255,0.2);
             border: none;
             color: white;
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.85rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        
+        .zamanli-popup .zp-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* iOS Install Banner */
+        .ios-install-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a2e;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10001;
+            animation: iib-up 0.3s ease;
+        }
+        
+        @keyframes iib-up {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .ios-install-banner .iib-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .ios-install-banner .iib-icon {
+            font-size: 1.5rem;
+        }
+        
+        .ios-install-banner .iib-text strong {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+        
+        .ios-install-banner .iib-text p {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin: 0;
+        }
+        
+        .ios-install-banner .iib-share {
+            display: inline-block;
+            background: #3b82f6;
+            padding: 0 4px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+        
+        .ios-install-banner .iib-close {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             cursor: pointer;
             font-size: 1rem;
         }
         
-        .new-appointment-popup button:hover {
-            background: rgba(255,255,255,0.3);
+        /* Mobil uyum */
+        @media (max-width: 480px) {
+            .zamanli-popup {
+                left: 10px;
+                right: 10px;
+                max-width: none;
+            }
         }
     </style>
 </body>
