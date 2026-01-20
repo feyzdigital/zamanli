@@ -2,9 +2,8 @@
 // Firebase Cloud Messaging entegrasyonu
 
 const PushManager = {
-    // FCM VAPID Key (Firebase Console'dan alınacak)
-    // Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
-    VAPID_KEY: 'BBOpQdU-eCIYjiQHiVPY8x2tBlhDYhZlYgARXayyRs4XR1q9zOghL_zuu3gaTSvgOGY6Q9fAtEK5zQXu-VMaHZM', // Bu değeri Firebase'den almanız gerekiyor
+    // FCM VAPID Key (Firebase Console'dan alındı)
+    VAPID_KEY: 'BBPC1mKHLS8_d1_e0ZvwLLTZOF1RUK56H5r_0fD6TXvZM6sJyFl3ss5DTU5JP6GYWM8wJU079YGqEpCxw3Sv3z0',
     
     // Durum
     isSupported: false,
@@ -165,6 +164,45 @@ const PushManager = {
         
         const token = this.fcmToken || JSON.stringify(this.subscription);
         return this.saveTokenToServer(token, 'salon', salonId);
+    },
+    
+    // ==================== SALONA BİLDİRİM GÖNDERME ====================
+    async sendNotificationToSalon(salonId, title, body, data = {}) {
+        try {
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                const db = firebase.firestore();
+                
+                // Salon'un push token'larını bul
+                const tokensSnapshot = await db.collection('push_tokens')
+                    .where('userType', '==', 'salon')
+                    .where('userId', '==', salonId)
+                    .get();
+                
+                if (tokensSnapshot.empty) {
+                    console.log('[Push] No tokens found for salon:', salonId);
+                    return { success: false, error: 'no_tokens' };
+                }
+                
+                // Bildirimi notifications koleksiyonuna kaydet
+                // Cloud Function bu koleksiyonu dinleyip FCM gönderecek
+                const notificationDoc = await db.collection('notifications').add({
+                    targetType: 'salon',
+                    targetId: salonId,
+                    title: title,
+                    body: body,
+                    data: data,
+                    tokens: tokensSnapshot.docs.map(doc => doc.data().token),
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                console.log('[Push] Notification queued:', notificationDoc.id);
+                return { success: true, notificationId: notificationDoc.id };
+            }
+        } catch (error) {
+            console.error('[Push] Send to salon error:', error);
+            return { success: false, error: error.message };
+        }
     },
     
     // ==================== MÜŞTERİ İÇİN TOKEN KAYDETME ====================

@@ -2974,6 +2974,11 @@
                         id: snapshot.docs[0].id,
                         ...snapshot.docs[0].data()
                     };
+                    
+                    // Push notification banner'ı kontrol et
+                    if (typeof checkAndShowPushBanner === 'function') {
+                        checkAndShowPushBanner(salon.id);
+                    }
                 }
             } catch (error) {
                 console.error('Error loading salon:', error);
@@ -4850,7 +4855,244 @@ END:VEVENT
         </div>
     </div>
     
+    <!-- Push Notification Banner -->
+    <div id="pushBanner" class="push-banner" style="display: none;">
+        <div class="push-banner-content">
+            <span class="push-banner-icon">🔔</span>
+            <div class="push-banner-text">
+                <strong>Bildirimleri Aç</strong>
+                <span>Yeni randevu geldiğinde anında haber al</span>
+            </div>
+        </div>
+        <div class="push-banner-actions">
+            <button class="push-btn push-btn-enable" onclick="enablePushNotifications()">Bildirimleri Aç</button>
+            <button class="push-btn push-btn-close" onclick="closePushBanner()">Sonra</button>
+        </div>
+    </div>
+    
+    <style>
+        /* Push Notification Banner */
+        .push-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #10B981, #059669);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+            z-index: 9999;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .push-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .push-banner-icon {
+            font-size: 1.75rem;
+        }
+        
+        .push-banner-text {
+            color: white;
+        }
+        
+        .push-banner-text strong {
+            display: block;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+        
+        .push-banner-text span {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        .push-banner-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .push-btn {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .push-btn-enable {
+            background: white;
+            color: #059669;
+        }
+        
+        .push-btn-enable:hover {
+            background: #f0fdf4;
+        }
+        
+        .push-btn-close {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .push-btn-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* Notification Status Badge */
+        .notification-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .notification-status.enabled {
+            background: #ECFDF5;
+            color: #059669;
+        }
+        
+        .notification-status.disabled {
+            background: #FEF2F2;
+            color: #DC2626;
+            cursor: pointer;
+        }
+        
+        .notification-status.disabled:hover {
+            background: #FEE2E2;
+        }
+    </style>
+    
     <!-- Finance Dashboard Module -->
     <script src="/finance-dashboard.js"></script>
+    
+    <!-- Push Notifications -->
+    <script src="/push-notifications.js"></script>
+    <script>
+        // Push Notification Banner Yönetimi
+        let currentSalonIdForPush = null;
+        
+        async function checkAndShowPushBanner(salonId) {
+            currentSalonIdForPush = salonId;
+            
+            // Push desteği var mı?
+            if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+                console.log('[Push] Not supported');
+                return;
+            }
+            
+            // Zaten izin verilmiş mi?
+            if (Notification.permission === 'granted') {
+                // Token'ı güncelle
+                await registerSalonPush(salonId);
+                updateNotificationStatusUI(true);
+                return;
+            }
+            
+            // Reddedilmiş mi?
+            if (Notification.permission === 'denied') {
+                updateNotificationStatusUI(false);
+                return;
+            }
+            
+            // Banner daha önce kapatılmış mı? (24 saat içinde)
+            const lastClosed = localStorage.getItem('push-banner-closed');
+            if (lastClosed && Date.now() - parseInt(lastClosed) < 24 * 60 * 60 * 1000) {
+                return;
+            }
+            
+            // Banner'ı göster
+            setTimeout(() => {
+                document.getElementById('pushBanner').style.display = 'block';
+            }, 3000);
+        }
+        
+        async function enablePushNotifications() {
+            const banner = document.getElementById('pushBanner');
+            const btn = banner.querySelector('.push-btn-enable');
+            btn.textContent = 'Açılıyor...';
+            btn.disabled = true;
+            
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    // Salon için token kaydet
+                    await registerSalonPush(currentSalonIdForPush);
+                    
+                    banner.style.display = 'none';
+                    updateNotificationStatusUI(true);
+                    
+                    // Test bildirimi gönder
+                    if (typeof PushManager !== 'undefined') {
+                        PushManager.showLocalNotification('Bildirimler Açıldı! 🎉', {
+                            body: 'Artık yeni randevulardan haberdar olacaksınız.',
+                            icon: '/icons/icon-192x192.png'
+                        });
+                    }
+                    
+                    alert('✅ Bildirimler açıldı! Yeni randevu geldiğinde bildirim alacaksınız.');
+                } else {
+                    alert('Bildirimlere izin verilmedi. Tarayıcı ayarlarından açabilirsiniz.');
+                    btn.textContent = 'Bildirimleri Aç';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('[Push] Error:', error);
+                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                btn.textContent = 'Bildirimleri Aç';
+                btn.disabled = false;
+            }
+        }
+        
+        async function registerSalonPush(salonId) {
+            try {
+                if (typeof PushManager !== 'undefined') {
+                    await PushManager.init();
+                    const result = await PushManager.registerSalonForPush(salonId);
+                    console.log('[Push] Salon registered:', result);
+                    return result;
+                }
+            } catch (error) {
+                console.error('[Push] Register error:', error);
+            }
+        }
+        
+        function closePushBanner() {
+            document.getElementById('pushBanner').style.display = 'none';
+            localStorage.setItem('push-banner-closed', Date.now().toString());
+        }
+        
+        function updateNotificationStatusUI(enabled) {
+            // Eğer header'da status badge varsa güncelle
+            const statusEl = document.getElementById('notificationStatus');
+            if (statusEl) {
+                if (enabled) {
+                    statusEl.className = 'notification-status enabled';
+                    statusEl.innerHTML = '🔔 Bildirimler Açık';
+                } else {
+                    statusEl.className = 'notification-status disabled';
+                    statusEl.innerHTML = '🔕 Bildirimler Kapalı';
+                    statusEl.onclick = enablePushNotifications;
+                }
+            }
+        }
+    </script>
 </body>
 </html>

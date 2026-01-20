@@ -2761,6 +2761,28 @@ Görüşmek üzere!`;
                     console.error('Email error:', e);
                 });
             }
+            
+            // Push notification gönder (berbere)
+            if (typeof PushManager !== 'undefined' && salon.id) {
+                const formattedDateShort = formatDateFromStr(apt.date);
+                PushManager.sendNotificationToSalon(
+                    salon.id,
+                    '🔔 Yeni Randevu Talebi!',
+                    `${apt.customerName} - ${formattedDateShort} ${apt.time} - ${apt.service}`,
+                    {
+                        type: 'new_appointment',
+                        appointmentId: apt.id || '',
+                        customerName: apt.customerName,
+                        date: apt.date,
+                        time: apt.time,
+                        service: apt.service
+                    }
+                ).then(result => {
+                    console.log('[Push] Notification sent to salon:', result);
+                }).catch(e => {
+                    console.error('[Push] Error sending to salon:', e);
+                });
+            }
         }
         
         function openWhatsApp() {
@@ -3071,6 +3093,7 @@ Onayınızı bekliyorum. Teşekkürler!`;
     
     <!-- UX Enhancements Module -->
     <script src="/ux-enhancements.js"></script>
+    <script src="/push-notifications.js"></script>
     
     <!-- Lightbox -->
     <div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox()">

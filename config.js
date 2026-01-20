@@ -142,7 +142,7 @@ const EMAILJS_CONFIG = {
 // VAPID Key'i Firebase Console'dan alın:
 // Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
 const FCM_CONFIG = {
-    vapidKey: 'BBOpQdU-eCIYjiQHiVPY8x2tBlhDYhZlYgARXayyRs4XR1q9zOghL_zuu3gaTSvgOGY6Q9fAtEK5zQXu-VMaHZM', // Firebase Console'dan alınacak
+    vapidKey: 'BBPC1mKHLS8_d1_e0ZvwLLTZOF1RUK56H5r_0fD6TXvZM6sJyFl3ss5DTU5JP6GYWM8wJU079YGqEpCxw3Sv3z0',
     
     // Bildirim ayarları
     notifications: {
