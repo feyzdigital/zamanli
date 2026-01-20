@@ -4,12 +4,21 @@
   "exclude": [
     "/berber/salon/*",
     "/berber/kayit/*",
+    "/berber/index.html",
     "/admin/*",
     "/fiyatlandirma/*",
     "/demo/*",
     "/randevu/*",
     "/functions/*",
     "/icons/*",
+    "/styles.css",
+    "/config.js",
+    "/sw.js",
+    "/ux-enhancements.js",
+    "/push-notifications.js",
+    "/ai-recommendation.js",
+    "/whatsapp-automation.js",
+    "/finance-dashboard.js",
     "/*.css",
     "/*.js",
     "/*.json",
@@ -17,6 +26,8 @@
     "/*.svg",
     "/*.png",
     "/*.jpg",
-    "/*.ico"
+    "/*.ico",
+    "/*.woff",
+    "/*.woff2"
   ]
 }
