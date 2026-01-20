@@ -95,8 +95,8 @@ const ZamanliPush = {
                     this.fcmToken = token;
                     console.log('[Push] FCM Token:', token);
                     
-                    // Token'ı sunucuya kaydet
-                    await this.saveTokenToServer(token);
+                    // NOT: Token burada otomatik kaydedilmiyor
+                    // registerSalonForPush veya registerCustomerForPush çağrılmalı
                     
                     return token;
                 }
@@ -122,7 +122,7 @@ const ZamanliPush = {
     },
     
     // ==================== TOKEN SUNUCUYA KAYDETME ====================
-    async saveTokenToServer(token, userType = 'customer', userId = null) {
+    async saveTokenToServer(token, userType = 'customer', id = null) {
         try {
             // Firestore'a kaydet
             if (typeof firebase !== 'undefined' && firebase.firestore) {
@@ -131,18 +131,24 @@ const ZamanliPush = {
                 const tokenData = {
                     token: token,
                     userType: userType, // 'customer' veya 'salon'
-                    userId: userId,
                     platform: this.detectPlatform(),
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     lastActive: firebase.firestore.FieldValue.serverTimestamp()
                 };
+                
+                // Kullanıcı tipine göre ID alanını ayarla
+                if (userType === 'salon') {
+                    tokenData.salonId = id;
+                } else {
+                    tokenData.customerId = id;
+                }
                 
                 // Token ID olarak hash kullan
                 const tokenId = await this.hashToken(token);
                 
                 await db.collection('push_tokens').doc(tokenId).set(tokenData, { merge: true });
                 
-                console.log('[Push] Token saved to Firestore');
+                console.log('[Push] Token saved to Firestore:', { userType, id });
                 return true;
             }
         } catch (error) {
@@ -177,7 +183,7 @@ const ZamanliPush = {
                 // Salon'un push token'larını bul
                 const tokensSnapshot = await db.collection('push_tokens')
                     .where('userType', '==', 'salon')
-                    .where('userId', '==', salonId)
+                    .where('salonId', '==', salonId)
                     .get();
                 
                 if (tokensSnapshot.empty) {
