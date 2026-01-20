@@ -4986,30 +4986,190 @@ END:VEVENT
     <!-- Finance Dashboard Module -->
     <script src="/finance-dashboard.js"></script>
     
-    <!-- Push Notifications -->
-    <script src="/push-notifications.js"></script>
+    <!-- Real-time Bildirim Sistemi -->
     <script>
-        // Push Notification Banner Yönetimi
-        let currentSalonIdForPush = null;
+        // Basit Real-time Bildirim Sistemi
+        let appointmentListener = null;
+        let lastKnownAppointments = new Set();
+        let notificationSound = null;
+        let notificationsEnabled = false;
         
-        async function checkAndShowPushBanner(salonId) {
-            currentSalonIdForPush = salonId;
+        // Bildirim sistemini başlat
+        function initNotificationSystem(salonId) {
+            console.log('[Notify] Initializing for salon:', salonId);
             
-            // Push desteği var mı?
-            if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-                console.log('[Push] Not supported');
+            // Bildirim desteği var mı?
+            if (!('Notification' in window)) {
+                console.log('[Notify] Notifications not supported');
                 return;
             }
             
-            // Zaten izin verilmiş mi?
+            // Ses dosyası hazırla
+            notificationSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQAAS8HX0o9ZHRJHl9rq0Y5XGBB6z+zXkFlBOrbc3dB9Uh0wqdHu1nhLNzjAzevKf1gwOdTi6sZ4RzE86dno1H5JLjzh3erIeUcuPNrj6tGFTzJB3uHo0oBLMDzh5OfQgUosPOLl5tGASis94+Tl0YFKKz3l5OTRgEorPeXk5NGASis95eTk0YBKKz3l5OTRgEorPeXk5NGASis95eTk0YBKK0A=');
+            
+            // Mevcut randevuları kaydet (ilk yükleme)
+            appointments.forEach(a => lastKnownAppointments.add(a.id));
+            
+            // İzin durumunu kontrol et
             if (Notification.permission === 'granted') {
-                // Token'ı güncelle
-                await registerSalonPush(salonId);
+                notificationsEnabled = true;
+                startListening(salonId);
+                updateNotificationStatusUI(true);
+            } else if (Notification.permission === 'default') {
+                // Banner göster
+                setTimeout(() => {
+                    document.getElementById('pushBanner').style.display = 'block';
+                }, 3000);
+            } else {
+                updateNotificationStatusUI(false);
+            }
+        }
+        
+        // Real-time dinlemeyi başlat
+        function startListening(salonId) {
+            if (appointmentListener) {
+                appointmentListener(); // Önceki listener'ı kapat
+            }
+            
+            console.log('[Notify] Starting real-time listener...');
+            
+            appointmentListener = db.collection('appointments')
+                .where('salonId', '==', salonId)
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            const appointment = { id: change.doc.id, ...change.doc.data() };
+                            
+                            // Yeni mi yoksa sayfa yüklenirken mi geldi?
+                            if (!lastKnownAppointments.has(appointment.id)) {
+                                console.log('[Notify] New appointment detected:', appointment);
+                                lastKnownAppointments.add(appointment.id);
+                                showNewAppointmentNotification(appointment);
+                                
+                                // Listeyi güncelle
+                                loadAppointments();
+                            }
+                        }
+                    });
+                }, error => {
+                    console.error('[Notify] Listener error:', error);
+                });
+        }
+        
+        // Yeni randevu bildirimi göster
+        function showNewAppointmentNotification(appointment) {
+            // Ses çal
+            if (notificationSound) {
+                notificationSound.play().catch(e => console.log('Sound play failed:', e));
+            }
+            
+            // Tarayıcı bildirimi
+            if (notificationsEnabled && Notification.permission === 'granted') {
+                const notification = new Notification('🎉 Yeni Randevu!', {
+                    body: `${appointment.customerName} - ${appointment.service}\n${appointment.date} ${appointment.time}`,
+                    icon: '/icons/icon-192x192.png',
+                    badge: '/icons/icon-72x72.png',
+                    tag: 'new-appointment-' + appointment.id,
+                    requireInteraction: true
+                });
+                
+                notification.onclick = () => {
+                    window.focus();
+                    notification.close();
+                };
+            }
+            
+            // Sayfa içi popup
+            showInPageNotification(appointment);
+        }
+        
+        // Sayfa içi bildirim popup'ı
+        function showInPageNotification(appointment) {
+            const popup = document.createElement('div');
+            popup.className = 'new-appointment-popup';
+            popup.innerHTML = `
+                <div class="popup-icon">🎉</div>
+                <div class="popup-content">
+                    <strong>Yeni Randevu!</strong>
+                    <p>${appointment.customerName}</p>
+                    <p>${appointment.service} - ${appointment.date} ${appointment.time}</p>
+                </div>
+                <button onclick="this.parentElement.remove()">✕</button>
+            `;
+            document.body.appendChild(popup);
+            
+            // 10 saniye sonra kapat
+            setTimeout(() => popup.remove(), 10000);
+        }
+        
+        // Bildirimleri aç
+        async function enablePushNotifications() {
+            const banner = document.getElementById('pushBanner');
+            const btn = banner.querySelector('.push-btn-enable');
+            btn.textContent = 'Açılıyor...';
+            btn.disabled = true;
+            
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    notificationsEnabled = true;
+                    banner.style.display = 'none';
+                    updateNotificationStatusUI(true);
+                    
+                    // Dinlemeyi başlat
+                    if (salon && salon.id) {
+                        startListening(salon.id);
+                    }
+                    
+                    // Test bildirimi
+                    new Notification('Bildirimler Açıldı! 🎉', {
+                        body: 'Artık yeni randevulardan haberdar olacaksınız.',
+                        icon: '/icons/icon-192x192.png'
+                    });
+                    
+                } else {
+                    alert('Bildirimlere izin verilmedi. Tarayıcı ayarlarından açabilirsiniz.');
+                    btn.textContent = 'Bildirimleri Aç';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('[Notify] Error:', error);
+                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                btn.textContent = 'Bildirimleri Aç';
+                btn.disabled = false;
+            }
+        }
+        
+        function closePushBanner() {
+            document.getElementById('pushBanner').style.display = 'none';
+            localStorage.setItem('push-banner-closed', Date.now().toString());
+        }
+        
+        function updateNotificationStatusUI(enabled) {
+            const statusEl = document.getElementById('notificationStatus');
+            if (statusEl) {
+                if (enabled) {
+                    statusEl.className = 'notification-status enabled';
+                    statusEl.innerHTML = '🔔 Bildirimler Açık';
+                } else {
+                    statusEl.className = 'notification-status disabled';
+                    statusEl.innerHTML = '🔕 Bildirimler Kapalı';
+                    statusEl.onclick = enablePushNotifications;
+                }
+            }
+        }
+        
+        // Banner daha önce kapatılmış mı kontrol et
+        function checkAndShowPushBanner(salonId) {
+            // Zaten izin verilmişse listener'ı başlat
+            if (Notification.permission === 'granted') {
+                notificationsEnabled = true;
+                startListening(salonId);
                 updateNotificationStatusUI(true);
                 return;
             }
             
-            // Reddedilmiş mi?
             if (Notification.permission === 'denied') {
                 updateNotificationStatusUI(false);
                 return;
@@ -5026,77 +5186,62 @@ END:VEVENT
                 document.getElementById('pushBanner').style.display = 'block';
             }, 3000);
         }
-        
-        async function enablePushNotifications() {
-            const banner = document.getElementById('pushBanner');
-            const btn = banner.querySelector('.push-btn-enable');
-            btn.textContent = 'Açılıyor...';
-            btn.disabled = true;
-            
-            try {
-                const permission = await Notification.requestPermission();
-                
-                if (permission === 'granted') {
-                    // Salon için token kaydet
-                    await registerSalonPush(currentSalonIdForPush);
-                    
-                    banner.style.display = 'none';
-                    updateNotificationStatusUI(true);
-                    
-                    // Test bildirimi gönder
-                    if (typeof ZamanliPush !== 'undefined') {
-                        ZamanliPush.showLocalNotification('Bildirimler Açıldı! 🎉', {
-                            body: 'Artık yeni randevulardan haberdar olacaksınız.',
-                            icon: '/icons/icon-192x192.png'
-                        });
-                    }
-                    
-                    alert('✅ Bildirimler açıldı! Yeni randevu geldiğinde bildirim alacaksınız.');
-                } else {
-                    alert('Bildirimlere izin verilmedi. Tarayıcı ayarlarından açabilirsiniz.');
-                    btn.textContent = 'Bildirimleri Aç';
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                console.error('[Push] Error:', error);
-                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
-                btn.textContent = 'Bildirimleri Aç';
-                btn.disabled = false;
-            }
-        }
-        
-        async function registerSalonPush(salonId) {
-            try {
-                if (typeof ZamanliPush !== 'undefined') {
-                    await ZamanliPush.init();
-                    const result = await ZamanliPush.registerSalonForPush(salonId);
-                    console.log('[Push] Salon registered:', result);
-                    return result;
-                }
-            } catch (error) {
-                console.error('[Push] Register error:', error);
-            }
-        }
-        
-        function closePushBanner() {
-            document.getElementById('pushBanner').style.display = 'none';
-            localStorage.setItem('push-banner-closed', Date.now().toString());
-        }
-        
-        function updateNotificationStatusUI(enabled) {
-            // Eğer header'da status badge varsa güncelle
-            const statusEl = document.getElementById('notificationStatus');
-            if (statusEl) {
-                if (enabled) {
-                    statusEl.className = 'notification-status enabled';
-                    statusEl.innerHTML = '🔔 Bildirimler Açık';
-                } else {
-                    statusEl.className = 'notification-status disabled';
-                    statusEl.innerHTML = '🔕 Bildirimler Kapalı';
-                    statusEl.onclick = enablePushNotifications;
-                }
-            }
-        }
     </script>
+    
+    <style>
+        /* Yeni Randevu Popup */
+        .new-appointment-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.4);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn 0.3s ease;
+            max-width: 350px;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .new-appointment-popup .popup-icon {
+            font-size: 2rem;
+        }
+        
+        .new-appointment-popup .popup-content strong {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .new-appointment-popup .popup-content p {
+            margin: 2px 0;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        .new-appointment-popup button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .new-appointment-popup button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
 </body>
 </html>
