@@ -41,5 +41,15 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+    
+    // Push Notification Tokens
+    match /push_tokens/{tokenId} {
+      allow read, write: if true;
+    }
+    
+    // Notifications Queue (Cloud Functions tarafından işlenir)
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
   }
 }

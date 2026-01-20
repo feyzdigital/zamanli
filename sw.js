@@ -1,6 +1,54 @@
-// Zamanli Service Worker v3.9
+// Zamanli Service Worker v4.0
 // Cache stratejisi: HTML/JS/CSS = Network Only, Diğer = Network First
-const CACHE_VERSION = 'v3.9';
+// Firebase Cloud Messaging entegrasyonu
+
+// Firebase SDK'ları import et (FCM için gerekli)
+importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
+
+// Firebase yapılandırması
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCCaSmLE9Ww3GTUqdeAINua3vNrmqNV-TQ",
+    authDomain: "zamanli.firebaseapp.com",
+    projectId: "zamanli",
+    storageBucket: "zamanli.firebasestorage.app",
+    messagingSenderId: "889448554414",
+    appId: "1:889448554414:web:3e97049c75c713c13e723f"
+};
+
+// Firebase'i başlat
+firebase.initializeApp(FIREBASE_CONFIG);
+
+// Firebase Messaging instance
+const messaging = firebase.messaging();
+
+// Background message handler (uygulama arka plandayken)
+messaging.onBackgroundMessage((payload) => {
+    console.log('[SW] Background message received:', payload);
+    
+    const notificationTitle = payload.notification?.title || payload.data?.title || 'Zamanli';
+    const notificationOptions = {
+        body: payload.notification?.body || payload.data?.body || 'Yeni bir bildiriminiz var',
+        icon: payload.notification?.icon || '/icons/icon-192x192.png',
+        badge: '/icons/icon-72x72.png',
+        vibrate: [200, 100, 200],
+        tag: payload.data?.tag || 'zamanli-notification',
+        renotify: true,
+        requireInteraction: payload.data?.requireInteraction === 'true',
+        data: {
+            url: payload.data?.link || payload.fcmOptions?.link || '/berber/salon/yonetim/',
+            ...payload.data
+        },
+        actions: [
+            { action: 'open', title: '👁️ Görüntüle' },
+            { action: 'dismiss', title: '❌ Kapat' }
+        ]
+    };
+
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+const CACHE_VERSION = 'v4.0';
 const CACHE_NAME = `zamanli-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 

@@ -11,11 +11,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Zamanli Panel">
     <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/icons/icon.svg">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
     
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png">
-    <link rel="shortcut icon" href="/icons/logo.png">
+    <link rel="shortcut icon" href="/icons/favicon.ico">
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
     <!-- Fonts: Satoshi + Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2644,6 +2647,7 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
     <script src="/config.js"></script>
     
     <script>
@@ -5064,8 +5068,8 @@ END:VEVENT
         async function registerSalonPush(salonId) {
             try {
                 if (typeof ZamanliPush !== 'undefined') {
-                    await PushManager.init();
-                    const result = await PushManager.registerSalonForPush(salonId);
+                    await ZamanliPush.init();
+                    const result = await ZamanliPush.registerSalonForPush(salonId);
                     console.log('[Push] Salon registered:', result);
                     return result;
                 }

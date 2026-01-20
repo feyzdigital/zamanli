@@ -2,8 +2,10 @@
 // Firebase Cloud Messaging entegrasyonu
 
 const ZamanliPush = {
-    // FCM VAPID Key (Firebase Console'dan alındı)
-    VAPID_KEY: 'BBPC1mKHLS8_d1_e0ZvwLLTZOF1RUK56H5r_0fD6TXvZM6sJyFl3ss5DTU5JP6GYWM8wJU079YGqEpCxw3Sv3z0',
+    // FCM VAPID Key (config.js'den alınır, fallback olarak burada da var)
+    VAPID_KEY: (typeof FCM_CONFIG !== 'undefined' && FCM_CONFIG.vapidKey) 
+        ? FCM_CONFIG.vapidKey 
+        : 'BBPC1mKHLS8_d1_e0ZvwLLTZOF1RUK56H5r_0fD6TXvZM6sJyFl3ss5DTU5JP6GYWM8wJU079YGqEpCxw3Sv3z0',
     
     // Durum
     isSupported: false,
@@ -529,5 +531,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Export
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = PushManager;
+    module.exports = ZamanliPush;
 }
