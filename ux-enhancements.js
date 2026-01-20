@@ -162,26 +162,26 @@ const ZamanliUX = {
             </a>
             <a href="/berber/" class="bottom-nav-item ${currentPath.includes('/berber') && !currentPath.includes('/salon') ? 'active' : ''}">
                 <span class="bottom-nav-icon">🔍</span>
-                <span class="bottom-nav-label">Ara</span>
+                <span class="bottom-nav-label">Keşfet</span>
             </a>
             <a href="#" onclick="ZamanliUX.showMyAppointments(); return false;" class="bottom-nav-item">
-                <span class="bottom-nav-icon">📅</span>
-                <span class="bottom-nav-label">Randevularım</span>
+                <span class="bottom-nav-icon">🗓️</span>
+                <span class="bottom-nav-label">Randevular</span>
             </a>
             <a href="#" onclick="ZamanliUX.showFavorites(); return false;" class="bottom-nav-item">
-                <span class="bottom-nav-icon">❤️</span>
+                <span class="bottom-nav-icon">♥</span>
                 <span class="bottom-nav-label">Favoriler</span>
             </a>
             ${showInstallBtn ? `
             <a href="#" onclick="ZamanliUX.showInstallPrompt(); return false;" class="bottom-nav-item" id="bottomNavInstall">
-                <span class="bottom-nav-icon">📲</span>
+                <span class="bottom-nav-icon">📥</span>
                 <span class="bottom-nav-label">Yükle</span>
             </a>
             ` : ''}
         `;
         
         document.body.appendChild(nav);
-        document.body.style.paddingBottom = '70px';
+        document.body.style.paddingBottom = '56px';
         
         // Eğer zaten yüklüyse (prompt gelmeyecekse) birkaç saniye sonra kontrol et
         if (showInstallBtn) {
@@ -192,7 +192,7 @@ const ZamanliUX = {
                     const installBtn = document.getElementById('bottomNavInstall');
                     if (installBtn) {
                         installBtn.innerHTML = `
-                            <span class="bottom-nav-icon">✅</span>
+                            <span class="bottom-nav-icon">✓</span>
                             <span class="bottom-nav-label">Yüklü</span>
                         `;
                         installBtn.style.opacity = '0.6';
@@ -845,7 +845,7 @@ const ZamanliUX = {
             .bottom-nav {
                 position: fixed;
                 bottom: 0; left: 0; right: 0;
-                height: 52px;
+                height: 56px;
                 background: #ffffff;
                 border-top: 1px solid #e2e8f0;
                 display: flex;
@@ -861,15 +861,15 @@ const ZamanliUX = {
                 display: flex; 
                 flex-direction: column; 
                 align-items: center;
-                gap: 1px;
+                gap: 2px;
                 text-decoration: none;
                 color: #94a3b8;
-                font-size: 9px; 
+                font-size: 10px; 
                 font-weight: 500;
-                padding: 4px 10px;
+                padding: 6px 12px;
                 border-radius: 8px;
                 transition: all 0.15s;
-                min-width: 48px;
+                min-width: 52px;
             }
             
             .bottom-nav-item.active { 
@@ -880,7 +880,7 @@ const ZamanliUX = {
                 transform: scale(0.95);
             }
             .bottom-nav-icon { 
-                font-size: 18px;
+                font-size: 20px;
                 line-height: 1;
             }
             .bottom-nav-label {

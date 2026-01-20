@@ -369,7 +369,7 @@
             .main {
                 grid-template-columns: 1fr;
                 padding: 0;
-                padding-bottom: 150px; /* Bottom nav (70px) + booking toggle (80px) */
+                padding-bottom: 130px; /* Bottom nav (56px) + booking toggle (74px) */
             }
         }
         
@@ -1041,7 +1041,7 @@
         @media (max-width: 900px) {
             .booking-panel {
                 position: fixed;
-                bottom: 70px; /* Bottom nav yüksekliği */
+                bottom: 56px; /* Bottom nav yüksekliği */
                 left: 0;
                 right: 0;
                 top: auto;
@@ -1059,23 +1059,42 @@
         @media (max-width: 900px) {
             .booking-card {
                 border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-                max-height: calc(85vh - 70px); /* Bottom nav için alan bırak */
+                max-height: calc(85vh - 56px); /* Bottom nav için alan bırak */
                 display: flex;
                 flex-direction: column;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
             }
         }
         
-        /* Mobile Toggle Bar */
+        /* Mobile Toggle Bar - Gradyan ve Şık */
         .booking-toggle {
             display: none;
-            padding: 1rem 1.25rem;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 0.875rem 1rem;
+            background: linear-gradient(135deg, #10B981 0%, #059669 50%, #047857 100%);
             cursor: pointer;
             color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Üst gradyan geçiş efekti */
+        .booking-toggle::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(to top, rgba(16, 185, 129, 0.3), transparent);
+            pointer-events: none;
         }
         
         @media (max-width: 900px) {
-            .booking-toggle { display: flex; align-items: center; justify-content: space-between; }
+            .booking-toggle { 
+                display: flex; 
+                align-items: center; 
+                justify-content: space-between;
+            }
         }
         
         .toggle-left {
@@ -1085,31 +1104,40 @@
         }
         
         .toggle-icon {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background: rgba(255,255,255,0.2);
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
+            backdrop-filter: blur(4px);
         }
         
         .toggle-text h4 {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 700;
             color: white;
+            margin-bottom: 1px;
         }
         
         .toggle-text p {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.85);
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.9);
         }
         
         .toggle-arrow {
-            font-size: 1.25rem;
-            color: rgba(255,255,255,0.8);
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.9);
             transition: transform 0.3s;
+            background: rgba(255,255,255,0.15);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .booking-card.collapsed .toggle-arrow {
@@ -1788,13 +1816,13 @@
             <div id="bookingCard" class="booking-card collapsed">
                 <div class="booking-toggle" onclick="toggleBooking()">
                     <div class="toggle-left">
-                        <div class="toggle-icon">📅</div>
+                        <div class="toggle-icon">🗓️</div>
                         <div class="toggle-text">
                             <h4>Randevu Al</h4>
                             <p id="toggleSummary">Hizmet ve tarih seçin</p>
                         </div>
                     </div>
-                    <span class="toggle-arrow">▼</span>
+                    <span class="toggle-arrow">▲</span>
                 </div>
                 
                 <div class="booking-content">
