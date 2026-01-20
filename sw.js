@@ -150,9 +150,6 @@ self.addEventListener('message', (event) => {
         console.log('[SW] All caches cleared by request');
     }
 });
-            })
-    );
-});
 
 // ==================== FETCH ====================
 self.addEventListener('fetch', (event) => {
