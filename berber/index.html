@@ -801,6 +801,158 @@
             }
         }
         
+        /* ============ MOBİL FİLTRE SİSTEMİ ============ */
+        .filters-mobile {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .filters-desktop { display: none; }
+            .filters-mobile { display: block; margin-bottom: 1rem; }
+        }
+        
+        .filters-mobile-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        
+        .results-count-mobile {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--slate-700);
+            white-space: nowrap;
+        }
+        
+        .filters-mobile-buttons {
+            display: flex;
+            gap: 0.35rem;
+            align-items: center;
+        }
+        
+        .filter-chip {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1.5px solid var(--slate-200);
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            color: var(--slate-600);
+            white-space: nowrap;
+        }
+        
+        .filter-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .filter-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .filter-chip-more {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            border: 1.5px solid var(--slate-200);
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-chip-more:hover,
+        .filter-chip-more.active {
+            border-color: var(--primary);
+            background: var(--primary-light, #ECFDF5);
+        }
+        
+        /* Açılır Filtre Menüsü */
+        .filters-mobile-dropdown {
+            display: none;
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        .filters-mobile-dropdown.active {
+            display: block;
+        }
+        
+        .dropdown-section {
+            margin-bottom: 0.75rem;
+        }
+        
+        .dropdown-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .dropdown-label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        
+        .dropdown-options {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+        
+        .dropdown-option {
+            padding: 0.4rem 0.7rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1.5px solid var(--slate-200);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            color: var(--slate-600);
+        }
+        
+        .dropdown-option:hover,
+        .dropdown-option.active {
+            border-color: var(--primary);
+            background: var(--primary-light, #ECFDF5);
+            color: var(--primary);
+        }
+        
+        .dropdown-select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            border: 1.5px solid var(--slate-200);
+            border-radius: 8px;
+            background: white;
+            font-family: inherit;
+            color: var(--slate-700);
+            cursor: pointer;
+        }
+        
+        .dropdown-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
         /* ============ MOBİL MİNİMAL TASARIM ============ */
         @media (max-width: 768px) {
             .mobile-menu-btn { display: block; }
@@ -1007,8 +1159,8 @@
             </div>
         </div>
         
-        <!-- Filters -->
-        <div class="filters-bar">
+        <!-- Filters - Desktop -->
+        <div class="filters-bar filters-desktop">
             <div class="results-count" id="resultsCount">Yükleniyor...</div>
             <div class="filters">
                 <button class="filter-btn active" data-filter="all">Tümü</button>
@@ -1019,6 +1171,37 @@
                 <select class="filter-select" id="cityFilter">
                     <option value="">Tüm Şehirler</option>
                 </select>
+            </div>
+        </div>
+        
+        <!-- Filters - Mobile -->
+        <div class="filters-mobile">
+            <div class="filters-mobile-row">
+                <span class="results-count-mobile" id="resultsCountMobile">Yükleniyor...</span>
+                <div class="filters-mobile-buttons">
+                    <button class="filter-chip active" data-filter="all">Tümü</button>
+                    <button class="filter-chip" data-filter="nearby" id="nearbyBtnMobile">📍 Yakınımda</button>
+                    <button class="filter-chip" data-filter="earliest">⚡ En Erken</button>
+                    <button class="filter-chip-more" onclick="toggleMobileFilters()">
+                        <span>⚙️</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Açılır Filtre Menüsü -->
+            <div class="filters-mobile-dropdown" id="mobileFiltersDropdown">
+                <div class="dropdown-section">
+                    <span class="dropdown-label">Durum</span>
+                    <div class="dropdown-options">
+                        <button class="dropdown-option" data-filter="open-now">🟢 Şimdi Açık</button>
+                        <button class="dropdown-option" data-filter="top-rated">⭐ En İyi Puan</button>
+                    </div>
+                </div>
+                <div class="dropdown-section">
+                    <span class="dropdown-label">Şehir</span>
+                    <select class="dropdown-select" id="cityFilterMobile">
+                        <option value="">Tüm Şehirler</option>
+                    </select>
+                </div>
             </div>
         </div>
         
@@ -1210,11 +1393,21 @@
         function populateCityFilter() {
             const cities = [...new Set(allSalons.map(s => s.city).filter(Boolean))];
             const select = document.getElementById('cityFilter');
+            const selectMobile = document.getElementById('cityFilterMobile');
+            
             cities.sort().forEach(city => {
                 const option = document.createElement('option');
                 option.value = city;
                 option.textContent = city;
                 select.appendChild(option);
+                
+                // Mobil için de ekle
+                if (selectMobile) {
+                    const optionMobile = document.createElement('option');
+                    optionMobile.value = city;
+                    optionMobile.textContent = city;
+                    selectMobile.appendChild(optionMobile);
+                }
             });
         }
         
@@ -1222,8 +1415,11 @@
         function renderSalons() {
             const grid = document.getElementById('salonGrid');
             const countEl = document.getElementById('resultsCount');
+            const countElMobile = document.getElementById('resultsCountMobile');
             
-            countEl.textContent = `${filteredSalons.length} berber bulundu`;
+            const countText = `${filteredSalons.length} berber bulundu`;
+            countEl.textContent = countText;
+            if (countElMobile) countElMobile.textContent = `${filteredSalons.length} berber`;
             
             if (filteredSalons.length === 0) {
                 grid.innerHTML = `
@@ -1533,6 +1729,74 @@
             document.getElementById('mobileMenu').classList.toggle('active');
             document.getElementById('mobileMenuOverlay').classList.toggle('active');
             document.body.style.overflow = document.getElementById('mobileMenu').classList.contains('active') ? 'hidden' : '';
+        }
+        
+        // Toggle Mobile Filters Dropdown
+        function toggleMobileFilters() {
+            const dropdown = document.getElementById('mobileFiltersDropdown');
+            const btn = document.querySelector('.filter-chip-more');
+            dropdown.classList.toggle('active');
+            btn.classList.toggle('active');
+        }
+        
+        // Mobil filtre chip'lerine click handler
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                // Aktif class'ı güncelle
+                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Desktop filtreleri de senkronize et
+                const filter = this.dataset.filter;
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.filter === filter);
+                });
+                
+                // Filtre uygula
+                if (typeof applyFilter === 'function') {
+                    applyFilter(filter);
+                }
+            });
+        });
+        
+        // Dropdown option click handler
+        document.querySelectorAll('.dropdown-option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                // Toggle active
+                this.classList.toggle('active');
+                
+                // Desktop'ta da uygula
+                const filter = this.dataset.filter;
+                const desktopBtn = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
+                if (desktopBtn) {
+                    desktopBtn.click();
+                }
+            });
+        });
+        
+        // Mobil şehir filtresi senkronizasyonu
+        const cityFilterMobile = document.getElementById('cityFilterMobile');
+        const cityFilterDesktop = document.getElementById('cityFilter');
+        
+        if (cityFilterMobile && cityFilterDesktop) {
+            cityFilterMobile.addEventListener('change', function() {
+                cityFilterDesktop.value = this.value;
+                cityFilterDesktop.dispatchEvent(new Event('change'));
+            });
+            
+            // Desktop değişince mobili güncelle
+            cityFilterDesktop.addEventListener('change', function() {
+                cityFilterMobile.value = this.value;
+            });
+        }
+        
+        // Results count senkronizasyonu
+        function updateResultsCount(count) {
+            const text = `${count} berber`;
+            const desktopEl = document.getElementById('resultsCount');
+            const mobileEl = document.getElementById('resultsCountMobile');
+            if (desktopEl) desktopEl.textContent = text;
+            if (mobileEl) mobileEl.textContent = text;
         }
         
         // Open Salon Login
