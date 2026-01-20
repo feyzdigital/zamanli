@@ -2,15 +2,23 @@
 /admin    /admin/index.html    200
 /admin/   /admin/index.html    200
 
-# Salon Yonetim Paneli (dinamik slug)
-/berber/*/yonetim    /berber/salon/yonetim/index.html    200
-/berber/*/yonetim/   /berber/salon/yonetim/index.html    200
-/kuafor/*/yonetim    /berber/salon/yonetim/index.html    200
-/kuafor/*/yonetim/   /berber/salon/yonetim/index.html    200
-/beauty/*/yonetim    /berber/salon/yonetim/index.html    200
-/beauty/*/yonetim/   /berber/salon/yonetim/index.html    200
+# Statik sayfalar - bunlar redirect OLMAMALI, olduğu gibi sunulmalı
+# (Cloudflare Pages otomatik olarak mevcut dosyaları önce kontrol eder)
 
-# Salon Sayfasi (dinamik slug)
-/berber/*    /berber/salon/index.html    200
-/kuafor/*    /berber/salon/index.html    200
-/beauty/*    /berber/salon/index.html    200
+# Salon Yonetim Paneli (dinamik slug)
+# /berber/SLUG/yonetim formatı
+/berber/:slug/yonetim    /berber/salon/yonetim/index.html    200
+/berber/:slug/yonetim/   /berber/salon/yonetim/index.html    200
+/kuafor/:slug/yonetim    /berber/salon/yonetim/index.html    200
+/kuafor/:slug/yonetim/   /berber/salon/yonetim/index.html    200
+/beauty/:slug/yonetim    /berber/salon/yonetim/index.html    200
+/beauty/:slug/yonetim/   /berber/salon/yonetim/index.html    200
+
+# Salon Sayfasi (dinamik slug) - sadece tek segment slug için
+# /berber/SLUG formatı (kayit, salon gibi klasörler hariç)
+/berber/:slug    /berber/salon/index.html    200
+/berber/:slug/   /berber/salon/index.html    200
+/kuafor/:slug    /berber/salon/index.html    200
+/kuafor/:slug/   /berber/salon/index.html    200
+/beauty/:slug    /berber/salon/index.html    200
+/beauty/:slug/   /berber/salon/index.html    200

@@ -2,23 +2,8 @@
   "version": 1,
   "include": ["/*"],
   "exclude": [
-    "/berber/salon/*",
-    "/berber/kayit/*",
-    "/berber/index.html",
-    "/admin/*",
-    "/fiyatlandirma/*",
-    "/demo/*",
-    "/randevu/*",
-    "/functions/*",
     "/icons/*",
-    "/styles.css",
-    "/config.js",
-    "/sw.js",
-    "/ux-enhancements.js",
-    "/push-notifications.js",
-    "/ai-recommendation.js",
-    "/whatsapp-automation.js",
-    "/finance-dashboard.js",
+    "/functions/*",
     "/*.css",
     "/*.js",
     "/*.json",
@@ -28,6 +13,8 @@
     "/*.jpg",
     "/*.ico",
     "/*.woff",
-    "/*.woff2"
+    "/*.woff2",
+    "/*.xml",
+    "/*.txt"
   ]
 }
