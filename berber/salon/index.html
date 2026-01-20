@@ -2763,9 +2763,9 @@ Görüşmek üzere!`;
             }
             
             // Push notification gönder (berbere)
-            if (typeof PushManager !== 'undefined' && salon.id) {
+            if (typeof ZamanliPush !== 'undefined' && salon.id) {
                 const formattedDateShort = formatDateFromStr(apt.date);
-                PushManager.sendNotificationToSalon(
+                ZamanliPush.sendNotificationToSalon(
                     salon.id,
                     '🔔 Yeni Randevu Talebi!',
                     `${apt.customerName} - ${formattedDateShort} ${apt.time} - ${apt.service}`,

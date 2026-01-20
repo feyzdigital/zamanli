@@ -5040,8 +5040,8 @@ END:VEVENT
                     updateNotificationStatusUI(true);
                     
                     // Test bildirimi gönder
-                    if (typeof PushManager !== 'undefined') {
-                        PushManager.showLocalNotification('Bildirimler Açıldı! 🎉', {
+                    if (typeof ZamanliPush !== 'undefined') {
+                        ZamanliPush.showLocalNotification('Bildirimler Açıldı! 🎉', {
                             body: 'Artık yeni randevulardan haberdar olacaksınız.',
                             icon: '/icons/icon-192x192.png'
                         });
@@ -5063,7 +5063,7 @@ END:VEVENT
         
         async function registerSalonPush(salonId) {
             try {
-                if (typeof PushManager !== 'undefined') {
+                if (typeof ZamanliPush !== 'undefined') {
                     await PushManager.init();
                     const result = await PushManager.registerSalonForPush(salonId);
                     console.log('[Push] Salon registered:', result);

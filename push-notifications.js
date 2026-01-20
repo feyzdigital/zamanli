@@ -1,7 +1,7 @@
 // Zamanli Push Notification Manager
 // Firebase Cloud Messaging entegrasyonu
 
-const PushManager = {
+const ZamanliPush = {
     // FCM VAPID Key (Firebase Console'dan alındı)
     VAPID_KEY: 'BBPC1mKHLS8_d1_e0ZvwLLTZOF1RUK56H5r_0fD6TXvZM6sJyFl3ss5DTU5JP6GYWM8wJU079YGqEpCxw3Sv3z0',
     
@@ -344,7 +344,7 @@ function createNotificationPromptUI() {
     // Zaten varsa ekleme
     if (document.getElementById('notificationPrompt')) return;
     
-    const status = PushManager.getPermissionStatus();
+    const status = ZamanliPush.getPermissionStatus();
     if (!status.canRequest) return;
     
     const promptHTML = `
@@ -466,7 +466,7 @@ function createNotificationPromptUI() {
 
 async function handleNotificationAllow() {
     const prompt = document.getElementById('notificationPrompt');
-    const result = await PushManager.requestPermission();
+    const result = await ZamanliPush.requestPermission();
     
     if (result.success) {
         prompt.innerHTML = `
@@ -509,13 +509,13 @@ function showNotificationPrompt() {
 // ==================== AUTO INIT ====================
 document.addEventListener('DOMContentLoaded', async () => {
     // Push Manager'ı başlat
-    await PushManager.init();
+    await ZamanliPush.init();
     
     // UI oluştur
     createNotificationPromptUI();
     
     // Gösterilecek mi kontrol et
-    const status = PushManager.getPermissionStatus();
+    const status = ZamanliPush.getPermissionStatus();
     if (status.canRequest) {
         const nextShow = localStorage.getItem('notification-prompt-next');
         const alreadyShown = localStorage.getItem('notification-prompt-shown');
