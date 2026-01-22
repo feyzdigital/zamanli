@@ -5094,6 +5094,9 @@ END:VEVENT
                     this.enabled = true;
                     this.updateUI(true);
                     console.log('[Notify] İzin verilmiş');
+                    
+                    // FCM Token'ı kaydet/güncelle (zaten izin varsa)
+                    this.registerFCMToken();
                 } else if (Notification.permission === 'denied') {
                     this.updateUI(false);
                     console.log('[Notify] İzin reddedilmiş');
@@ -5225,13 +5228,16 @@ END:VEVENT
                         if (banner) banner.style.display = 'none';
                         this.updateUI(true);
                         
+                        // FCM Token al ve kaydet
+                        await this.registerFCMToken();
+                        
                         // Test bildirimi
                         new Notification('✅ Bildirimler Açıldı!', {
                             body: 'Artık yeni randevulardan haberdar olacaksınız.',
                             icon: '/icons/icon-192x192.png'
                         });
                         
-                        console.log('[Notify] İzin verildi');
+                        console.log('[Notify] İzin verildi ve FCM token kaydedildi');
                     } else {
                         alert('Bildirimlere izin verilmedi.\nTarayıcı ayarlarından açabilirsiniz.');
                         if (btn) {
@@ -5247,6 +5253,102 @@ END:VEVENT
                         btn.disabled = false;
                     }
                 }
+            },
+            
+            // FCM Token al ve Firestore'a kaydet
+            registerFCMToken: async function() {
+                try {
+                    // Service Worker'ın hazır olmasını bekle
+                    const registration = await navigator.serviceWorker.ready;
+                    
+                    // Firebase Messaging başlat
+                    if (typeof firebase !== 'undefined' && firebase.messaging) {
+                        const messaging = firebase.messaging();
+                        
+                        // VAPID Key - config.js'den al
+                        const vapidKey = (typeof FCM_CONFIG !== 'undefined' && FCM_CONFIG.vapidKey) 
+                            ? FCM_CONFIG.vapidKey 
+                            : 'BBPC1mKHLS8_d1_e0ZvwLLTZOF1RUK56H5r_0fD6TXvZM6sJyFl3ss5DTU5JP6GYWM8wJU079YGqEpCxw3Sv3z0';
+                        
+                        const token = await messaging.getToken({
+                            vapidKey: vapidKey,
+                            serviceWorkerRegistration: registration
+                        });
+                        
+                        if (token && this.salonId) {
+                            console.log('[Notify] FCM Token alındı:', token.substring(0, 30) + '...');
+                            
+                            // Token'ı Firestore'a kaydet
+                            const tokenHash = await this.hashToken(token);
+                            
+                            await db.collection('push_tokens').doc(tokenHash).set({
+                                token: token,
+                                salonId: this.salonId,
+                                userType: 'salon',
+                                platform: this.detectPlatform(),
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true });
+                            
+                            console.log('[Notify] FCM Token Firestore\'a kaydedildi');
+                            
+                            // Foreground mesaj dinleyicisi
+                            messaging.onMessage((payload) => {
+                                console.log('[Notify] Foreground mesaj:', payload);
+                                
+                                // Uygulama açıkken gelen bildirimi göster
+                                if (payload.notification) {
+                                    new Notification(payload.notification.title, {
+                                        body: payload.notification.body,
+                                        icon: '/icons/icon-192x192.png',
+                                        badge: '/icons/icon-72x72.png'
+                                    });
+                                }
+                                
+                                // Popup da göster
+                                if (payload.data && payload.data.type === 'new_appointment') {
+                                    this.showPopup({
+                                        customerName: payload.data.customerName,
+                                        service: payload.data.service,
+                                        date: payload.data.date,
+                                        time: payload.data.time
+                                    });
+                                    
+                                    // Listeyi güncelle
+                                    if (typeof loadAppointments === 'function') {
+                                        loadAppointments();
+                                    }
+                                }
+                            });
+                            
+                            return token;
+                        }
+                    } else {
+                        console.warn('[Notify] Firebase Messaging kullanılamıyor');
+                    }
+                } catch (error) {
+                    console.error('[Notify] FCM Token hatası:', error);
+                }
+                return null;
+            },
+            
+            // Token hash'leme (ID olarak kullanmak için)
+            hashToken: async function(token) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(token);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 40);
+            },
+            
+            // Platform tespiti
+            detectPlatform: function() {
+                const ua = navigator.userAgent;
+                if (/android/i.test(ua)) return 'android';
+                if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+                if (/Windows/.test(ua)) return 'windows';
+                if (/Mac/.test(ua)) return 'mac';
+                return 'web';
             },
             
             // Bildirim banner'ını göster
