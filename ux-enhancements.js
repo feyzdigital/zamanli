@@ -462,206 +462,64 @@ const ZamanliUX = {
     },
 
     // ==================== 7. PWA INSTALL ====================
+    // NOT: PWA fonksiyonları artık pwa-manager.js tarafından yönetiliyor
+    // Bu bölüm geriye dönük uyumluluk için korunuyor ama aktif değil
     
     deferredPrompt: null,
     
     initPWA() {
+        // PWA yönetimi artık ZamanliPWA modülü tarafından yapılıyor
+        // Bu fonksiyon sadece bottom nav install butonunu yönetir
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         if (isStandalone) {
-            console.log('[UX] PWA zaten yüklü');
-            // Bottom nav'dan yükle butonunu gizle
+            console.log('[UX] PWA standalone mod - install butonları gizleniyor');
             const installBtn = document.getElementById('bottomNavInstall');
             if (installBtn) installBtn.style.display = 'none';
-            return;
         }
-        
-        // Global'de yakalanmış prompt var mı?
-        if (window.__pwaPrompt) {
-            this.deferredPrompt = window.__pwaPrompt;
-            console.log('[UX] PWA prompt global\'den alındı');
-        }
-        
-        // Android/Desktop için beforeinstallprompt (henüz yakalanmadıysa)
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            this.deferredPrompt = e;
-            window.__pwaPrompt = e;
-            console.log('[UX] PWA kuruluma hazır');
-            
-            // Banner göster (ilk ziyarette)
-            const dismissCount = parseInt(localStorage.getItem('pwa-dismiss-count') || '0');
-            if (dismissCount < 2) {
-                setTimeout(() => this.showPWABanner(), dismissCount === 0 ? 5000 : 10000);
-            }
-        });
-        
-        // Yüklendi event'i
-        window.addEventListener('appinstalled', () => {
-            console.log('[UX] PWA yüklendi!');
-            this.success('Uygulama yüklendi! 🎉');
-            localStorage.setItem('pwa-dismiss-count', '999');
-            this.hidePWABanner();
-            this.deferredPrompt = null;
-            window.__pwaPrompt = null;
-            
-            // Bottom nav'dan yükle butonunu kaldır
-            const installBtn = document.getElementById('bottomNavInstall');
-            if (installBtn) installBtn.style.display = 'none';
-        });
+        // Banner gösterme işlemi artık pwa-manager.js tarafından yapılıyor
     },
     
     showInstallPrompt() {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-        
-        // Zaten PWA olarak açılmışsa
-        if (isStandalone) {
-            this.success('Uygulamayı zaten kullanıyorsunuz! 🎉');
-            return;
-        }
-        
-        // Global'den prompt'u al
-        const prompt = this.deferredPrompt || window.__pwaPrompt;
-        
-        if (isIOS) {
-            this.showIOSInstallGuide();
-        } else if (prompt) {
-            // Native Chrome prompt göster
-            prompt.prompt();
-            prompt.userChoice.then((result) => {
-                if (result.outcome === 'accepted') {
-                    localStorage.setItem('pwa-dismiss-count', '999');
-                    this.success('Uygulama yükleniyor! 🎉');
-                }
-                this.deferredPrompt = null;
-                window.__pwaPrompt = null;
-            });
+        // pwa-manager.js'e yönlendir
+        if (typeof ZamanliPWA !== 'undefined' && ZamanliPWA.promptInstall) {
+            ZamanliPWA.promptInstall();
         } else {
-            // Prompt yok - muhtemelen zaten yüklü veya desteklenmiyor
-            this.showAlreadyInstalledOrUnsupported();
+            console.log('[UX] ZamanliPWA modülü bulunamadı');
         }
     },
     
+    // Eski fonksiyonlar - geriye dönük uyumluluk için (artık kullanılmıyor)
     showAlreadyInstalledOrUnsupported() {
-        const modal = document.createElement('div');
-        modal.className = 'ux-modal-overlay';
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-        
-        modal.innerHTML = `
-            <div class="ux-modal">
-                <div class="ux-modal-header">
-                    <h3>📲 Uygulama Durumu</h3>
-                    <button class="ux-modal-close" onclick="this.closest('.ux-modal-overlay').remove()">×</button>
-                </div>
-                <div class="ux-modal-body" style="text-align: center; padding: 24px;">
-                    <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
-                    <p style="font-size: 16px; color: #334155; margin-bottom: 12px;"><strong>Uygulama zaten yüklü!</strong></p>
-                    <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Ana ekranınızda "Zamanli" ikonunu arayın veya uygulama çekmecenize bakın.</p>
-                    <button class="ux-btn-primary" onclick="this.closest('.ux-modal-overlay').remove()" style="width: 100%;">Tamam</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        setTimeout(() => modal.classList.add('active'), 10);
+        if (typeof ZamanliPWA !== 'undefined') {
+            ZamanliPWA.showAlreadyInstalledModal();
+        }
     },
     
     showIOSInstallGuide() {
-        const modal = document.createElement('div');
-        modal.className = 'ux-modal-overlay';
-        modal.id = 'iosInstallModal';
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-        
-        modal.innerHTML = `
-            <div class="ux-modal ios-install-modal">
-                <div class="ux-modal-header">
-                    <h3>📲 iPhone'a Yükle</h3>
-                    <button class="ux-modal-close" onclick="this.closest('.ux-modal-overlay').remove()">×</button>
-                </div>
-                <div class="ux-modal-body">
-                    <div class="ios-install-steps">
-                        <div class="ios-step">
-                            <div class="ios-step-number">1</div>
-                            <div class="ios-step-content">
-                                <p>Safari'nin altındaki <strong>Paylaş</strong> butonuna tıklayın</p>
-                                <div class="ios-step-icon">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                                        <polyline points="16 6 12 2 8 6"/>
-                                        <line x1="12" y1="2" x2="12" y2="15"/>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ios-step">
-                            <div class="ios-step-number">2</div>
-                            <div class="ios-step-content">
-                                <p>Aşağı kaydırın ve <strong>"Ana Ekrana Ekle"</strong> seçin</p>
-                                <div class="ios-step-icon">➕</div>
-                            </div>
-                        </div>
-                        <div class="ios-step">
-                            <div class="ios-step-number">3</div>
-                            <div class="ios-step-content">
-                                <p>Sağ üstteki <strong>"Ekle"</strong> butonuna tıklayın</p>
-                                <div class="ios-step-icon">✓</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ios-install-note">
-                        <p>💡 Bu işlem sonrasında Zamanli ana ekranınızda bir uygulama gibi görünecek!</p>
-                    </div>
-                    <button class="ux-btn-primary ios-done-btn" onclick="this.closest('.ux-modal-overlay').remove()">Anladım</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        setTimeout(() => modal.classList.add('active'), 10);
+        if (typeof ZamanliPWA !== 'undefined') {
+            ZamanliPWA.showIOSInstallGuide();
+        }
     },
     
     showPWABanner() {
-        if (document.getElementById('uxPwaBanner')) return;
-        
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        
-        const banner = document.createElement('div');
-        banner.id = 'uxPwaBanner';
-        banner.className = 'ux-pwa-banner';
-        banner.innerHTML = `
-            <div class="ux-pwa-content">
-                <span class="ux-pwa-icon">📲</span>
-                <div class="ux-pwa-text">
-                    <strong>Zamanli'u Yükle</strong>
-                    <span>${isIOS ? 'Ana ekrana ekle' : 'Uygulama gibi kullan'}</span>
-                </div>
-            </div>
-            <div class="ux-pwa-actions">
-                <button class="ux-pwa-install" onclick="ZamanliUX.handleBannerInstall()">Yükle</button>
-                <button class="ux-pwa-close" onclick="ZamanliUX.dismissPWABanner()">✕</button>
-            </div>
-        `;
-        
-        document.body.appendChild(banner);
-        setTimeout(() => banner.classList.add('show'), 100);
+        // Artık pwa-manager.js tarafından yönetiliyor - bu fonksiyon çağrılmamalı
+        console.log('[UX] showPWABanner devre dışı - ZamanliPWA kullanılıyor');
     },
     
     handleBannerInstall() {
-        this.hidePWABanner();
         this.showInstallPrompt();
     },
     
     dismissPWABanner() {
-        const count = parseInt(localStorage.getItem('pwa-dismiss-count') || '0');
-        localStorage.setItem('pwa-dismiss-count', (count + 1).toString());
-        this.hidePWABanner();
+        // pwa-manager.js'e yönlendir
+        if (typeof ZamanliPWA !== 'undefined') {
+            ZamanliPWA.dismissInstallBanner();
+        }
     },
     
     hidePWABanner() {
-        const banner = document.getElementById('uxPwaBanner');
-        if (banner) {
-            banner.classList.remove('show');
-            setTimeout(() => banner.remove(), 300);
+        if (typeof ZamanliPWA !== 'undefined') {
+            ZamanliPWA.hideInstallBanner();
         }
     },
 
@@ -694,11 +552,8 @@ const ZamanliUX = {
         // Salon sayfasındaysa favori butonu ekle
         this.initSalonPage();
         
-        // PWA kurulum desteği
+        // PWA kurulum desteği - artık sadece bottom nav yönetimi
         this.initPWA();
-        
-        // iOS için PWA banner (ilk ziyarette)
-        this.checkIOSFirstVisit();
         
         // PWA olarak açıldıysa install butonlarını gizle
         this.hideInstallButtonsIfStandalone();
@@ -719,13 +574,8 @@ const ZamanliUX = {
     },
     
     checkIOSFirstVisit() {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const isStandalone = window.navigator.standalone;
-        const dismissCount = parseInt(localStorage.getItem('pwa-dismiss-count') || '0');
-        
-        if (isIOS && !isStandalone && dismissCount < 2) {
-            setTimeout(() => this.showPWABanner(), dismissCount === 0 ? 5000 : 15000);
-        }
+        // iOS PWA banner artık pwa-manager.js tarafından yönetiliyor
+        // Bu fonksiyon geriye dönük uyumluluk için korunuyor
     },
 
     initSalonPage() {

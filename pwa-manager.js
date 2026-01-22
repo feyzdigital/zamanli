@@ -631,16 +631,30 @@ const ZamanliPWA = {
                 background: linear-gradient(135deg, #0B2B26 0%, #10B981 100%);
                 color: white;
                 border-radius: 16px;
-                padding: 12px 16px;
+                padding: 14px 16px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                gap: 12px;
+                gap: 10px;
                 z-index: 9990;
                 box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3), 0 0 0 1px rgba(255,255,255,0.1) inset;
                 transform: translateY(calc(100% + 100px));
                 opacity: 0;
                 transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+            
+            /* Mobil - bottom nav üzerinde */
+            @media (max-width: 599px) {
+                .pwa-install-banner {
+                    bottom: 64px;
+                    left: 8px;
+                    right: 8px;
+                    padding: 12px 14px;
+                    gap: 8px;
+                    border-radius: 14px;
+                }
             }
             
             @media (min-width: 600px) {
@@ -660,16 +674,17 @@ const ZamanliPWA = {
             .pwa-banner-content {
                 display: flex;
                 align-items: center;
-                gap: 12px;
+                gap: 10px;
                 flex: 1;
                 min-width: 0;
+                overflow: hidden;
             }
             
             .pwa-banner-icon {
-                width: 44px;
-                height: 44px;
+                width: 40px;
+                height: 40px;
                 background: rgba(255,255,255,0.15);
-                border-radius: 12px;
+                border-radius: 10px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -677,27 +692,43 @@ const ZamanliPWA = {
                 overflow: hidden;
             }
             
+            @media (max-width: 599px) {
+                .pwa-banner-icon {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 8px;
+                }
+            }
+            
             .pwa-banner-icon img {
-                width: 32px;
-                height: 32px;
+                width: 28px;
+                height: 28px;
                 border-radius: 6px;
             }
             
             .pwa-banner-text {
                 display: flex;
                 flex-direction: column;
-                gap: 2px;
+                gap: 1px;
                 min-width: 0;
+                overflow: hidden;
             }
             
             .pwa-banner-text strong {
-                font-size: 15px;
+                font-size: 14px;
                 font-weight: 600;
                 letter-spacing: -0.01em;
+                white-space: nowrap;
+            }
+            
+            @media (max-width: 599px) {
+                .pwa-banner-text strong {
+                    font-size: 13px;
+                }
             }
             
             .pwa-banner-text span {
-                font-size: 12px;
+                font-size: 11px;
                 opacity: 0.85;
                 white-space: nowrap;
                 overflow: hidden;
@@ -707,7 +738,7 @@ const ZamanliPWA = {
             .pwa-banner-actions {
                 display: flex;
                 align-items: center;
-                gap: 8px;
+                gap: 6px;
                 flex-shrink: 0;
             }
             
@@ -715,13 +746,22 @@ const ZamanliPWA = {
                 background: white;
                 color: #0B2B26;
                 border: none;
-                padding: 10px 18px;
+                padding: 10px 16px;
                 border-radius: 10px;
                 font-weight: 600;
-                font-size: 14px;
+                font-size: 13px;
                 cursor: pointer;
                 font-family: inherit;
                 transition: transform 0.15s, box-shadow 0.15s;
+                white-space: nowrap;
+            }
+            
+            @media (max-width: 599px) {
+                .pwa-banner-install {
+                    padding: 8px 14px;
+                    font-size: 12px;
+                    border-radius: 8px;
+                }
             }
             
             .pwa-banner-install:active {
@@ -731,9 +771,9 @@ const ZamanliPWA = {
             .pwa-banner-close {
                 background: rgba(255,255,255,0.1);
                 border: none;
-                width: 36px;
-                height: 36px;
-                border-radius: 10px;
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
