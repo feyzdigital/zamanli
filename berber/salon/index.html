@@ -2,26 +2,42 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Salon - Zamanli</title>
     
-    <!-- PWA Install Prompt - En erken yakala -->
-    <script>window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__pwaPrompt=e;console.log('[PWA] Prompt yakalandı')});</script>
+    <!-- PWA Install Prompt - En Erken Yakala -->
+    <script>window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();window.__pwaPrompt=e;console.log('[PWA] Install prompt yakalandı');});</script>
     
-    <!-- PWA Meta Tags -->
+    <!-- PWA Temel -->
+    <meta name="application-name" content="Zamanli">
     <meta name="theme-color" content="#0B2B26">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- Apple/iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-title" content="Zamanli">
+    
+    <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
     <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
     
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" href="/icons/splash/apple-splash-1170-2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/icons/splash/apple-splash-1125-2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/icons/splash/apple-splash-750-1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png">
     <link rel="shortcut icon" href="/icons/favicon.ico">
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+    
     <!-- Fonts: Satoshi + Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
@@ -3096,6 +3112,9 @@ Onayınızı bekliyorum. Teşekkürler!`;
     <script src="/ai-recommendation.js"></script>
     
     <!-- UX Enhancements Module -->
+    <!-- PWA Manager -->
+    <script src="/pwa-manager.js"></script>
+    
     <script src="/ux-enhancements.js"></script>
     <script src="/push-notifications.js"></script>
     

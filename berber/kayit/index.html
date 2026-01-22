@@ -2,14 +2,19 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Salon Kayıt - Zamanli</title>
     
-    <!-- PWA Meta Tags -->
+    <!-- PWA Install Prompt - En Erken Yakala -->
+    <script>window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();window.__pwaPrompt=e;});</script>
+    
+    <!-- PWA Temel -->
+    <meta name="application-name" content="Zamanli">
     <meta name="theme-color" content="#0B2B26">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-title" content="Zamanli">
     
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -17,7 +22,8 @@
     <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
     <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
     
-    <!-- Favicons -->
+    <!-- Manifest & Favicons -->
+    <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png">
     <link rel="shortcut icon" href="/icons/favicon.ico">
@@ -1514,5 +1520,8 @@
         
         init();
     </script>
+    
+    <!-- PWA Manager -->
+    <script src="/pwa-manager.js"></script>
 </body>
 </html>

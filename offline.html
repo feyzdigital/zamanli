@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Çevrimdışı - Zamanli</title>
     <meta name="theme-color" content="#0B2B26">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,48 +30,70 @@
         
         body {
             font-family: var(--font-body);
-            background: linear-gradient(135deg, var(--brand-deep-forest) 0%, #0F3A33 100%);
+            background: linear-gradient(135deg, var(--brand-deep-forest) 0%, #0F3A33 50%, #0B2B26 100%);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            padding-top: calc(20px + env(safe-area-inset-top));
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
         }
         
         .offline-container {
             background: white;
             border-radius: 24px;
-            padding: 48px 32px;
-            max-width: 400px;
+            padding: 40px 28px;
+            max-width: 380px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(11, 43, 38, 0.25);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .offline-logo {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, var(--brand-emerald), #0EA371);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+        }
+        
+        .offline-logo img {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
         }
         
         .offline-icon {
-            font-size: 80px;
-            margin-bottom: 24px;
-            animation: float 3s ease-in-out infinite;
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: block;
+            animation: pulse-icon 2s ease-in-out infinite;
         }
         
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        @keyframes pulse-icon {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
         }
         
         h1 {
             font-family: var(--font-heading);
             color: var(--brand-deep-forest);
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         
-        p {
-            color: #6b7280;
-            font-size: 16px;
+        .subtitle {
+            color: #64748b;
+            font-size: 15px;
             line-height: 1.6;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
         
         .btn {
@@ -81,102 +103,157 @@
             gap: 8px;
             padding: 14px 28px;
             border-radius: 12px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             text-decoration: none;
             cursor: pointer;
             transition: all 0.2s ease;
             border: none;
+            font-family: inherit;
+            width: 100%;
         }
         
         .btn-primary {
-            background: var(--brand-emerald);
+            background: linear-gradient(135deg, var(--brand-emerald), #0EA371);
             color: white;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary.loading {
+            pointer-events: none;
+            opacity: 0.8;
         }
         
         .btn-secondary {
-            background: #f3f4f6;
-            color: #374151;
-            margin-top: 12px;
+            background: #f1f5f9;
+            color: #475569;
+            margin-top: 10px;
         }
         
         .btn-secondary:hover {
-            background: #e5e7eb;
+            background: #e2e8f0;
         }
         
-        .status-indicator {
+        .status-card {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            margin-top: 32px;
-            padding: 12px 16px;
+            gap: 10px;
+            margin-top: 24px;
+            padding: 14px 18px;
             background: #fef3c7;
-            border-radius: 8px;
+            border-radius: 12px;
             color: #92400e;
             font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .status-card.online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-card.error {
+            background: #fee2e2;
+            color: #991b1b;
         }
         
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             background: #f59e0b;
             border-radius: 50%;
-            animation: pulse 2s infinite;
+            animation: blink 1.5s infinite;
         }
         
-        @keyframes pulse {
+        .status-card.online .status-dot {
+            background: #10b981;
+            animation: none;
+        }
+        
+        .status-card.error .status-dot {
+            background: #ef4444;
+        }
+        
+        @keyframes blink {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            50% { opacity: 0.3; }
         }
         
-        .cached-info {
-            margin-top: 24px;
+        .tips {
+            margin-top: 28px;
             padding-top: 24px;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid #e2e8f0;
         }
         
-        .cached-info h3 {
-            font-size: 14px;
-            color: #6b7280;
-            margin-bottom: 12px;
-        }
-        
-        .cached-pages {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-        }
-        
-        .cached-page {
-            padding: 8px 16px;
-            background: #f3f4f6;
-            border-radius: 20px;
+        .tips h3 {
             font-size: 13px;
-            color: #374151;
-            text-decoration: none;
-            transition: all 0.2s;
+            color: #94a3b8;
+            font-weight: 600;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
-        .cached-page:hover {
-            background: #10B981;
-            color: white;
+        .tip-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .tip-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #475569;
+            text-align: left;
+        }
+        
+        .tip-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        /* Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="offline-container">
-        <div class="offline-icon">📡</div>
-        <h1>İnternet Bağlantısı Yok</h1>
-        <p>Şu anda çevrimdışı görünüyorsunuz. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.</p>
+        <div class="offline-logo">
+            <img src="/icons/icon-72x72.png" alt="Zamanli" onerror="this.parentElement.innerHTML='💈'">
+        </div>
         
-        <button class="btn btn-primary" onclick="tryReconnect()">
+        <span class="offline-icon">📡</span>
+        
+        <h1>İnternet Bağlantısı Yok</h1>
+        <p class="subtitle">Şu anda çevrimdışı görünüyorsunuz. Bağlantınızı kontrol edip tekrar deneyin.</p>
+        
+        <button class="btn btn-primary" id="retryBtn" onclick="tryReconnect()">
             🔄 Tekrar Dene
         </button>
         
@@ -184,61 +261,93 @@
             ← Geri Dön
         </button>
         
-        <div class="status-indicator">
+        <div class="status-card" id="statusCard">
             <span class="status-dot"></span>
-            <span>Bağlantı bekleniyor...</span>
+            <span id="statusText">Bağlantı bekleniyor...</span>
         </div>
         
-        <div class="cached-info">
-            <h3>📦 Çevrimdışı erişilebilir sayfalar:</h3>
-            <div class="cached-pages">
-                <a href="/" class="cached-page">🏠 Ana Sayfa</a>
-                <a href="/berber/" class="cached-page">💈 Berberler</a>
-                <a href="/fiyatlandirma/" class="cached-page">💰 Fiyatlar</a>
+        <div class="tips">
+            <h3>💡 İpuçları</h3>
+            <div class="tip-list">
+                <div class="tip-item">
+                    <span class="tip-icon">📶</span>
+                    <span>WiFi veya mobil veri bağlantınızı kontrol edin</span>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">✈️</span>
+                    <span>Uçak modunun kapalı olduğundan emin olun</span>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">🔄</span>
+                    <span>Yönlendiricinizi yeniden başlatmayı deneyin</span>
+                </div>
             </div>
         </div>
     </div>
     
     <script>
+        const retryBtn = document.getElementById('retryBtn');
+        const statusCard = document.getElementById('statusCard');
+        const statusText = document.getElementById('statusText');
+        
         // Bağlantı durumunu izle
+        function updateStatus(status) {
+            statusCard.className = 'status-card ' + status;
+            
+            switch(status) {
+                case 'online':
+                    statusText.textContent = 'Bağlantı sağlandı!';
+                    break;
+                case 'error':
+                    statusText.textContent = 'Bağlantı kurulamadı';
+                    break;
+                default:
+                    statusText.textContent = 'Bağlantı bekleniyor...';
+            }
+        }
+        
         function checkConnection() {
             if (navigator.onLine) {
-                // Online oldu, sayfayı yenile
-                window.location.reload();
+                updateStatus('online');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
             }
         }
         
         // Online/offline eventlerini dinle
         window.addEventListener('online', checkConnection);
+        window.addEventListener('offline', () => updateStatus(''));
         
         // Periyodik kontrol
-        setInterval(checkConnection, 3000);
+        setInterval(checkConnection, 5000);
         
-        function tryReconnect() {
-            const btn = event.target;
-            btn.innerHTML = '⏳ Bağlanılıyor...';
-            btn.disabled = true;
+        async function tryReconnect() {
+            retryBtn.classList.add('loading');
+            retryBtn.innerHTML = '<span class="spinner"></span> Bağlanılıyor...';
             
-            setTimeout(() => {
-                if (navigator.onLine) {
-                    window.location.reload();
+            // Gerçek bağlantı testi
+            try {
+                const response = await fetch('/', { 
+                    method: 'HEAD',
+                    cache: 'no-store'
+                });
+                
+                if (response.ok || navigator.onLine) {
+                    updateStatus('online');
+                    setTimeout(() => window.location.reload(), 300);
                 } else {
-                    btn.innerHTML = '🔄 Tekrar Dene';
-                    btn.disabled = false;
-                    
-                    // Hata mesajı göster
-                    const indicator = document.querySelector('.status-indicator');
-                    indicator.style.background = '#fee2e2';
-                    indicator.style.color = '#991b1b';
-                    indicator.innerHTML = '<span class="status-dot" style="background:#ef4444"></span><span>Bağlantı kurulamadı</span>';
-                    
-                    setTimeout(() => {
-                        indicator.style.background = '#fef3c7';
-                        indicator.style.color = '#92400e';
-                        indicator.innerHTML = '<span class="status-dot"></span><span>Bağlantı bekleniyor...</span>';
-                    }, 2000);
+                    throw new Error('Offline');
                 }
-            }, 1500);
+            } catch (e) {
+                updateStatus('error');
+                
+                setTimeout(() => {
+                    updateStatus('');
+                    retryBtn.classList.remove('loading');
+                    retryBtn.innerHTML = '🔄 Tekrar Dene';
+                }, 2000);
+            }
         }
         
         function goBack() {
@@ -248,6 +357,9 @@
                 window.location.href = '/';
             }
         }
+        
+        // Başlangıç kontrolü
+        checkConnection();
     </script>
 </body>
 </html>

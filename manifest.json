@@ -5,10 +5,13 @@
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#F8F9FA",
+  "background_color": "#0B2B26",
   "theme_color": "#0B2B26",
   "orientation": "portrait-primary",
   "id": "zamanli-pwa",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -94,11 +97,28 @@
       "icons": [{ "src": "/icons/shortcut-add.png", "sizes": "96x96" }]
     }
   ],
+  "screenshots": [
+    {
+      "src": "/icons/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Zamanli Dashboard"
+    },
+    {
+      "src": "/icons/screenshot-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Zamanli Mobil"
+    }
+  ],
   "categories": ["business", "lifestyle", "utilities"],
   "lang": "tr",
   "dir": "ltr",
   "prefer_related_applications": false,
   "display_override": ["standalone", "minimal-ui"],
+  "handle_links": "preferred",
   "edge_side_panel": {
     "preferred_width": 400
   }
