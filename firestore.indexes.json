@@ -49,13 +49,6 @@
         { "fieldPath": "time", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "push_tokens",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "lastActive", "order": "ASCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []
