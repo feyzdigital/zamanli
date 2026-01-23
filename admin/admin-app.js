@@ -5,6 +5,34 @@ const AdminState = {
 };
 let db = null;
 
+// Varsayılan hizmetler (kategorilere göre)
+const DEFAULT_SERVICES = {
+    berber: [
+        { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 30, price: 150, active: true },
+        { id: 'sakal-trasi', name: 'Sakal Tıraşı', icon: '🪒', duration: 20, price: 100, active: true },
+        { id: 'sac-sakal', name: 'Saç + Sakal', icon: '💈', duration: 45, price: 200, active: true },
+        { id: 'sac-yikama', name: 'Saç Yıkama', icon: '💧', duration: 15, price: 50, active: true },
+        { id: 'cilt-bakimi', name: 'Cilt Bakımı', icon: '🧴', duration: 30, price: 150, active: true },
+        { id: 'cocuk-tiras', name: 'Çocuk Tıraşı', icon: '👦', duration: 20, price: 100, active: true }
+    ],
+    kuafor: [
+        { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 45, price: 200, active: true },
+        { id: 'fon', name: 'Fön', icon: '💨', duration: 30, price: 150, active: true },
+        { id: 'boya', name: 'Saç Boyama', icon: '🎨', duration: 120, price: 500, active: true },
+        { id: 'balyaj', name: 'Balyaj', icon: '✨', duration: 180, price: 800, active: true },
+        { id: 'manikur', name: 'Manikür', icon: '💅', duration: 45, price: 200, active: true },
+        { id: 'pedikur', name: 'Pedikür', icon: '🦶', duration: 60, price: 250, active: true }
+    ],
+    beauty: [
+        { id: 'cilt-bakimi', name: 'Cilt Bakımı', icon: '🧴', duration: 60, price: 300, active: true },
+        { id: 'masaj', name: 'Masaj', icon: '💆', duration: 60, price: 400, active: true },
+        { id: 'epilasyon', name: 'Epilasyon', icon: '✨', duration: 45, price: 250, active: true },
+        { id: 'kirpik', name: 'Kirpik Lifting', icon: '👁️', duration: 60, price: 350, active: true },
+        { id: 'kas-dizayn', name: 'Kaş Dizayn', icon: '✏️', duration: 30, price: 150, active: true },
+        { id: 'kalici-makyaj', name: 'Kalıcı Makyaj', icon: '💄', duration: 120, price: 1500, active: true }
+    ]
+};
+
 // QR Kod URL Oluşturma (Harici API kullanır)
 function generateQRCodeUrl(text, size = 256) {
     return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&format=png&data=${encodeURIComponent(text)}`;
@@ -219,47 +247,96 @@ function switchDetailTab(t) { AdminState.detailTab = t; renderApp(); }
 async function approveSalon(id) {
     if (!confirm('Onaylamak istediginize emin misiniz?')) return;
     showToast('Onaylaniyor...', 'info');
+    
     try {
         const ref = db.collection('salons').doc(id);
-        const doc = await ref.get(); const data = doc.data();
+        const doc = await ref.get();
+        
+        if (!doc.exists) {
+            showToast('Hata: Salon bulunamadi!', 'error');
+            return;
+        }
+        
+        const data = doc.data();
         const pin = data.pin || Math.floor(1000 + Math.random() * 9000).toString();
+        
+        console.log('[Admin] Onaylanan salon:', data.name, 'ID:', id);
         
         // Salon URL'leri - Yeni format
         const panelUrl = 'https://zamanli.com/berber/salon/yonetim/?slug=' + data.slug;
-        const salonUrl = 'https://zamanli.com/' + (data.category || 'berber') + '/' + data.slug + '/';
+        const salonUrl = 'https://zamanli.com/berber/salon/?slug=' + data.slug;
         
         // QR Kod URL'leri (harici API)
         const qrCodeUrl = generateQRCodeUrl(salonUrl, 256);
         const qrCardUrl = generateQRCodeUrl(salonUrl, 200);
         
-        // Veritabanını güncelle
+        // 1. ADIM: Veritabanını güncelle (boolean değerler!)
+        console.log('[Admin] Adim 1: Salon durumu guncelleniyor...');
         await ref.update({ 
-            active: true, 
+            active: true,  // Boolean olarak true
             status: 'approved', 
             approvedAt: new Date().toISOString(),
             qrCodeUrl: qrCodeUrl,
-            qrCardUrl: qrCardUrl
+            qrCardUrl: qrCardUrl,
+            pin: pin
         });
+        console.log('[Admin] Adim 1: Tamamlandi');
         
-        // Personel ekle
-        if (data.staff?.length > 0) { 
-            const b = db.batch(); 
-            data.staff.forEach((s, i) => b.set(ref.collection('staff').doc(s.id || 'staff-' + (i+1)), { ...s, createdAt: new Date().toISOString() })); 
-            await b.commit(); 
+        // 2. ADIM: Personel ekle
+        if (data.staff?.length > 0) {
+            console.log('[Admin] Adim 2: Personel ekleniyor...', data.staff.length, 'kisi');
+            try {
+                const batch = db.batch();
+                data.staff.forEach((s, i) => {
+                    const staffId = s.id || 'staff-' + (i + 1);
+                    const staffRef = ref.collection('staff').doc(staffId);
+                    batch.set(staffRef, { 
+                        ...s, 
+                        id: staffId,
+                        createdAt: new Date().toISOString() 
+                    });
+                });
+                await batch.commit();
+                console.log('[Admin] Adim 2: Tamamlandi');
+            } catch (staffError) {
+                console.error('[Admin] Personel ekleme hatasi:', staffError);
+                // Devam et, kritik değil
+            }
         }
         
-        // Hizmetleri ekle
+        // 3. ADIM: Hizmetleri ekle
         const svc = data.services || DEFAULT_SERVICES[data.category || 'berber'] || DEFAULT_SERVICES.berber;
-        const svcSnap = await ref.collection('services').get();
-        if (svcSnap.empty && svc.length > 0) { 
-            const b = db.batch(); 
-            svc.forEach(s => b.set(ref.collection('services').doc(s.id), { ...s, createdAt: new Date().toISOString() })); 
-            await b.commit(); 
+        console.log('[Admin] Adim 3: Hizmetler kontrol ediliyor...', svc?.length || 0, 'hizmet');
+        
+        try {
+            const svcSnap = await ref.collection('services').get();
+            if (svcSnap.empty && svc && svc.length > 0) {
+                console.log('[Admin] Hizmetler ekleniyor...');
+                const batch = db.batch();
+                svc.forEach((s, index) => {
+                    const serviceId = s.id || 'service-' + (index + 1);
+                    const serviceRef = ref.collection('services').doc(serviceId);
+                    batch.set(serviceRef, { 
+                        ...s, 
+                        id: serviceId,
+                        active: true,
+                        createdAt: new Date().toISOString() 
+                    });
+                });
+                await batch.commit();
+                console.log('[Admin] Adim 3: Tamamlandi');
+            } else {
+                console.log('[Admin] Adim 3: Hizmetler zaten mevcut, atlanıyor');
+            }
+        } catch (serviceError) {
+            console.error('[Admin] Hizmet ekleme hatasi:', serviceError);
+            // Devam et, kritik değil
         }
         
-        // E-posta gönder (QR kod dahil)
+        // 4. ADIM: E-posta gönder (QR kod dahil)
         if (data.email) { 
             try { 
+                console.log('[Admin] Adim 4: E-posta gonderiliyor...', data.email);
                 await emailjs.send(ADMIN_CONFIG.emailjs.serviceId, ADMIN_CONFIG.emailjs.templateApproval, { 
                     to_email: data.email, 
                     salon_name: data.name, 
@@ -271,16 +348,22 @@ async function approveSalon(id) {
                     qr_code_url: qrCodeUrl,
                     qr_card_url: qrCardUrl
                 }); 
+                console.log('[Admin] Adim 4: E-posta gonderildi');
                 showToast('Onaylandi, QR kod oluşturuldu ve mail gonderildi!', 'success'); 
-            } catch (e) { 
-                console.error('Email error:', e); 
+            } catch (emailError) { 
+                console.error('[Admin] Email hatasi:', emailError); 
                 showToast('Onaylandi! Mail gonderilemedi. PIN: ' + pin, 'warning'); 
             } 
         } else {
             showToast('Onaylandi ve QR kod oluşturuldu! PIN: ' + pin, 'success');
         }
+        
         await loadAllData();
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+        
+    } catch (e) { 
+        console.error('[Admin] Onaylama hatasi:', e);
+        showToast('Hata: ' + e.message, 'error'); 
+    }
 }
 
 async function rejectSalon(id) {

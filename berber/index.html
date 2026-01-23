@@ -1358,7 +1358,8 @@
         // Load Salons
         async function loadSalons() {
             try {
-                const snapshot = await db.collection('salons')
+                // İlk olarak boolean true ile dene
+                let snapshot = await db.collection('salons')
                     .where('active', '==', true)
                     .where('status', '==', 'approved')
                     .where('category', '==', 'berber')
@@ -1369,18 +1370,33 @@
                     ...doc.data()
                 }));
                 
-                // If no salons with category, try without category filter (for existing data)
+                // Eğer boşsa, string "true" ile dene (eski kayıtlar için)
                 if (allSalons.length === 0) {
-                    const fallbackSnapshot = await db.collection('salons')
-                        .where('active', '==', true)
+                    const stringSnapshot = await db.collection('salons')
+                        .where('active', '==', 'true')
                         .where('status', '==', 'approved')
+                        .where('category', '==', 'berber')
                         .get();
                     
-                    allSalons = fallbackSnapshot.docs.map(doc => ({
+                    allSalons = stringSnapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data()
                     }));
                 }
+                
+                // Hala boşsa, category filtresi olmadan dene
+                if (allSalons.length === 0) {
+                    const fallbackSnapshot = await db.collection('salons')
+                        .where('status', '==', 'approved')
+                        .get();
+                    
+                    // Client-side active filtresi (hem boolean hem string)
+                    allSalons = fallbackSnapshot.docs
+                        .map(doc => ({ id: doc.id, ...doc.data() }))
+                        .filter(s => s.active === true || s.active === 'true');
+                }
+                
+                console.log('[Salons] Loaded:', allSalons.length, 'salons');
                 
                 // Mark demo salons and filter out old demo-berber
                 allSalons = allSalons

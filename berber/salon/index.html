@@ -2177,21 +2177,29 @@
             firebase.initializeApp(FIREBASE_CONFIG);
             db = firebase.firestore();
             
-            // Önce URL parametresinden slug'ı al
+            // URL parametresinden slug'ı al
             const urlParams = new URLSearchParams(window.location.search);
             let slug = urlParams.get('slug');
             
-            // Eğer parametre yoksa, eski yöntemle dene (geriye uyumluluk)
+            // Eğer parametre yoksa, path'den dene (geriye uyumluluk)
+            // Ancak /berber/salon/ path'indeki "salon" kelimesini atla
             if (!slug) {
                 const pathParts = window.location.pathname.split('/').filter(Boolean);
                 console.log('Path parts:', pathParts);
-                // URL: /berber/[slug]/ -> pathParts = ['berber', 'slug']
-                slug = pathParts[1];
+                // URL: /berber/[actual-slug]/ -> pathParts = ['berber', 'actual-slug']
+                // Ancak /berber/salon/?slug=x formatında pathParts[1] = 'salon' olur, bunu atla
+                if (pathParts.length >= 2 && pathParts[0] === 'berber' && pathParts[1] !== 'salon') {
+                    slug = pathParts[1];
+                }
             }
             
             console.log('Looking for slug:', slug);
             
-            if (!slug || slug === 'salon') { showError(); return; }
+            if (!slug) { 
+                console.log('No slug found in URL');
+                showError(); 
+                return; 
+            }
             
             try {
                 // Önce slug ile ara
@@ -2205,29 +2213,38 @@
                 }
                 
                 const salonData = snap.docs[0].data();
-                if (!salonData.active) {
-                    console.log('Salon is not active');
+                
+                // active kontrolü - hem boolean hem string destekle
+                const isActive = salonData.active === true || salonData.active === 'true';
+                if (!isActive) {
+                    console.log('Salon is not active. active value:', salonData.active, 'type:', typeof salonData.active);
                     showError();
                     return;
                 }
                 
-                salon = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                salon = { id: snap.docs[0].id, ...salonData };
                 
                 // Load subcollections
                 const [staffSnap, svcSnap] = await Promise.all([
                     db.collection('salons').doc(salon.id).collection('staff').get(),
-                    db.collection('salons').doc(salon.id).collection('services').where('active', '==', true).get()
+                    db.collection('salons').doc(salon.id).collection('services').get()
                 ]);
                 
                 salon.staffList = staffSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                salon.serviceList = svcSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Aktif servisleri filtrele (hem boolean hem string destekle)
+                salon.serviceList = svcSnap.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(s => s.active === true || s.active === 'true' || s.active === undefined);
                 
+                // Subcollection boşsa ana dokümandaki verileri kullan
                 if (salon.serviceList.length === 0 && salon.services) {
-                    salon.serviceList = salon.services.filter(s => s.active !== false);
+                    salon.serviceList = salon.services.filter(s => s.active !== false && s.active !== 'false');
                 }
                 if (salon.staffList.length === 0 && salon.staff) {
                     salon.staffList = salon.staff;
                 }
+                
+                console.log('Salon loaded:', salon.name, 'Staff:', salon.staffList.length, 'Services:', salon.serviceList.length);
                 
                 // Randevuları yükle (hata olursa devam et)
                 await loadExistingAppointments();

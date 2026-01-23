@@ -8,6 +8,16 @@ service cloud.firestore {
       allow create: if true; // Kayıt için
       allow update, delete: if true; // PIN doğrulaması frontend'de yapılıyor
       
+      // Salon altındaki personeller
+      match /staff/{staffId} {
+        allow read, write: if true;
+      }
+      
+      // Salon altındaki hizmetler
+      match /services/{serviceId} {
+        allow read, write: if true;
+      }
+      
       // Salon altındaki randevular
       match /appointments/{appointmentId} {
         allow read, write: if true;
