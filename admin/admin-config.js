@@ -30,6 +30,24 @@ const DEFAULT_SERVICES = {
         { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 30, price: 150, active: true },
         { id: 'sakal-trasi', name: 'Sakal Tıraşı', icon: '🪒', duration: 20, price: 100, active: true },
         { id: 'sac-sakal', name: 'Saç + Sakal', icon: '💈', duration: 45, price: 200, active: true },
-        { id: 'sac-yikama', name: 'Saç Yıkama', icon: '💧', duration: 15, price: 50, active: true }
+        { id: 'sac-yikama', name: 'Saç Yıkama', icon: '💧', duration: 15, price: 50, active: true },
+        { id: 'cilt-bakimi', name: 'Cilt Bakımı', icon: '🧴', duration: 30, price: 150, active: true },
+        { id: 'cocuk-tiras', name: 'Çocuk Tıraşı', icon: '👦', duration: 20, price: 100, active: true }
+    ],
+    kuafor: [
+        { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 45, price: 200, active: true },
+        { id: 'fon', name: 'Fön', icon: '💨', duration: 30, price: 150, active: true },
+        { id: 'boya', name: 'Saç Boyama', icon: '🎨', duration: 120, price: 500, active: true },
+        { id: 'balyaj', name: 'Balyaj', icon: '✨', duration: 180, price: 800, active: true },
+        { id: 'manikur', name: 'Manikür', icon: '💅', duration: 45, price: 200, active: true },
+        { id: 'pedikur', name: 'Pedikür', icon: '🦶', duration: 60, price: 250, active: true }
+    ],
+    beauty: [
+        { id: 'cilt-bakimi', name: 'Cilt Bakımı', icon: '🧴', duration: 60, price: 300, active: true },
+        { id: 'masaj', name: 'Masaj', icon: '💆', duration: 60, price: 400, active: true },
+        { id: 'epilasyon', name: 'Epilasyon', icon: '✨', duration: 45, price: 250, active: true },
+        { id: 'kirpik', name: 'Kirpik Lifting', icon: '👁️', duration: 60, price: 350, active: true },
+        { id: 'kas-dizayn', name: 'Kaş Dizayn', icon: '✏️', duration: 30, price: 150, active: true },
+        { id: 'kalici-makyaj', name: 'Kalıcı Makyaj', icon: '💄', duration: 120, price: 1500, active: true }
     ]
 };
