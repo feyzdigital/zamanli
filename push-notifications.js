@@ -44,9 +44,33 @@ const ZamanliPush = {
             notification: 'Notification' in window
         };
         
+        // iOS PWA kontrolü
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        
+        if (isIOS) {
+            checks.isIOSPWA = isStandalone;
+            // iOS 16.4+ gerekli
+            const iOSVersion = parseFloat((navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[1] + '.' + ((navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[2] || '0'));
+            checks.iOSVersionOK = iOSVersion >= 16.4;
+            
+            console.log('[Push] iOS detected. Standalone:', isStandalone, 'iOS Version:', iOSVersion);
+            
+            if (!isStandalone) {
+                console.log('[Push] iOS: PWA ana ekrana eklenmeli');
+            }
+        }
+        
         console.log('[Push] Support checks:', checks);
         
         return checks.serviceWorker && checks.pushManager && checks.notification;
+    },
+    
+    // iOS için PWA kurulum kontrolü
+    isIOSAndNeedsPWA() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        return isIOS && !isStandalone;
     },
     
     // ==================== İZİN İSTEME ====================
@@ -352,6 +376,12 @@ function createNotificationPromptUI() {
     // Zaten varsa ekleme
     if (document.getElementById('notificationPrompt')) return;
     
+    // iOS ve PWA değilse, önce PWA kurulum prompt'u göster
+    if (ZamanliPush.isIOSAndNeedsPWA()) {
+        createIOSInstallPrompt();
+        return;
+    }
+    
     const status = ZamanliPush.getPermissionStatus();
     if (!status.canRequest) return;
     
@@ -514,10 +544,80 @@ function showNotificationPrompt() {
     }
 }
 
+// ==================== iOS PWA KURULUM PROMPT ====================
+function createIOSInstallPrompt() {
+    if (document.getElementById('iosInstallPrompt')) return;
+    
+    const promptHTML = `
+        <div id="iosInstallPrompt" class="notification-prompt">
+            <div class="notification-prompt-content">
+                <div class="notification-prompt-icon">📲</div>
+                <div class="notification-prompt-text">
+                    <h4>Ana Ekrana Ekle</h4>
+                    <p>Bildirim alabilmek için uygulamayı ana ekrana eklemeniz gerekiyor</p>
+                    <div class="ios-install-steps">
+                        <p>1. Safari'de <strong>Paylaş</strong> butonuna tıklayın <span style="font-size:1.2em">⬆️</span></p>
+                        <p>2. <strong>"Ana Ekrana Ekle"</strong> seçeneğini seçin</p>
+                        <p>3. Eklenen uygulamayı açın</p>
+                    </div>
+                </div>
+                <div class="notification-prompt-actions">
+                    <button class="btn-allow" onclick="closeIOSInstallPrompt()">Anladım</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // iOS özel stiller
+    if (!document.getElementById('iosInstallStyles')) {
+        const style = document.createElement('style');
+        style.id = 'iosInstallStyles';
+        style.textContent = `
+            .ios-install-steps {
+                margin-top: 12px;
+                padding: 12px;
+                background: #f3f4f6;
+                border-radius: 8px;
+                font-size: 13px;
+            }
+            .ios-install-steps p {
+                margin: 6px 0;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', promptHTML);
+    
+    // Otomatik göster
+    setTimeout(() => {
+        const prompt = document.getElementById('iosInstallPrompt');
+        if (prompt) prompt.classList.add('show');
+    }, 2000);
+}
+
+function closeIOSInstallPrompt() {
+    const prompt = document.getElementById('iosInstallPrompt');
+    if (prompt) {
+        prompt.classList.remove('show');
+        setTimeout(() => prompt.remove(), 300);
+    }
+    localStorage.setItem('ios-install-prompt-shown', 'true');
+}
+
 // ==================== AUTO INIT ====================
 document.addEventListener('DOMContentLoaded', async () => {
     // Push Manager'ı başlat
     await ZamanliPush.init();
+    
+    // iOS PWA kontrolü
+    if (ZamanliPush.isIOSAndNeedsPWA()) {
+        const alreadyShown = localStorage.getItem('ios-install-prompt-shown');
+        if (!alreadyShown) {
+            createIOSInstallPrompt();
+        }
+        return; // iOS'ta PWA olmadan bildirim çalışmaz
+    }
     
     // UI oluştur
     createNotificationPromptUI();

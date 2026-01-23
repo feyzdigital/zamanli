@@ -12,6 +12,9 @@
   "launch_handler": {
     "client_mode": "navigate-existing"
   },
+  "permissions_policy": {
+    "notifications": ["self"]
+  },
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
