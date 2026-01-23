@@ -35,6 +35,15 @@ exports.onNewAppointment = functions
         }
         
         try {
+            // Salon bilgilerini al (slug için)
+            let salonSlug = appointment.salonSlug || '';
+            if (!salonSlug) {
+                const salonDoc = await db.collection('salons').doc(appointment.salonId).get();
+                if (salonDoc.exists) {
+                    salonSlug = salonDoc.data().slug || '';
+                }
+            }
+            
             // Salonun push token'larını al
             const tokensSnapshot = await db.collection('push_tokens')
                 .where('salonId', '==', appointment.salonId)
@@ -68,6 +77,8 @@ exports.onNewAppointment = functions
                 body: `${appointment.customerName || 'Müşteri'} - ${appointment.service || 'Hizmet'}\n${appointment.date || ''} ${appointment.time || ''}`
             };
             
+            const clickUrl = salonSlug ? `https://zamanli.com/berber/salon/yonetim/?slug=${salonSlug}` : 'https://zamanli.com/berber/';
+            
             // FCM mesajı
             const message = {
                 notification: notification,
@@ -75,11 +86,12 @@ exports.onNewAppointment = functions
                     type: 'new_appointment',
                     appointmentId: appointmentId,
                     salonId: appointment.salonId,
+                    salonSlug: salonSlug,
                     customerName: appointment.customerName || '',
                     service: appointment.service || '',
                     date: appointment.date || '',
                     time: appointment.time || '',
-                    click_action: `/berber/salon/yonetim/?slug=${appointment.salonSlug || ''}`
+                    click_action: clickUrl
                 },
                 webpush: {
                     notification: {
@@ -100,7 +112,7 @@ exports.onNewAppointment = functions
                         ]
                     },
                     fcmOptions: {
-                        link: `/berber/salon/yonetim/?slug=${appointment.salonSlug || ''}`
+                        link: clickUrl
                     }
                 },
                 android: {
