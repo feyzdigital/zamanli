@@ -1848,79 +1848,118 @@
         
         .weekly-calendar {
             display: grid;
-            grid-template-columns: 60px repeat(7, 1fr);
-            gap: 1px;
-            background: var(--slate-200);
+            grid-template-columns: 40px repeat(7, 1fr);
+            grid-auto-rows: minmax(32px, auto);
+            font-size: 0.7rem;
+            background: white;
             border-radius: var(--radius);
-            overflow: hidden;
-            min-height: 500px;
+            overflow: auto;
+            max-height: calc(100vh - 320px);
+            min-height: 250px;
+        }
+        
+        @media (max-width: 768px) {
+            .weekly-calendar {
+                grid-template-columns: 35px repeat(7, 1fr);
+                grid-auto-rows: minmax(28px, auto);
+                font-size: 0.65rem;
+                max-height: 45vh;
+            }
         }
         
         .cal-header {
-            background: var(--primary);
+            background: linear-gradient(135deg, #10B981, #059669);
             color: white;
-            padding: 0.75rem 0.25rem;
+            padding: 0.2rem 0.1rem;
             text-align: center;
             font-weight: 600;
-            font-size: 0.75rem;
+            font-size: 0.6rem;
+            border-bottom: 2px solid #059669;
+            border-right: 1px solid rgba(255,255,255,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
         
         .cal-header.today {
-            background: var(--success);
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-bottom-color: #1e293b;
+        }
+        
+        .cal-header-day {
+            font-size: 0.5rem;
+            opacity: 0.9;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
         
         .cal-header-date {
-            font-size: 1.1rem;
+            font-size: 0.8rem;
             font-weight: 700;
+            line-height: 1.1;
         }
         
         .cal-time-header {
-            background: var(--slate-100);
-            padding: 0.5rem;
-            font-size: 0.75rem;
+            background: var(--slate-50);
+            padding: 0.2rem;
+            font-size: 0.6rem;
             color: var(--slate-500);
             text-align: center;
+            border-right: 1px solid var(--slate-200);
+            border-bottom: 2px solid #059669;
+            position: sticky;
+            top: 0;
+            left: 0;
+            z-index: 3;
         }
         
         .cal-time-slot {
-            background: var(--slate-50);
-            padding: 0.25rem;
-            font-size: 0.7rem;
+            background: white;
+            padding: 0.1rem;
+            font-size: 0.55rem;
             color: var(--slate-500);
             text-align: center;
-            border-bottom: 1px solid var(--slate-200);
-            min-height: 40px;
+            border-right: 1px solid var(--slate-200);
+            border-bottom: 1px solid var(--slate-100);
+            position: sticky;
+            left: 0;
+            z-index: 1;
         }
         
         .cal-cell {
             background: white;
-            padding: 2px;
-            min-height: 40px;
+            padding: 1px;
+            min-height: 32px;
             position: relative;
             cursor: pointer;
             transition: background 0.2s;
+            border-right: 1px solid var(--slate-100);
+            border-bottom: 1px solid var(--slate-100);
         }
         
         .cal-cell:hover {
-            background: var(--slate-50);
+            background: rgba(16, 185, 129, 0.05);
         }
         
         .cal-cell.past {
-            background: var(--slate-100);
+            background: var(--slate-50);
             cursor: not-allowed;
         }
         
         .cal-appointment {
             background: var(--primary);
             color: white;
-            padding: 3px 5px;
-            border-radius: 4px;
-            font-size: 0.65rem;
-            margin-bottom: 2px;
+            padding: 0.15rem 0.25rem;
+            border-radius: 3px;
+            font-size: 0.55rem;
+            margin-bottom: 1px;
             cursor: pointer;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            line-height: 1.2;
+            transition: transform 0.1s, box-shadow 0.1s;
         }
         
         .cal-appointment.pending {
@@ -1928,7 +1967,7 @@
         }
         
         .cal-appointment.confirmed {
-            background: var(--success);
+            background: var(--primary);
         }
         
         .cal-appointment.cancelled {
@@ -1937,8 +1976,9 @@
         }
         
         .cal-appointment:hover {
-            transform: scale(1.02);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 10;
         }
         
         /* Sürükle-Bırak stilleri */
@@ -3128,62 +3168,57 @@
                 <button class="tab" data-tab="settings">⚙️ Ayarlar</button>
             </div>
             
-            <!-- Appointments Tab -->
+            <!-- Appointments Tab - Yeni Tasarım -->
             <div id="tab-appointments" class="tab-content active">
-                <div class="appointments-header" style="flex-wrap: wrap; gap: 0.5rem;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
-                        <h3 class="appointments-title" style="margin: 0;">Randevular</h3>
-                        <button class="btn btn-primary btn-sm" onclick="openManualAppointmentModal()" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
-                            ➕ Randevu Ekle
+                <div class="appointments-header" style="flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+                        <h3 class="appointments-title" style="margin: 0; font-size: 1rem;">📅 Tüm Randevular</h3>
+                        <button class="btn-add-appointment" onclick="openManualAppointmentModal()" title="Manuel Randevu Ekle">
+                            ➕
                         </button>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                        <div class="view-toggle">
-                            <button class="view-btn active" data-view="list" onclick="switchView('list')">📋 Liste</button>
-                            <button class="view-btn" data-view="calendar" onclick="switchView('calendar')">📅 Takvim</button>
+                    <div style="display: flex; gap: 0.35rem; align-items: center;">
+                        <div class="view-toggle" style="background: var(--slate-100); border-radius: 8px; padding: 2px;">
+                            <button class="view-btn active" data-view="calendar" onclick="switchView('calendar')" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;">📅 Takvim</button>
+                            <button class="view-btn" data-view="list" onclick="switchView('list')" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;">📋 Liste</button>
                         </div>
-                        <button class="btn btn-outline btn-sm" onclick="exportToGoogleCalendar()" title="Google Takvime Aktar" style="padding: 0.35rem 0.5rem; font-size: 0.75rem;">
-                            📅 G.Cal
+                        <button class="btn btn-outline btn-sm" onclick="exportToGoogleCalendar()" title="Google Takvime Aktar" style="padding: 0.3rem 0.5rem; font-size: 0.7rem;">
+                            📅
                         </button>
                     </div>
                 </div>
                 
-                <!-- Liste Görünümü -->
-                <div id="listView" class="view-container active">
-                    <div class="appointments-filters">
-                        <button class="filter-btn active" data-filter="all">Tümü</button>
-                        <button class="filter-btn" data-filter="pending">Bekleyen</button>
-                        <button class="filter-btn" data-filter="confirmed">Onaylı</button>
-                        <button class="filter-btn" data-filter="today">Bugün</button>
+                <!-- Haftalık Takvim Görünümü (ÖNCELİKLİ) -->
+                <div id="calendarView" class="view-container active">
+                    <div class="calendar-controls" style="padding: 0.5rem 1rem; background: var(--slate-50); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                            <button class="cal-nav-btn" onclick="changeWeek(-1)" style="padding: 0.3rem 0.5rem;">←</button>
+                            <span id="weekRange" class="week-range" style="font-size: 0.8rem; min-width: 100px; text-align: center; font-weight: 600;">Tarih</span>
+                            <button class="cal-nav-btn" onclick="changeWeek(1)" style="padding: 0.3rem 0.5rem;">→</button>
+                            <button class="cal-today-btn" onclick="goToToday()" style="padding: 0.3rem 0.5rem; font-size: 0.75rem;">Bugün</button>
+                        </div>
+                        <select id="calendarStaffFilter" onchange="renderWeeklyCalendar()" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; border: 1px solid var(--slate-200); border-radius: 6px;">
+                            <option value="all">Tüm Personel</option>
+                        </select>
                     </div>
-                    <div class="staff-filter-row">
-                        <label>Personel:</label>
-                        <select id="staffFilterSelect" onchange="filterByStaff()">
+                    <div id="weeklyCalendar" class="weekly-calendar">
+                        <!-- Calendar will be rendered here -->
+                    </div>
+                </div>
+                
+                <!-- Liste Görünümü -->
+                <div id="listView" class="view-container" style="display: none;">
+                    <div class="appointments-filters" style="padding: 0.5rem 1rem; background: var(--slate-50); display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                        <button class="filter-btn active" data-filter="all" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Tümü</button>
+                        <button class="filter-btn" data-filter="pending" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">⏳ Bekleyen</button>
+                        <button class="filter-btn" data-filter="confirmed" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">✅ Onaylı</button>
+                        <button class="filter-btn" data-filter="today" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">📅 Bugün</button>
+                        <select id="staffFilterSelect" onchange="filterByStaff()" style="margin-left: auto; padding: 0.3rem 0.5rem; font-size: 0.75rem; border: 1px solid var(--slate-200); border-radius: 6px;">
                             <option value="all">Tüm Personel</option>
                         </select>
                     </div>
                     <div id="appointmentList" class="appointment-list">
                         <!-- Appointments will be loaded here -->
-                    </div>
-                </div>
-                
-                <!-- Haftalık Takvim Görünümü -->
-                <div id="calendarView" class="view-container">
-                    <div class="calendar-controls" style="flex-wrap: wrap; gap: 0.5rem;">
-                        <div style="display: flex; align-items: center; gap: 0.35rem;">
-                            <button class="cal-nav-btn" onclick="changeWeek(-1)">←</button>
-                            <span id="weekRange" class="week-range" style="font-size: 0.85rem; min-width: 120px; text-align: center;">Tarih</span>
-                            <button class="cal-nav-btn" onclick="changeWeek(1)">→</button>
-                            <button class="cal-today-btn" onclick="goToToday()" style="padding: 0.35rem 0.6rem; font-size: 0.8rem;">Bugün</button>
-                        </div>
-                        <div class="staff-filter-row" style="margin: 0; padding: 0; border: none; background: none;">
-                            <select id="calendarStaffFilter" onchange="renderWeeklyCalendar()" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;">
-                                <option value="all">Tüm Personel</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="weeklyCalendar" class="weekly-calendar">
-                        <!-- Calendar will be rendered here -->
                     </div>
                 </div>
             </div>
@@ -4277,10 +4312,14 @@
         // Render Appointments
         function renderAppointments() {
             const container = document.getElementById('appointmentList');
+            if (!container) return;
+            
             const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
             
             let filtered = [...appointments];
             
+            // Filtre uygula
             if (currentFilter === 'pending') {
                 filtered = filtered.filter(a => a.status === 'pending');
             } else if (currentFilter === 'confirmed') {
@@ -4289,12 +4328,31 @@
                 filtered = filtered.filter(a => a.date === today);
             }
             
+            // Personel filtresi
+            if (currentStaffFilter && currentStaffFilter !== 'all') {
+                filtered = filtered.filter(a => 
+                    a.staffId === currentStaffFilter || a.staffName === currentStaffFilter
+                );
+            }
+            
+            // SIRALAMA: Bekleyenler önce, sonra tarihe göre (yakın olan önce)
+            filtered.sort((a, b) => {
+                // Önce bekleyenler
+                if (a.status === 'pending' && b.status !== 'pending') return -1;
+                if (a.status !== 'pending' && b.status === 'pending') return 1;
+                
+                // Sonra tarihe göre (yakın olan önce)
+                const dateA = new Date(a.date + 'T' + (a.time || '00:00'));
+                const dateB = new Date(b.date + 'T' + (b.time || '00:00'));
+                return dateA - dateB;
+            });
+            
             if (filtered.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📅</div>
-                        <h3 class="empty-title">Randevu Yok</h3>
-                        <p class="empty-text">Bu kriterlere uygun randevu bulunamadı.</p>
+                    <div class="empty-state" style="padding: 2rem; text-align: center;">
+                        <div class="empty-icon" style="font-size: 2.5rem; margin-bottom: 0.5rem;">📅</div>
+                        <h3 class="empty-title" style="font-size: 1rem; color: var(--slate-700);">Randevu Yok</h3>
+                        <p class="empty-text" style="font-size: 0.85rem; color: var(--slate-500);">Bu kriterlere uygun randevu bulunamadı.</p>
                     </div>
                 `;
                 return;
@@ -4302,48 +4360,52 @@
             
             container.innerHTML = filtered.map(apt => {
                 const date = new Date(apt.date);
+                const aptDateTime = new Date(apt.date + 'T' + (apt.time || '00:00'));
+                const isPast = aptDateTime < now;
+                const isToday = apt.date === today;
+                
                 const statusClass = `status-${apt.status}`;
                 const statusText = {
-                    pending: 'Bekliyor',
-                    confirmed: 'Onaylandı',
-                    cancelled: 'İptal',
-                    completed: 'Tamamlandı'
+                    pending: '⏳ Bekliyor',
+                    confirmed: '✅ Onaylı',
+                    cancelled: '❌ İptal',
+                    completed: '✓ Tamamlandı'
                 }[apt.status] || apt.status;
                 
                 const showActions = apt.status === 'pending';
+                const borderColor = apt.status === 'pending' ? 'var(--warning)' : 
+                                   apt.status === 'confirmed' ? 'var(--success)' : 
+                                   apt.status === 'cancelled' ? 'var(--danger)' : 'var(--slate-300)';
                 
                 return `
-                    <div class="appointment-card">
-                        <div class="appointment-date">
+                    <div class="appointment-card" style="border-left: 3px solid ${borderColor}; ${isPast && apt.status !== 'pending' ? 'opacity: 0.7;' : ''}">
+                        <div class="appointment-date" style="${isToday ? 'background: var(--primary); color: white;' : ''}">
                             <div class="appointment-day">${date.getDate()}</div>
-                            <div class="appointment-month">${MONTHS_TR[date.getMonth()]}</div>
-                            <div class="appointment-time">${apt.time}</div>
+                            <div class="appointment-month">${MONTHS_TR[date.getMonth()].slice(0,3)}</div>
+                            <div class="appointment-time" style="font-weight: 700;">${apt.time}</div>
                         </div>
-                        <div class="appointment-info">
-                            <h4>${escapeHtml(apt.customerName)}</h4>
-                            <div class="appointment-details">
-                                <span>📞 ${escapeHtml(apt.customerPhone)}</span>
+                        <div class="appointment-info" onclick="showAppointmentDetail('${apt.id}')" style="cursor: pointer;">
+                            <h4 style="font-size: 0.95rem;">${escapeHtml(apt.customerName)}</h4>
+                            <div class="appointment-details" style="font-size: 0.8rem;">
                                 <span>✂️ ${escapeHtml(apt.service)}</span>
-                                <span>💰 ${apt.servicePrice || 0} ₺</span>
+                                <span>💰 ${apt.servicePrice || 0}₺</span>
+                                ${apt.staffName ? `<span>👤 ${escapeHtml(apt.staffName)}</span>` : ''}
                             </div>
-                            ${apt.customerNote ? `<div class="appointment-details" style="margin-top: 0.25rem;"><span>📝 ${escapeHtml(apt.customerNote)}</span></div>` : ''}
-                            <span class="appointment-status ${statusClass}">${statusText}</span>
+                            <span class="appointment-status ${statusClass}" style="font-size: 0.7rem;">${statusText}</span>
                         </div>
-                        <div class="appointment-actions">
+                        <div class="appointment-actions" style="display: flex; flex-direction: column; gap: 0.25rem;">
                             ${showActions ? `
-                                <button class="btn btn-success btn-sm" onclick="updateAppointmentStatus('${apt.id}', 'confirmed')">
+                                <button class="btn btn-success btn-sm" onclick="quickApprove('${apt.id}')" style="padding: 0.3rem 0.5rem; font-size: 0.7rem;">
                                     ✓ Onayla
                                 </button>
-                                <button class="btn btn-danger btn-sm" onclick="updateAppointmentStatus('${apt.id}', 'cancelled')">
+                                <button class="btn btn-danger btn-sm" onclick="quickReject('${apt.id}')" style="padding: 0.3rem 0.5rem; font-size: 0.7rem;">
                                     ✗ İptal
                                 </button>
-                            ` : ''}
-                            <button class="btn btn-outline btn-sm" onclick="addSingleToGoogleCalendar('${apt.id}')" title="Google Takvime Ekle">
-                                📅
-                            </button>
-                            <button class="btn btn-outline btn-sm" onclick="openWhatsApp('${apt.customerPhone}', '${apt.customerName}')">
-                                📱
-                            </button>
+                            ` : `
+                                <button class="btn btn-outline btn-sm" onclick="showAppointmentDetail('${apt.id}')" style="padding: 0.3rem 0.5rem; font-size: 0.7rem;">
+                                    📋 Detay
+                                </button>
+                            `}
                         </div>
                     </div>
                 `;
@@ -5572,16 +5634,24 @@ Panel: ${window.location.href}`);
             document.querySelectorAll('.view-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.view === view);
             });
-            document.querySelectorAll('.view-container').forEach(container => {
-                container.classList.remove('active');
-            });
-            document.getElementById(view === 'calendar' ? 'calendarView' : 'listView').classList.add('active');
+            
+            const calendarView = document.getElementById('calendarView');
+            const listView = document.getElementById('listView');
             
             if (view === 'calendar') {
+                calendarView.style.display = 'block';
+                calendarView.classList.add('active');
+                listView.style.display = 'none';
+                listView.classList.remove('active');
                 populateStaffFilter('calendarStaffFilter');
                 renderWeeklyCalendar();
             } else {
+                calendarView.style.display = 'none';
+                calendarView.classList.remove('active');
+                listView.style.display = 'block';
+                listView.classList.add('active');
                 populateStaffFilter('staffFilterSelect');
+                renderAppointments();
             }
         }
         
@@ -5660,7 +5730,7 @@ Panel: ${window.location.href}`);
                 const isToday = dateStr === today;
                 html += `
                     <div class="cal-header ${isToday ? 'today' : ''}">
-                        <div>${DAYS_SHORT[d.getDay()]}</div>
+                        <div class="cal-header-day">${DAYS_SHORT[d.getDay()]}</div>
                         <div class="cal-header-date">${d.getDate()}</div>
                     </div>
                 `;
@@ -5669,7 +5739,7 @@ Panel: ${window.location.href}`);
             // Time rows
             for (let hour = earliestHour; hour < latestHour; hour++) {
                 const timeStr = `${hour.toString().padStart(2, '0')}:00`;
-                html += `<div class="cal-time-slot">${timeStr}</div>`;
+                html += `<div class="cal-time-slot">${hour}</div>`;
                 
                 weekDays.forEach(d => {
                     const dateStr = d.toISOString().split('T')[0];
@@ -5704,13 +5774,16 @@ Panel: ${window.location.href}`);
                     `;
                     
                     cellAppointments.forEach(apt => {
+                        const shortName = apt.customerName?.split(' ')[0] || 'Müşteri';
+                        const mins = apt.time?.slice(3,5) || '00';
+                        const timeLabel = mins !== '00' ? `:${mins}` : '';
                         html += `
                             <div class="cal-appointment ${apt.status}" 
                                  draggable="true"
                                  ondragstart="handleDragStart(event, '${apt.id}')"
                                  onclick="showAppointmentDetail('${apt.id}')"
-                                 title="${escapeHtml(apt.customerName)} - ${apt.service}">
-                                ${apt.time?.slice(0,5)} ${escapeHtml(apt.customerName?.split(' ')[0] || '')}
+                                 title="${escapeHtml(apt.customerName)} - ${apt.service} - ${apt.time}">
+                                ${escapeHtml(shortName)}${timeLabel}
                             </div>
                         `;
                     });
@@ -5891,14 +5964,14 @@ Panel: ${window.location.href}`);
                                 </div>
                             </div>
                             
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: nowrap;">
                                 <input type="number" id="paymentAmountInput" 
-                                       placeholder="Alınan tutar..." 
+                                       placeholder="Tutar" 
                                        value="${remaining > 0 ? remaining : ''}"
-                                       style="flex: 1; padding: 0.6rem; border: 2px solid #a7f3d0; border-radius: 8px; font-size: 1rem; font-weight: 600;">
-                                <span style="color: #166534; font-weight: 500;">₺</span>
+                                       style="flex: 1; min-width: 80px; padding: 0.5rem 0.6rem; border: 2px solid #a7f3d0; border-radius: 8px; font-size: 1rem; font-weight: 600;">
+                                <span style="color: #166534; font-weight: 600;">₺</span>
                                 <button onclick="savePayment('${apt.id}')" 
-                                        style="padding: 0.6rem 1rem; background: var(--success); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                                        style="padding: 0.5rem 0.75rem; background: var(--success); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap; font-size: 0.85rem;">
                                     💾 Kaydet
                                 </button>
                             </div>
@@ -6561,17 +6634,13 @@ END:VEVENT
             e.preventDefault();
             deferredPrompt = e;
             
-            // Banner mantığı: İlk seferde 5. saniyede, "Sonra" derse 10. saniyede tekrar
-            const dismissCount = parseInt(localStorage.getItem('pwa-panel-dismiss') || '0');
-            
-            if (dismissCount === 0) {
+            // Sadece bir kere göster - 3 saniye sonra
+            if (shouldShowPWABanner()) {
                 setTimeout(() => {
-                    if (deferredPrompt) document.getElementById('pwaBanner').classList.add('show');
-                }, 5000);
-            } else if (dismissCount === 1) {
-                setTimeout(() => {
-                    if (deferredPrompt) document.getElementById('pwaBanner').classList.add('show');
-                }, 10000);
+                    if (deferredPrompt) {
+                        document.getElementById('pwaBanner').classList.add('show');
+                    }
+                }, 3000);
             }
         });
         
@@ -6581,14 +6650,25 @@ END:VEVENT
             deferredPrompt.userChoice.then(() => {
                 deferredPrompt = null;
                 document.getElementById('pwaBanner').classList.remove('show');
-                localStorage.setItem('pwa-panel-dismiss', '999');
+                // Bir daha gösterme
+                localStorage.setItem('pwa-panel-installed', 'true');
             });
         }
         
         function closePWABanner() {
             document.getElementById('pwaBanner').classList.remove('show');
-            const count = parseInt(localStorage.getItem('pwa-panel-dismiss') || '0');
-            localStorage.setItem('pwa-panel-dismiss', (count + 1).toString());
+            // Bir daha gösterme (kullanıcı kapattıysa)
+            localStorage.setItem('pwa-panel-dismissed', 'true');
+        }
+        
+        // PWA banner'ı gösterme kontrolü
+        function shouldShowPWABanner() {
+            // Zaten yüklendiyse veya reddedildiyse gösterme
+            if (localStorage.getItem('pwa-panel-installed') === 'true') return false;
+            if (localStorage.getItem('pwa-panel-dismissed') === 'true') return false;
+            // Standalone modda çalışıyorsa gösterme (zaten yüklü)
+            if (window.matchMedia('(display-mode: standalone)').matches) return false;
+            return true;
         }
         
         // Service Worker - Yönetim panelinde devre dışı bırak ve mevcut SW'yi temizle
@@ -7097,51 +7177,111 @@ END:VEVENT
         init();
     </script>
     
-    <!-- PWA Install Banner -->
+    <!-- PWA Install Banner - Geliştirilmiş -->
     <style>
         .pwa-banner {
             display: none;
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #10B981, #0EA371);
-            color: white;
-            padding: 1rem;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            color: #1e293b;
+            padding: 1rem 1.25rem;
             z-index: 1100;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            border-radius: 16px;
+            max-width: 360px;
+            width: calc(100% - 2rem);
+            border: 1px solid #e2e8f0;
         }
-        .pwa-banner.show { display: flex; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .pwa-banner-content { display: flex; align-items: center; gap: 0.75rem; }
-        .pwa-banner-icon { font-size: 1.5rem; }
-        .pwa-banner-text h4 { font-size: 0.9rem; font-weight: 600; }
-        .pwa-banner-text p { font-size: 0.75rem; opacity: 0.9; }
-        .pwa-banner-actions { display: flex; gap: 0.5rem; }
-        .pwa-btn { padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; border: none; }
-        .pwa-btn-install { background: white; color: #10B981; }
-        .pwa-btn-close { background: rgba(255,255,255,0.2); color: white; }
-        @media (max-width: 500px) {
-            .pwa-banner { flex-direction: column; text-align: center; }
-            .pwa-banner-content { flex-direction: column; }
-            .pwa-banner-actions { width: 100%; }
-            .pwa-btn { flex: 1; }
+        .pwa-banner.show { 
+            display: block; 
+            animation: slideUpBanner 0.4s ease; 
+        }
+        @keyframes slideUpBanner { 
+            from { transform: translateX(-50%) translateY(100px); opacity: 0; } 
+            to { transform: translateX(-50%) translateY(0); opacity: 1; } 
+        }
+        .pwa-banner-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .pwa-banner-icon { 
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #10B981, #059669);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .pwa-banner-text h4 { 
+            font-size: 1rem; 
+            font-weight: 700; 
+            color: #1e293b;
+            margin-bottom: 0.15rem;
+        }
+        .pwa-banner-text p { 
+            font-size: 0.8rem; 
+            color: #64748b;
+            line-height: 1.3;
+        }
+        .pwa-banner-actions { 
+            display: flex; 
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .pwa-btn { 
+            padding: 0.6rem 1rem; 
+            border-radius: 10px; 
+            font-weight: 600; 
+            font-size: 0.85rem; 
+            cursor: pointer; 
+            border: none;
+            flex: 1;
+            transition: all 0.2s;
+        }
+        .pwa-btn-install { 
+            background: linear-gradient(135deg, #10B981, #059669); 
+            color: white; 
+        }
+        .pwa-btn-install:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+        .pwa-btn-close { 
+            background: #f1f5f9; 
+            color: #64748b; 
+        }
+        .pwa-banner-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
         }
     </style>
     <div id="pwaBanner" class="pwa-banner">
-        <div class="pwa-banner-content">
-            <span class="pwa-banner-icon">📲</span>
+        <button class="pwa-banner-close" onclick="closePWABanner()">&times;</button>
+        <div class="pwa-banner-header">
+            <div class="pwa-banner-icon">📲</div>
             <div class="pwa-banner-text">
-                <h4>Paneli Yükle</h4>
-                <p>Telefonuna ekle, hızlı eriş</p>
+                <h4>Uygulamayı Yükle</h4>
+                <p>Ana ekrana ekle, internet olmadan da kullan</p>
             </div>
         </div>
         <div class="pwa-banner-actions">
-            <button class="pwa-btn pwa-btn-install" onclick="installPWA()">Yükle</button>
-            <button class="pwa-btn pwa-btn-close" onclick="closePWABanner()">Sonra</button>
+            <button class="pwa-btn pwa-btn-close" onclick="closePWABanner()">Şimdi Değil</button>
+            <button class="pwa-btn pwa-btn-install" onclick="installPWA()">📲 Yükle</button>
         </div>
     </div>
     
