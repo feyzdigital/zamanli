@@ -2020,6 +2020,11 @@
             opacity: 0.6;
         }
         
+        .cal-appointment.completed {
+            background: var(--slate-400);
+            opacity: 0.7;
+        }
+        
         .cal-appointment:hover {
             transform: scale(1.05);
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
@@ -5074,6 +5079,15 @@
             
             let filtered = [...appointments];
             
+            // GEÇMİŞ TARİHLERİ FİLTRELE (iptal ve tamamlanmış olanlar dahil)
+            // Sadece bugün ve gelecekteki randevuları göster
+            // Bekleyen randevular her zaman gösterilsin (geçmiş olsa bile aksiyon gerektirir)
+            filtered = filtered.filter(a => {
+                if (a.status === 'pending') return true; // Bekleyenler her zaman görünsün
+                if (a.status === 'cancelled') return false; // İptal edilenler hiç görünmesin
+                return a.date >= today; // Diğerleri sadece bugün ve sonrası
+            });
+            
             // Filtre uygula
             if (currentFilter === 'pending') {
                 filtered = filtered.filter(a => a.status === 'pending');
@@ -5107,7 +5121,7 @@
                     <div class="empty-state" style="padding: 2rem; text-align: center;">
                         <div class="empty-icon" style="font-size: 2.5rem; margin-bottom: 0.5rem;">📅</div>
                         <h3 class="empty-title" style="font-size: 1rem; color: var(--slate-700);">Randevu Yok</h3>
-                        <p class="empty-text" style="font-size: 0.85rem; color: var(--slate-500);">Bu kriterlere uygun randevu bulunamadı.</p>
+                        <p class="empty-text" style="font-size: 0.85rem; color: var(--slate-500);">Yaklaşan randevu bulunamadı.</p>
                     </div>
                 `;
                 return;
@@ -6576,10 +6590,11 @@ Panel: ${window.location.href}`);
                     const isClosed = dayHours.closed || dayHours.active === false;
                     const isPast = dateStr < today;
                     
-                    // Bu saat için randevular
+                    // Bu saat için randevular - TAKVİMDE TÜMÜNÜ GÖSTER
                     const cellAppointments = appointments.filter(apt => {
                         if (apt.date !== dateStr) return false;
-                        if (!['pending', 'confirmed'].includes(apt.status)) return false;
+                        // Takvimde pending, confirmed, completed göster (cancelled hariç)
+                        if (!['pending', 'confirmed', 'completed'].includes(apt.status)) return false;
                         
                         const aptHour = parseInt(apt.time?.split(':')[0] || '0');
                         if (aptHour !== hour) return false;
@@ -6606,12 +6621,15 @@ Panel: ${window.location.href}`);
                         const shortName = apt.customerName?.split(' ')[0] || 'Müşteri';
                         const mins = apt.time?.slice(3,5) || '00';
                         const timeLabel = mins !== '00' ? `:${mins}` : '';
+                        // Tamamlanmış randevular için farklı stil
+                        const completedStyle = apt.status === 'completed' ? 'opacity: 0.6; text-decoration: line-through;' : '';
                         html += `
                             <div class="cal-appointment ${apt.status}" 
-                                 draggable="true"
+                                 draggable="${apt.status === 'completed' ? 'false' : 'true'}"
                                  ondragstart="handleDragStart(event, '${apt.id}')"
-                                 onclick="showAppointmentDetail('${apt.id}')"
-                                 title="${escapeHtml(apt.customerName)} - ${apt.service} - ${apt.time}">
+                                 onclick="event.stopPropagation(); showAppointmentDetail('${apt.id}')"
+                                 title="${escapeHtml(apt.customerName)} - ${apt.service} - ${apt.time}"
+                                 style="${completedStyle}">
                                 ${escapeHtml(shortName)}${timeLabel}
                             </div>
                         `;
@@ -7559,10 +7577,11 @@ Panel: ${window.location.href}`);
                     const isClosed = dayHours.closed || dayHours.active === false;
                     const isPast = dateStr < today;
                     
-                    // Bu saat için randevular
+                    // Bu saat için randevular - TAKVİMDE TÜMÜNÜ GÖSTER
                     const cellAppointments = appointments.filter(apt => {
                         if (apt.date !== dateStr) return false;
-                        if (!['pending', 'confirmed'].includes(apt.status)) return false;
+                        // Takvimde pending, confirmed, completed göster (cancelled hariç)
+                        if (!['pending', 'confirmed', 'completed'].includes(apt.status)) return false;
                         
                         const aptHour = parseInt(apt.time?.split(':')[0] || '0');
                         if (aptHour !== hour) return false;
@@ -7589,12 +7608,15 @@ Panel: ${window.location.href}`);
                         const shortName = apt.customerName?.split(' ')[0] || 'Müşteri';
                         const mins = apt.time?.slice(3,5) || '00';
                         const timeLabel = mins !== '00' ? `:${mins}` : '';
+                        // Tamamlanmış randevular için farklı stil
+                        const completedStyle = apt.status === 'completed' ? 'opacity: 0.6; text-decoration: line-through;' : '';
                         html += `
                             <div class="cal-appointment ${apt.status}" 
-                                 draggable="true"
+                                 draggable="${apt.status === 'completed' ? 'false' : 'true'}"
                                  ondragstart="handleDragStart(event, '${apt.id}')"
-                                 onclick="showAppointmentDetail('${apt.id}')"
-                                 title="${escapeHtml(apt.customerName)} - ${apt.service} - ${apt.time}">
+                                 onclick="event.stopPropagation(); showAppointmentDetail('${apt.id}')"
+                                 title="${escapeHtml(apt.customerName)} - ${apt.service} - ${apt.time}"
+                                 style="${completedStyle}">
                                 ${escapeHtml(shortName)}${timeLabel}
                             </div>
                         `;
