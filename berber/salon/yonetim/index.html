@@ -545,14 +545,41 @@
                 grid-template-columns: 1fr;
                 height: auto;
                 max-height: none;
+                gap: 0.5rem;
             }
             
             .calendar-panel {
-                max-height: 55vh;
+                max-height: none;
+                min-height: auto;
             }
             
             .requests-panel {
-                max-height: 40vh;
+                max-height: 35vh;
+                min-height: 200px;
+            }
+            
+            .top-bar {
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 0.5rem;
+                gap: 0.5rem;
+            }
+            
+            .top-bar-stats {
+                flex: 1;
+                min-width: 200px;
+            }
+            
+            .mini-stat {
+                padding: 0.4rem 0.6rem;
+            }
+            
+            .mini-stat span:first-child {
+                font-size: 1rem;
+            }
+            
+            .mini-stat span:last-child {
+                font-size: 0.6rem;
             }
         }
         
@@ -571,13 +598,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 1rem;
+            padding: 0.5rem 0.75rem;
             border-bottom: 1px solid var(--slate-200);
             background: var(--slate-50);
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
         
         .panel-header h3 {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 600;
             color: var(--slate-800);
             margin: 0;
@@ -598,12 +627,13 @@
         .calendar-controls-inline {
             display: flex;
             align-items: center;
-            gap: 0.35rem;
+            gap: 0.25rem;
+            flex-wrap: wrap;
         }
         
         .calendar-controls-inline .cal-nav-btn {
-            padding: 0.35rem 0.6rem;
-            font-size: 0.85rem;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.8rem;
             background: white;
             border: 1px solid var(--slate-200);
             border-radius: 6px;
@@ -614,10 +644,46 @@
             background: var(--slate-100);
         }
         
+        .btn-add-appointment {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-add-appointment:hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+        
         .week-range-text {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             font-weight: 600;
             color: var(--slate-700);
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        @media (max-width: 480px) {
+            .week-range-text {
+                font-size: 0.6rem;
+                min-width: 70px;
+            }
+            
+            .calendar-controls-inline .cal-nav-btn {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.75rem;
+            }
+            
+            .cal-today-btn-small {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.65rem;
+            }
+        }
             min-width: 100px;
             text-align: center;
         }
@@ -651,19 +717,29 @@
             flex: 1;
             overflow: auto;
             display: grid;
-            grid-template-columns: 45px repeat(7, 1fr);
-            grid-auto-rows: minmax(36px, auto);
-            font-size: 0.75rem;
+            grid-template-columns: 40px repeat(7, 1fr);
+            grid-auto-rows: minmax(32px, auto);
+            font-size: 0.7rem;
             position: relative;
-            max-height: calc(100vh - 280px);
+            max-height: calc(100vh - 320px);
+            min-height: 250px;
         }
         
         @media (max-width: 768px) {
             .weekly-calendar-new {
-                grid-template-columns: 40px repeat(7, 1fr);
-                grid-auto-rows: minmax(32px, auto);
-                font-size: 0.7rem;
-                max-height: calc(100vh - 320px);
+                grid-template-columns: 35px repeat(7, 1fr);
+                grid-auto-rows: minmax(28px, auto);
+                font-size: 0.65rem;
+                max-height: 45vh;
+                min-height: 200px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .weekly-calendar-new {
+                grid-template-columns: 30px repeat(7, 1fr);
+                grid-auto-rows: minmax(26px, auto);
+                font-size: 0.6rem;
             }
         }
         
@@ -678,33 +754,54 @@
         }
         
         .weekly-calendar-new .cal-header {
-            background: var(--primary);
+            background: linear-gradient(135deg, #10B981, #059669);
             color: white;
-            padding: 0.35rem 0.25rem;
+            padding: 0.2rem 0.1rem;
             text-align: center;
             font-weight: 600;
-            border-bottom: 1px solid var(--slate-200);
-            border-right: 1px solid rgba(255,255,255,0.2);
+            border-bottom: 2px solid #059669;
+            border-right: 1px solid rgba(255,255,255,0.15);
             position: sticky;
             top: 0;
             z-index: 2;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
         }
         
         .weekly-calendar-new .cal-header.today {
-            background: var(--slate-800);
-            color: white;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-bottom-color: #1e293b;
+        }
+        
+        .weekly-calendar-new .cal-header-day {
+            font-size: 0.5rem;
+            opacity: 0.9;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
         
         .weekly-calendar-new .cal-header-date {
-            font-size: 0.95rem;
+            font-size: 0.8rem;
             font-weight: 700;
+            line-height: 1.1;
+        }
+        
+        @media (max-width: 480px) {
+            .weekly-calendar-new .cal-header {
+                padding: 0.15rem 0.05rem;
+            }
+            .weekly-calendar-new .cal-header-day {
+                font-size: 0.45rem;
+            }
+            .weekly-calendar-new .cal-header-date {
+                font-size: 0.7rem;
+            }
         }
         
         .weekly-calendar-new .cal-time-slot {
-            padding: 0.15rem;
+            padding: 0.1rem;
             text-align: center;
-            font-size: 0.65rem;
+            font-size: 0.55rem;
             color: var(--slate-500);
             border-right: 1px solid var(--slate-200);
             border-bottom: 1px solid var(--slate-100);
@@ -2970,7 +3067,12 @@
                 <!-- SOL: Haftalık Takvim -->
                 <div class="calendar-panel">
                     <div class="panel-header">
-                        <h3>📅 Haftalık Takvim</h3>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <h3 style="margin: 0; font-size: 0.85rem;">📅 Takvim</h3>
+                            <button class="btn-add-appointment" onclick="openManualAppointmentModal()" title="Manuel Randevu Ekle">
+                                ➕
+                            </button>
+                        </div>
                         <div class="calendar-controls-inline">
                             <button class="cal-nav-btn" onclick="changeWeek(-1)">←</button>
                             <span id="weekRangeNew" class="week-range-text">Tarih</span>
@@ -3028,16 +3130,21 @@
             
             <!-- Appointments Tab -->
             <div id="tab-appointments" class="tab-content active">
-                <div class="appointments-header">
-                    <h3 class="appointments-title">Randevular</h3>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <button class="gcal-export-btn" onclick="exportToGoogleCalendar()" title="Randevuları Google Takvime Aktar">
-                            📅 Google Takvime Aktar
+                <div class="appointments-header" style="flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+                        <h3 class="appointments-title" style="margin: 0;">Randevular</h3>
+                        <button class="btn btn-primary btn-sm" onclick="openManualAppointmentModal()" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
+                            ➕ Randevu Ekle
                         </button>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                         <div class="view-toggle">
                             <button class="view-btn active" data-view="list" onclick="switchView('list')">📋 Liste</button>
                             <button class="view-btn" data-view="calendar" onclick="switchView('calendar')">📅 Takvim</button>
                         </div>
+                        <button class="btn btn-outline btn-sm" onclick="exportToGoogleCalendar()" title="Google Takvime Aktar" style="padding: 0.35rem 0.5rem; font-size: 0.75rem;">
+                            📅 G.Cal
+                        </button>
                     </div>
                 </div>
                 
@@ -3062,17 +3169,18 @@
                 
                 <!-- Haftalık Takvim Görünümü -->
                 <div id="calendarView" class="view-container">
-                    <div class="calendar-controls">
-                        <button class="cal-nav-btn" onclick="changeWeek(-1)">← Önceki</button>
-                        <span id="weekRange" class="week-range">Tarih</span>
-                        <button class="cal-nav-btn" onclick="changeWeek(1)">Sonraki →</button>
-                        <button class="cal-today-btn" onclick="goToToday()">Bugün</button>
-                    </div>
-                    <div class="staff-filter-row">
-                        <label>Personel:</label>
-                        <select id="calendarStaffFilter" onchange="renderWeeklyCalendar()">
-                            <option value="all">Tüm Personel</option>
-                        </select>
+                    <div class="calendar-controls" style="flex-wrap: wrap; gap: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                            <button class="cal-nav-btn" onclick="changeWeek(-1)">←</button>
+                            <span id="weekRange" class="week-range" style="font-size: 0.85rem; min-width: 120px; text-align: center;">Tarih</span>
+                            <button class="cal-nav-btn" onclick="changeWeek(1)">→</button>
+                            <button class="cal-today-btn" onclick="goToToday()" style="padding: 0.35rem 0.6rem; font-size: 0.8rem;">Bugün</button>
+                        </div>
+                        <div class="staff-filter-row" style="margin: 0; padding: 0; border: none; background: none;">
+                            <select id="calendarStaffFilter" onchange="renderWeeklyCalendar()" style="padding: 0.35rem 0.5rem; font-size: 0.8rem;">
+                                <option value="all">Tüm Personel</option>
+                            </select>
+                        </div>
                     </div>
                     <div id="weeklyCalendar" class="weekly-calendar">
                         <!-- Calendar will be rendered here -->
@@ -3351,6 +3459,108 @@
                 </div>
             </div>
         </main>
+    </div>
+    
+    <!-- Manuel Randevu Ekleme Modal -->
+    <div id="manualAppointmentModal" class="modal-overlay">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h3 class="modal-title">➕ Manuel Randevu Ekle</h3>
+                <button class="modal-close" onclick="closeManualAppointmentModal()" style="color: white;">×</button>
+            </div>
+            <div class="modal-body" style="padding: 1.25rem;">
+                <form id="manualAppointmentForm" onsubmit="submitManualAppointment(event)">
+                    <!-- Müşteri Bilgileri -->
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                            👤 Müşteri Adı *
+                        </label>
+                        <input type="text" id="manualCustomerName" class="form-input" placeholder="Ad Soyad" required style="width: 100%;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                            📱 Telefon *
+                        </label>
+                        <input type="tel" id="manualCustomerPhone" class="form-input" placeholder="5XX XXX XX XX" required style="width: 100%;">
+                    </div>
+                    
+                    <!-- Tarih ve Saat -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div>
+                            <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                                📅 Tarih *
+                            </label>
+                            <input type="date" id="manualAppointmentDate" class="form-input" required style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                                🕐 Saat *
+                            </label>
+                            <select id="manualAppointmentTime" class="form-input" required style="width: 100%;">
+                                <option value="">Seçin</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Hizmet -->
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                            ✂️ Hizmet *
+                        </label>
+                        <select id="manualServiceSelect" class="form-input" required style="width: 100%;" onchange="updateManualServicePrice()">
+                            <option value="">Hizmet Seçin</option>
+                        </select>
+                        <div id="manualServicePrice" style="font-size: 0.8rem; color: var(--primary); margin-top: 0.25rem; font-weight: 600;"></div>
+                    </div>
+                    
+                    <!-- Personel -->
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                            👤 Personel
+                        </label>
+                        <select id="manualStaffSelect" class="form-input" style="width: 100%;">
+                            <option value="">Personel Seçin (Opsiyonel)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Not -->
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                            📝 Not (Opsiyonel)
+                        </label>
+                        <textarea id="manualAppointmentNote" class="form-input" placeholder="Randevu notu..." rows="2" style="width: 100%; resize: none;"></textarea>
+                    </div>
+                    
+                    <!-- Durum -->
+                    <div style="margin-bottom: 1.25rem;">
+                        <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                            📌 Durum
+                        </label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(16, 185, 129, 0.1); border: 2px solid var(--success); border-radius: 8px; cursor: pointer;">
+                                <input type="radio" name="manualStatus" value="confirmed" checked>
+                                <span style="font-size: 0.85rem; color: var(--success);">✅ Onaylı</span>
+                            </label>
+                            <label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(245, 158, 11, 0.1); border: 2px solid var(--warning); border-radius: 8px; cursor: pointer;">
+                                <input type="radio" name="manualStatus" value="pending">
+                                <span style="font-size: 0.85rem; color: var(--warning);">⏳ Bekleyen</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Butonlar -->
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button type="button" class="btn btn-outline" onclick="closeManualAppointmentModal()" style="flex: 1;">
+                            İptal
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="flex: 2;">
+                            ✅ Randevu Oluştur
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
     
     <!-- Notification Choice Modal -->
@@ -6092,7 +6302,7 @@ Panel: ${window.location.href}`);
                 const isToday = dateStr === today;
                 html += `
                     <div class="cal-header ${isToday ? 'today' : ''}">
-                        <div>${DAYS_SHORT[d.getDay()]}</div>
+                        <div class="cal-header-day">${DAYS_SHORT[d.getDay()]}</div>
                         <div class="cal-header-date">${d.getDate()}</div>
                     </div>
                 `;
@@ -6101,7 +6311,7 @@ Panel: ${window.location.href}`);
             // Time rows
             for (let hour = earliestHour; hour < latestHour; hour++) {
                 const timeStr = `${hour.toString().padStart(2, '0')}:00`;
-                html += `<div class="cal-time-slot">${timeStr}</div>`;
+                html += `<div class="cal-time-slot">${hour}</div>`;
                 
                 weekDays.forEach(d => {
                     const dateStr = d.toISOString().split('T')[0];
@@ -6701,6 +6911,186 @@ END:VEVENT
             }).join('');
             
             container.innerHTML = html;
+        }
+        
+        // ========== MANUEL RANDEVU EKLEME ==========
+        
+        function openManualAppointmentModal() {
+            const modal = document.getElementById('manualAppointmentModal');
+            
+            // Tarihi bugün olarak ayarla
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('manualAppointmentDate').value = today;
+            document.getElementById('manualAppointmentDate').min = today;
+            
+            // Saatleri doldur
+            populateTimeSlots();
+            
+            // Hizmetleri doldur
+            populateServices();
+            
+            // Personelleri doldur
+            populateStaffForManual();
+            
+            // Formu temizle
+            document.getElementById('manualCustomerName').value = '';
+            document.getElementById('manualCustomerPhone').value = '';
+            document.getElementById('manualAppointmentNote').value = '';
+            document.getElementById('manualServicePrice').textContent = '';
+            
+            modal.classList.add('active');
+        }
+        
+        function closeManualAppointmentModal() {
+            document.getElementById('manualAppointmentModal').classList.remove('active');
+        }
+        
+        function populateTimeSlots() {
+            const select = document.getElementById('manualAppointmentTime');
+            const hours = salon?.workingHours || {};
+            
+            // Varsayılan saatler
+            let startHour = 9;
+            let endHour = 20;
+            
+            // Çalışma saatlerinden al
+            const todayKey = DAY_KEYS[new Date().getDay()];
+            const todayHours = hours[todayKey];
+            if (todayHours && !todayHours.closed) {
+                startHour = parseInt(todayHours.open?.split(':')[0]) || 9;
+                endHour = parseInt(todayHours.close?.split(':')[0]) || 20;
+            }
+            
+            select.innerHTML = '<option value="">Saat Seçin</option>';
+            
+            for (let h = startHour; h < endHour; h++) {
+                for (let m = 0; m < 60; m += 30) {
+                    const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                    select.innerHTML += `<option value="${timeStr}">${timeStr}</option>`;
+                }
+            }
+        }
+        
+        function populateServices() {
+            const select = document.getElementById('manualServiceSelect');
+            const services = salon?.services || [];
+            
+            select.innerHTML = '<option value="">Hizmet Seçin</option>';
+            
+            services.forEach((service, index) => {
+                const name = typeof service === 'string' ? service : service.name;
+                const price = typeof service === 'object' ? service.price : 0;
+                const duration = typeof service === 'object' ? service.duration : 30;
+                
+                select.innerHTML += `<option value="${index}" data-price="${price}" data-duration="${duration}" data-name="${name}">${name} - ${price}₺</option>`;
+            });
+        }
+        
+        function populateStaffForManual() {
+            const select = document.getElementById('manualStaffSelect');
+            const staff = salon?.staff || [];
+            
+            select.innerHTML = '<option value="">Personel Seçin (Opsiyonel)</option>';
+            
+            staff.forEach(s => {
+                if (s.active !== false) {
+                    select.innerHTML += `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`;
+                }
+            });
+        }
+        
+        function updateManualServicePrice() {
+            const select = document.getElementById('manualServiceSelect');
+            const option = select.selectedOptions[0];
+            const priceDiv = document.getElementById('manualServicePrice');
+            
+            if (option && option.dataset.price) {
+                priceDiv.textContent = `💰 ${option.dataset.price}₺ • ⏱️ ${option.dataset.duration || 30} dk`;
+            } else {
+                priceDiv.textContent = '';
+            }
+        }
+        
+        async function submitManualAppointment(event) {
+            event.preventDefault();
+            
+            const customerName = document.getElementById('manualCustomerName').value.trim();
+            const customerPhone = document.getElementById('manualCustomerPhone').value.replace(/\D/g, '');
+            const date = document.getElementById('manualAppointmentDate').value;
+            const time = document.getElementById('manualAppointmentTime').value;
+            const serviceSelect = document.getElementById('manualServiceSelect');
+            const staffSelect = document.getElementById('manualStaffSelect');
+            const note = document.getElementById('manualAppointmentNote').value.trim();
+            const status = document.querySelector('input[name="manualStatus"]:checked').value;
+            
+            if (!customerName || !customerPhone || !date || !time || !serviceSelect.value) {
+                showToast('Lütfen tüm zorunlu alanları doldurun', 'error');
+                return;
+            }
+            
+            const serviceOption = serviceSelect.selectedOptions[0];
+            const serviceName = serviceOption.dataset.name;
+            const servicePrice = parseInt(serviceOption.dataset.price) || 0;
+            const serviceDuration = parseInt(serviceOption.dataset.duration) || 30;
+            
+            const staffOption = staffSelect.selectedOptions[0];
+            const staffId = staffSelect.value || null;
+            const staffName = staffOption?.dataset?.name || null;
+            
+            try {
+                const appointmentData = {
+                    salonId: salon.id,
+                    salonSlug: salon.slug,
+                    customerName: customerName,
+                    customerPhone: customerPhone,
+                    date: date,
+                    time: time,
+                    service: serviceName,
+                    serviceName: serviceName,
+                    servicePrice: servicePrice,
+                    serviceDuration: serviceDuration,
+                    staffId: staffId,
+                    staffName: staffName,
+                    status: status,
+                    note: note,
+                    source: 'manual', // Manuel eklendi işareti
+                    createdAt: new Date().toISOString(),
+                    createdBy: isStaffMode ? currentStaffName : 'salon_owner'
+                };
+                
+                const docRef = await db.collection('appointments').add(appointmentData);
+                
+                // Lokal listeye ekle
+                appointments.push({
+                    id: docRef.id,
+                    ...appointmentData
+                });
+                
+                // Görünümleri güncelle
+                renderWeeklyCalendar();
+                renderWeeklyCalendarNew();
+                renderAppointments();
+                renderPendingRequests();
+                renderTodayAppointments();
+                updateStats();
+                
+                closeManualAppointmentModal();
+                showToast('Randevu başarıyla oluşturuldu ✅', 'success');
+                
+                // WhatsApp bildirimi sor
+                if (status === 'confirmed') {
+                    setTimeout(() => {
+                        if (confirm('Müşteriye WhatsApp ile onay mesajı göndermek ister misiniz?')) {
+                            const msg = encodeURIComponent(`Merhaba ${customerName}, ${formatDateTR(date)} tarihinde saat ${time}'de ${salon.name} için randevunuz onaylanmıştır. ✅`);
+                            window.open(`https://wa.me/90${customerPhone}?text=${msg}`, '_blank');
+                        }
+                    }, 500);
+                }
+                
+            } catch (error) {
+                console.error('Manuel randevu ekleme hatası:', error);
+                showToast('Randevu eklenirken hata oluştu', 'error');
+            }
         }
         
         // Start
