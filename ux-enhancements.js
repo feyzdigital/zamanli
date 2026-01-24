@@ -481,10 +481,28 @@ const ZamanliUX = {
     
     showInstallPrompt() {
         // pwa-manager.js'e yönlendir
-        if (typeof ZamanliPWA !== 'undefined' && ZamanliPWA.promptInstall) {
-            ZamanliPWA.promptInstall();
+        if (typeof ZamanliPWA !== 'undefined') {
+            if (ZamanliPWA.promptInstall) {
+                ZamanliPWA.promptInstall();
+            } else if (ZamanliPWA.handleInstallClick) {
+                ZamanliPWA.handleInstallClick();
+            } else {
+                console.log('[UX] ZamanliPWA install fonksiyonu bulunamadı');
+                // Fallback: iOS kontrolü yap
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                if (isIOS) {
+                    alert('Uygulamayı yüklemek için:\n\n1. Safari\'de Paylaş butonuna (⬆️) tıklayın\n2. "Ana Ekrana Ekle" seçeneğini seçin\n3. "Ekle" butonuna tıklayın');
+                } else {
+                    alert('Uygulama yüklemesi şu an kullanılamıyor. Lütfen daha sonra tekrar deneyin.');
+                }
+            }
         } else {
             console.log('[UX] ZamanliPWA modülü bulunamadı');
+            // Fallback mesajı
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+                alert('Uygulamayı yüklemek için:\n\n1. Safari\'de Paylaş butonuna (⬆️) tıklayın\n2. "Ana Ekrana Ekle" seçeneğini seçin\n3. "Ekle" butonuna tıklayın');
+            }
         }
     },
     

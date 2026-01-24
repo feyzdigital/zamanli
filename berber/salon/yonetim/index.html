@@ -258,6 +258,200 @@
             border-color: var(--slate-300);
         }
         
+        /* ===== MOBİL HAMBURGER MENÜ ===== */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            color: var(--slate-700);
+            z-index: 101;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .header-salon {
+                display: none;
+            }
+            
+            .header-right .btn-text,
+            .header-user,
+            .btn-logout {
+                display: none !important;
+            }
+            
+            .header-right {
+                gap: 0.5rem;
+            }
+            
+            .header-right .btn-outline {
+                padding: 0.5rem;
+            }
+            
+            .tabs {
+                display: none;
+            }
+        }
+        
+        /* Mobil Slide Menü */
+        .mobile-slide-menu {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            max-width: 85vw;
+            height: 100%;
+            background: white;
+            z-index: 1000;
+            transition: left 0.3s ease;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mobile-slide-menu.active {
+            left: 0;
+        }
+        
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .mobile-menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid var(--slate-200);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        .mobile-menu-header .salon-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .mobile-menu-header .salon-avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .mobile-menu-header .salon-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .mobile-menu-header .salon-type {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        
+        .mobile-menu-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .mobile-menu-nav {
+            flex: 1;
+            padding: 0.5rem 0;
+            overflow-y: auto;
+        }
+        
+        .mobile-menu-nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            color: var(--slate-700);
+            text-decoration: none;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .mobile-menu-nav a:hover,
+        .mobile-menu-nav a.active {
+            background: var(--slate-50);
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .mobile-menu-nav a .menu-icon {
+            font-size: 1.25rem;
+            width: 28px;
+            text-align: center;
+        }
+        
+        .mobile-menu-nav .menu-divider {
+            height: 1px;
+            background: var(--slate-200);
+            margin: 0.5rem 1rem;
+        }
+        
+        .mobile-menu-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--slate-200);
+        }
+        
+        .mobile-menu-footer .logout-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--slate-100);
+            color: var(--danger);
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mobile-menu-footer .logout-btn:hover {
+            background: var(--danger-light);
+        }
+        
         .staff-pin-section {
             margin: 0.5rem 0;
             padding: 0.5rem;
@@ -2078,10 +2272,61 @@
     
     <!-- Dashboard -->
     <div id="dashboard" class="dashboard">
+        <!-- Mobil Slide Menü -->
+        <div id="mobileMenuOverlay" class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+        <div id="mobileSlideMenu" class="mobile-slide-menu">
+            <div class="mobile-menu-header">
+                <div class="salon-info">
+                    <div id="mobileMenuAvatar" class="salon-avatar">S</div>
+                    <div>
+                        <div id="mobileMenuSalonName" class="salon-name">Salon Adı</div>
+                        <div class="salon-type">Yönetim Paneli</div>
+                    </div>
+                </div>
+                <button class="mobile-menu-close" onclick="closeMobileMenu()">✕</button>
+            </div>
+            <nav class="mobile-menu-nav">
+                <a href="#" data-tab="appointments" class="active" onclick="switchTabMobile('appointments')">
+                    <span class="menu-icon">📅</span> Randevular
+                </a>
+                <a href="#" data-tab="customers" onclick="switchTabMobile('customers')">
+                    <span class="menu-icon">👥</span> Müşteriler
+                </a>
+                <a href="#" data-tab="services" onclick="switchTabMobile('services')">
+                    <span class="menu-icon">✂️</span> Hizmetler
+                </a>
+                <a href="#" data-tab="staff" onclick="switchTabMobile('staff')">
+                    <span class="menu-icon">👤</span> Personel
+                </a>
+                <a href="#" data-tab="hours" onclick="switchTabMobile('hours')">
+                    <span class="menu-icon">🕐</span> Çalışma Saatleri
+                </a>
+                <div class="menu-divider"></div>
+                <a href="#" data-tab="reports" onclick="switchTabMobile('reports')">
+                    <span class="menu-icon">📊</span> Raporlar
+                </a>
+                <a href="#" data-tab="settings" onclick="switchTabMobile('settings')">
+                    <span class="menu-icon">⚙️</span> Ayarlar
+                </a>
+                <div class="menu-divider"></div>
+                <a href="#" id="mobileViewSalonBtn" target="_blank">
+                    <span class="menu-icon">👁️</span> Salonu Görüntüle
+                </a>
+            </nav>
+            <div class="mobile-menu-footer">
+                <button class="logout-btn" onclick="logout()">
+                    <span>🚪</span> Çıkış Yap
+                </button>
+            </div>
+        </div>
+        
         <!-- Header -->
         <header class="header">
             <div class="header-container">
                 <div class="header-left">
+                    <button class="mobile-menu-toggle" onclick="openMobileMenu()" aria-label="Menü">
+                        ☰
+                    </button>
                     <a href="/" class="header-logo">
                         <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
                         <span class="logo-text">Zamanli</span>
@@ -2862,6 +3107,9 @@
                 document.getElementById('headerAvatar').textContent = salon.name.charAt(0).toUpperCase();
             }
             
+            // Mobil menü bilgilerini güncelle
+            updateMobileMenuInfo();
+            
             document.getElementById('viewSalonBtn').href = `/berber/salon/?slug=${salon.slug}`;
             
             // Load data
@@ -2877,6 +3125,64 @@
             
             // Raporları yükle (appointments yüklendikten sonra)
             setTimeout(() => loadReports(), 500);
+        }
+        
+        // ===== MOBİL MENÜ FONKSİYONLARI =====
+        function openMobileMenu() {
+            document.getElementById('mobileSlideMenu').classList.add('active');
+            document.getElementById('mobileMenuOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeMobileMenu() {
+            document.getElementById('mobileSlideMenu').classList.remove('active');
+            document.getElementById('mobileMenuOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        function updateMobileMenuInfo() {
+            const salonName = salon?.name || 'Salon';
+            const avatar = salonName.charAt(0).toUpperCase();
+            
+            document.getElementById('mobileMenuSalonName').textContent = salonName;
+            document.getElementById('mobileMenuAvatar').textContent = avatar;
+            document.getElementById('mobileViewSalonBtn').href = `/berber/salon/?slug=${salon?.slug || ''}`;
+        }
+        
+        function switchTabMobile(tabName) {
+            // Desktop tab'ı da değiştir
+            switchTab(tabName);
+            
+            // Mobil menüdeki aktif durumu güncelle
+            const mobileLinks = document.querySelectorAll('.mobile-menu-nav a[data-tab]');
+            mobileLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.dataset.tab === tabName) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Menüyü kapat
+            closeMobileMenu();
+        }
+        
+        function switchTab(tabName) {
+            // Tab butonlarını güncelle
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.tab === tabName) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Tab içeriklerini güncelle
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const targetContent = document.getElementById('tab-' + tabName);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
         }
         
         // Süper Admin modu banner'ı
@@ -3165,8 +3471,8 @@
                 if (status === 'confirmed' && apt) {
                     showNotificationModal(apt, 'confirmed');
                 } else if (status === 'cancelled' && apt) {
-                    // İptal için de modal göster
-                    showNotificationModal(apt, 'cancelled');
+                    // İptal için slot açma seçeneği ile birlikte modal göster
+                    showCancelledSlotModal(apt);
                 } else {
                     showToast('Randevu güncellendi', 'success');
                 }
@@ -3174,6 +3480,131 @@
             } catch (error) {
                 console.error('Error updating appointment:', error);
                 showToast('Bir hata oluştu', 'error');
+            }
+        }
+        
+        // İptal edilen randevu için slot açma modal'ı
+        function showCancelledSlotModal(apt) {
+            // Modal var mı kontrol et, yoksa oluştur
+            let modal = document.getElementById('cancelledSlotModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'cancelledSlotModal';
+                modal.className = 'modal-overlay';
+                modal.innerHTML = `
+                    <div class="modal" style="max-width: 450px;">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                            <h3 class="modal-title">❌ Randevu İptal Edildi</h3>
+                            <button class="modal-close" onclick="closeCancelledSlotModal(false)" style="color: white;">×</button>
+                        </div>
+                        <div class="modal-body" style="padding: 1.5rem;">
+                            <div style="text-align: center; margin-bottom: 1.5rem;">
+                                <div style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2rem; background: linear-gradient(135deg, #ef4444, #dc2626); color: white;">❌</div>
+                            </div>
+                            
+                            <div style="background: var(--slate-50); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;">
+                                <div style="font-weight: 600; color: var(--slate-800);" id="cancelledCustomerName">-</div>
+                                <div style="font-size: 0.85rem; color: var(--slate-500);" id="cancelledAppointmentInfo">-</div>
+                            </div>
+                            
+                            <!-- Slot Açma Seçeneği -->
+                            <div style="background: #f0fdf4; border: 2px solid #a7f3d0; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                                    <span style="font-size: 1.5rem;">📅</span>
+                                    <div>
+                                        <strong style="color: #166534;">Bu saati yeni randevulara aç</strong>
+                                        <p style="font-size: 0.85rem; color: #15803d; margin: 0;">İptal edilen saat başka müşteriler tarafından alınabilir.</p>
+                                    </div>
+                                </div>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border-radius: 6px;">
+                                    <input type="checkbox" id="reopenSlotCheckbox" checked style="width: 18px; height: 18px; accent-color: #10B981;">
+                                    <span style="font-size: 0.9rem; color: var(--slate-700);">Evet, bu saati yeni randevulara aç</span>
+                                </label>
+                            </div>
+                            
+                            <p style="font-size: 0.85rem; color: var(--slate-500); text-align: center;">Müşteriye bildirim göndermek ister misiniz?</p>
+                        </div>
+                        <div class="modal-footer" style="justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+                            <button class="btn btn-danger" id="cancelledSendBtn" onclick="sendCancelNotificationAndReopen()" style="display: flex; align-items: center; gap: 0.5rem;">
+                                📱 İptal Mesajı Gönder
+                            </button>
+                            <button class="btn btn-outline" onclick="closeCancelledSlotModal(true)">Mesaj Gönderme</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            // Modal içeriğini güncelle
+            document.getElementById('cancelledCustomerName').textContent = apt.customerName;
+            document.getElementById('cancelledAppointmentInfo').textContent = `${formatDateDisplay(apt.date)} - ${apt.time} - ${apt.service}`;
+            document.getElementById('reopenSlotCheckbox').checked = true;
+            
+            // Randevu bilgisini sakla
+            modal.dataset.aptId = apt.id;
+            modal.dataset.aptDate = apt.date;
+            modal.dataset.aptTime = apt.time;
+            modal.dataset.aptStaffId = apt.staffId || '';
+            modal.dataset.aptDuration = apt.serviceDuration || 30;
+            
+            modal.classList.add('active');
+        }
+        
+        // İptal mesajı gönder ve slot'u aç
+        function sendCancelNotificationAndReopen() {
+            const modal = document.getElementById('cancelledSlotModal');
+            const aptId = modal.dataset.aptId;
+            const apt = appointments.find(a => a.id === aptId);
+            
+            if (apt) {
+                sendStatusNotification(apt, 'cancelled');
+            }
+            
+            closeCancelledSlotModal(true);
+        }
+        
+        // Modal'ı kapat ve slot işlemini yap
+        function closeCancelledSlotModal(processSlot = false) {
+            const modal = document.getElementById('cancelledSlotModal');
+            const reopenSlot = document.getElementById('reopenSlotCheckbox')?.checked;
+            
+            if (processSlot && reopenSlot) {
+                // Slot'u yeniden açmak için blockedSlots'tan kaldır (eğer varsa)
+                const aptDate = modal.dataset.aptDate;
+                const aptTime = modal.dataset.aptTime;
+                const aptStaffId = modal.dataset.aptStaffId;
+                
+                // Firestore'dan blockedSlot varsa kaldır
+                removeBlockedSlot(aptDate, aptTime, aptStaffId);
+                
+                showToast('Saat yeni randevulara açıldı ✓', 'success');
+            } else if (processSlot) {
+                showToast('Randevu iptal edildi', 'success');
+            }
+            
+            modal.classList.remove('active');
+        }
+        
+        // Bloklanmış slot'u kaldır (varsa)
+        async function removeBlockedSlot(date, time, staffId) {
+            try {
+                // Salon'un blockedSlots array'inden kaldır
+                if (salon.blockedSlots && Array.isArray(salon.blockedSlots)) {
+                    const updatedBlocked = salon.blockedSlots.filter(slot => {
+                        return !(slot.date === date && slot.time === time && 
+                                (staffId ? slot.staffId === staffId : true));
+                    });
+                    
+                    if (updatedBlocked.length !== salon.blockedSlots.length) {
+                        await db.collection('salons').doc(salon.id).update({
+                            blockedSlots: updatedBlocked
+                        });
+                        salon.blockedSlots = updatedBlocked;
+                        console.log('[Slot] Bloklanmış saat kaldırıldı:', date, time);
+                    }
+                }
+            } catch (error) {
+                console.error('[Slot] Blok kaldırma hatası:', error);
             }
         }
         
@@ -5010,8 +5441,9 @@ END:VEVENT
     <!-- Real-time Bildirim Sistemi (iOS dahil tüm platformlar) -->
     <script>
         // ============================================
-        // ZAMANLI BİLDİRİM SİSTEMİ v2.0
+        // ZAMANLI BİLDİRİM SİSTEMİ v2.1
         // Tüm platformlarda çalışır (iOS dahil)
+        // iOS döngü sorunu düzeltildi
         // ============================================
         
         const ZamanliNotify = {
@@ -5023,9 +5455,18 @@ END:VEVENT
             isIOS: false,
             isPWA: false,
             salonId: null,
+            initialized: false, // Çift init engellemek için
+            initInProgress: false, // Init sırasında tekrar çağrılmasını engelle
             
             // Sistemi başlat
             init: function(salonId) {
+                // Zaten başlatılmışsa veya devam ediyorsa çık
+                if (this.initialized || this.initInProgress) {
+                    console.log('[Notify] Zaten başlatılmış veya devam ediyor, atlanıyor');
+                    return;
+                }
+                
+                this.initInProgress = true;
                 console.log('[Notify] Başlatılıyor...');
                 this.salonId = salonId;
                 
@@ -5048,11 +5489,14 @@ END:VEVENT
                     appointments.forEach(a => this.knownAppointments.add(a.id));
                 }
                 
-                // Bildirim durumunu kontrol et
+                // Bildirim durumunu kontrol et (iOS'ta döngü yapmadan)
                 this.checkNotificationStatus();
                 
                 // Real-time dinlemeyi başlat (her durumda)
                 this.startListening();
+                
+                this.initialized = true;
+                this.initInProgress = false;
             },
             
             // Ses sistemini başlat
@@ -5082,9 +5526,14 @@ END:VEVENT
                 // Notification API var mı?
                 if (!('Notification' in window)) {
                     console.log('[Notify] Notification API desteklenmiyor');
-                    // iOS Safari (PWA değilse) - sadece popup göster
+                    // iOS Safari (PWA değilse) - banner'ı sadece bir kez göster
                     if (this.isIOS && !this.isPWA) {
-                        this.showIOSInstallBanner();
+                        // Daha önce gösterilmiş mi kontrol et
+                        const iosBannerShown = sessionStorage.getItem('ios-banner-shown-session');
+                        if (!iosBannerShown) {
+                            sessionStorage.setItem('ios-banner-shown-session', 'true');
+                            this.showIOSInstallBanner();
+                        }
                     }
                     return;
                 }
@@ -5095,14 +5544,22 @@ END:VEVENT
                     this.updateUI(true);
                     console.log('[Notify] İzin verilmiş');
                     
-                    // FCM Token'ı kaydet/güncelle (zaten izin varsa)
-                    this.registerFCMToken();
+                    // FCM Token'ı kaydet/güncelle (zaten izin varsa) - sadece bir kez
+                    if (!this.fcmRegistered) {
+                        this.fcmRegistered = true;
+                        this.registerFCMToken();
+                    }
                 } else if (Notification.permission === 'denied') {
                     this.updateUI(false);
                     console.log('[Notify] İzin reddedilmiş');
                 } else {
-                    // İzin istenmemiş - banner göster
-                    this.showNotificationBanner();
+                    // İzin istenmemiş - banner göster (session başına bir kez)
+                    const bannerShown = sessionStorage.getItem('push-banner-shown-session');
+                    if (!bannerShown) {
+                        sessionStorage.setItem('push-banner-shown-session', 'true');
+                        this.showNotificationBanner();
+                    }
+                };
                 }
             },
             
