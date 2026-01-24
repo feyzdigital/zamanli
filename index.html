@@ -96,7 +96,7 @@
             <div class="mobile-menu-divider"></div>
             <a href="#" onclick="showLoginModal(); toggleMobileMenu(); return false;">🔑 Giriş Yap</a>
             <a href="/berber/kayit/" class="highlight">✨ Salonunu Ekle</a>
-            <a href="#" onclick="ZamanliUX.showInstallPrompt(); toggleMobileMenu(); return false;" id="mobileInstallBtn" class="pwa-hide-when-installed">📲 Uygulamayı İndir</a>
+            <a href="#" onclick="ZamanliUX.showInstallPrompt(); toggleMobileMenu(); return false;" id="mobileInstallBtn" class="pwa-hide-when-installed pwa-hide-on-ios">📲 Uygulamayı İndir</a>
         </nav>
         <div class="mobile-menu-footer">
             <p>© 2026 Zamanli</p>
@@ -363,20 +363,34 @@
                     })
                     .catch(err => console.log('SW registration failed:', err));
                 
-                // SW'dan güncelleme mesajı gelince sayfayı yenile
+                // SW'dan güncelleme mesajı gelince BANNER göster (otomatik reload değil)
+                let updateBannerShown = false;
                 navigator.serviceWorker.addEventListener('message', (event) => {
-                    if (event.data.type === 'SW_UPDATED') {
-                        console.log('SW updated to', event.data.version, '- refreshing...');
-                        window.location.reload();
+                    if (event.data.type === 'SW_UPDATED' && !updateBannerShown) {
+                        console.log('SW updated to', event.data.version);
+                        updateBannerShown = true;
+                        // Banner göster
+                        showUpdateBanner();
                     }
                 });
                 
-                // Controller değişince yenile
+                function showUpdateBanner() {
+                    if (document.getElementById('sw-update-banner')) return;
+                    const banner = document.createElement('div');
+                    banner.id = 'sw-update-banner';
+                    banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:12px 20px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9999;display:flex;align-items:center;gap:12px;font-size:14px;';
+                    banner.innerHTML = '<span>🔄 Güncelleme mevcut</span><button onclick="location.reload()" style="background:#10B981;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;">Yenile</button><button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:18px;">×</button>';
+                    document.body.appendChild(banner);
+                }
+                
+                // Controller değişince banner göster (otomatik reload değil)
                 let refreshing = false;
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                     if (!refreshing) {
                         refreshing = true;
-                        window.location.reload();
+                        // Otomatik reload yerine sadece log
+                        console.log('SW controller changed');
+                        // İsteğe bağlı: showUpdateBanner();
                     }
                 });
             });

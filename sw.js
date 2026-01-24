@@ -48,7 +48,7 @@ messaging.onBackgroundMessage((payload) => {
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-const CACHE_VERSION = 'v4.0';
+const CACHE_VERSION = 'v4.1';
 const CACHE_NAME = `zamanli-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
@@ -114,26 +114,34 @@ self.addEventListener('activate', (event) => {
         // TÜM eski cache'leri temizle
         caches.keys()
             .then((cacheNames) => {
+                const oldCaches = cacheNames.filter((name) => name !== CACHE_NAME && name.startsWith('zamanli-'));
+                
+                // Sadece eski zamanli cache'leri varsa güncelleme var demektir
+                const hasRealUpdate = oldCaches.length > 0;
+                
                 return Promise.all(
-                    cacheNames
-                        .filter((name) => name !== CACHE_NAME)
-                        .map((name) => {
-                            console.log('[SW] Deleting old cache:', name);
-                            return caches.delete(name);
-                        })
-                );
+                    oldCaches.map((name) => {
+                        console.log('[SW] Deleting old cache:', name);
+                        return caches.delete(name);
+                    })
+                ).then(() => hasRealUpdate);
             })
-            .then(() => {
+            .then((hasRealUpdate) => {
                 console.log('[SW] Claiming all clients');
-                return self.clients.claim(); // Tüm sekmeleri hemen kontrol al
+                return self.clients.claim().then(() => hasRealUpdate);
             })
-            .then(() => {
-                // Tüm client'lara reload mesajı gönder
-                return self.clients.matchAll().then(clients => {
-                    clients.forEach(client => {
-                        client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+            .then((hasRealUpdate) => {
+                // SADECE gerçek güncelleme varsa mesaj gönder (yeni kurulum değilse)
+                if (hasRealUpdate) {
+                    return self.clients.matchAll().then(clients => {
+                        clients.forEach(client => {
+                            // Yönetim paneli sayfalarına mesaj gönderme
+                            if (!client.url.includes('/yonetim/')) {
+                                client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+                            }
+                        });
                     });
-                });
+                }
             })
     );
 });

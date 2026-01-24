@@ -76,6 +76,10 @@ const ZamanliPWA = {
         if (this.isIOS) {
             const match = ua.match(/OS (\d+)_/);
             this.iosVersion = match ? parseInt(match[1]) : 0;
+            
+            // iOS'ta install butonlarını gizlemek için class ekle
+            document.documentElement.classList.add('pwa-ios');
+            document.body.classList.add('pwa-ios');
         }
     },
     
@@ -1193,6 +1197,14 @@ const ZamanliPWA = {
                 font-size: 14px;
                 font-weight: 500;
                 color: #1e293b;
+            }
+            
+            /* ===== iOS'ta INSTALL BUTONUNU GİZLE ===== */
+            .pwa-ios .pwa-hide-on-ios,
+            .pwa-ios #mobileInstallBtn,
+            .pwa-ios #bottomNavInstall,
+            .pwa-ios .pwa-install-banner {
+                display: none !important;
             }
             
             /* ===== STANDALONE MODE ADJUSTMENTS ===== */

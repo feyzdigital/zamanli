@@ -7818,6 +7818,9 @@ END:VEVENT
         
         // PWA Install
         let deferredPrompt;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -7833,7 +7836,20 @@ END:VEVENT
             }
         });
         
+        // iOS için: beforeinstallprompt olmayacak, manuel göster
+        if (isIOS && !isStandalone && shouldShowPWABanner()) {
+            setTimeout(() => {
+                document.getElementById('pwaBanner').classList.add('show');
+            }, 3000);
+        }
+        
         function installPWA() {
+            if (isIOS) {
+                // iOS için kurulum rehberi göster
+                showIOSInstallGuide();
+                return;
+            }
+            
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then(() => {
@@ -7842,6 +7858,72 @@ END:VEVENT
                 // Bir daha gösterme
                 localStorage.setItem('pwa-panel-installed', 'true');
             });
+        }
+        
+        function showIOSInstallGuide() {
+            // Mevcut modal varsa kaldır
+            const existingModal = document.getElementById('iosInstallModal');
+            if (existingModal) existingModal.remove();
+            
+            const modal = document.createElement('div');
+            modal.id = 'iosInstallModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;padding:1rem;';
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            
+            modal.innerHTML = `
+                <div style="background:white;border-radius:20px;max-width:360px;width:100%;overflow:hidden;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+                    <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);padding:1.25rem;display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            <span style="font-size:1.5rem;">📲</span>
+                            <h3 style="margin:0;color:white;font-size:1.1rem;">iPhone'a Yükle</h3>
+                        </div>
+                        <button onclick="this.closest('#iosInstallModal').remove()" style="background:rgba(255,255,255,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;font-size:1.25rem;cursor:pointer;">×</button>
+                    </div>
+                    <div style="padding:1.25rem;">
+                        ${!isSafari ? '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:0.75rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;"><span>⚠️</span><p style="margin:0;font-size:0.85rem;">PWA yüklemek için <strong>Safari</strong> kullanın</p></div>' : ''}
+                        
+                        <div style="display:flex;flex-direction:column;gap:1rem;">
+                            <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+                                <div style="width:28px;height:28px;background:linear-gradient(135deg,#10B981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:0.85rem;flex-shrink:0;">1</div>
+                                <div>
+                                    <p style="margin:0;font-size:0.9rem;">Ekranın altındaki <strong>Paylaş</strong> butonuna dokunun</p>
+                                    <div style="margin-top:0.5rem;background:#f1f5f9;border-radius:8px;padding:0.5rem 0.75rem;display:inline-flex;align-items:center;gap:0.35rem;">
+                                        <svg width="18" height="22" viewBox="0 0 22 28" fill="none"><rect x="1" y="8" width="20" height="18" rx="2" stroke="#10B981" stroke-width="2"/><path d="M11 2v14M6 7l5-5 5 5" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+                                <div style="width:28px;height:28px;background:linear-gradient(135deg,#10B981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:0.85rem;flex-shrink:0;">2</div>
+                                <div>
+                                    <p style="margin:0;font-size:0.9rem;">Listede <strong>"Ana Ekrana Ekle"</strong> seçin</p>
+                                    <div style="margin-top:0.5rem;background:#f1f5f9;border-radius:8px;padding:0.5rem 0.75rem;display:inline-flex;align-items:center;gap:0.35rem;font-size:0.85rem;">
+                                        <span>➕</span> Ana Ekrana Ekle
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+                                <div style="width:28px;height:28px;background:linear-gradient(135deg,#10B981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:0.85rem;flex-shrink:0;">3</div>
+                                <div>
+                                    <p style="margin:0;font-size:0.9rem;">Sağ üstteki <strong>"Ekle"</strong> butonuna dokunun</p>
+                                    <div style="margin-top:0.5rem;background:#3b82f6;color:white;border-radius:8px;padding:0.35rem 0.75rem;display:inline-block;font-size:0.85rem;font-weight:600;">Ekle</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top:1rem;background:#ecfdf5;border-radius:10px;padding:0.75rem;display:flex;align-items:center;gap:0.5rem;">
+                            <span>✨</span>
+                            <p style="margin:0;font-size:0.8rem;color:#065f46;">Kurulumdan sonra Zamanli ana ekranınızda bir uygulama gibi görünecek!</p>
+                        </div>
+                    </div>
+                    <div style="padding:1rem 1.25rem;border-top:1px solid #e2e8f0;">
+                        <button onclick="this.closest('#iosInstallModal').remove(); closePWABanner();" style="width:100%;padding:0.75rem;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;border-radius:10px;font-weight:600;font-size:0.95rem;cursor:pointer;">Anladım</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
         }
         
         function closePWABanner() {
@@ -7857,24 +7939,49 @@ END:VEVENT
             if (localStorage.getItem('pwa-panel-dismissed') === 'true') return false;
             // Standalone modda çalışıyorsa gösterme (zaten yüklü)
             if (window.matchMedia('(display-mode: standalone)').matches) return false;
+            if (window.navigator.standalone === true) return false;
             return true;
         }
         
-        // Service Worker - Yönetim panelinde devre dışı bırak ve mevcut SW'yi temizle
-        if ('serviceWorker' in navigator) {
-            // Mevcut service worker'ları kaldır (cache sorunlarını önlemek için)
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                registrations.forEach(registration => {
-                    registration.unregister();
+        // ========== SERVICE WORKER - YÖNETİM PANELİNDE DEVRE DIŞI ==========
+        // iOS Safari döngü sorununu engellemek için SW tamamen devre dışı
+        (function disableServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                // SW mesajlarını dinlemeyi engelle
+                navigator.serviceWorker.addEventListener('message', (e) => {
+                    // Güncelleme mesajlarını yoksay
+                    if (e.data?.type === 'SW_UPDATED') {
+                        console.log('[Panel] SW update message ignored');
+                        e.stopImmediatePropagation();
+                    }
                 });
-            });
+                
+                // Mevcut SW'leri kaldır
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    registrations.forEach(reg => {
+                        reg.unregister().then(() => {
+                            console.log('[Panel] SW unregistered');
+                        });
+                    });
+                }).catch(err => console.log('[Panel] SW unregister error:', err));
+                
+                // Controller change event'ini engelle
+                navigator.serviceWorker.addEventListener('controllerchange', (e) => {
+                    console.log('[Panel] Controller change ignored');
+                    e.stopImmediatePropagation();
+                });
+            }
+            
             // Cache'leri temizle
             if ('caches' in window) {
                 caches.keys().then(names => {
-                    names.forEach(name => caches.delete(name));
+                    names.forEach(name => {
+                        caches.delete(name);
+                        console.log('[Panel] Cache deleted:', name);
+                    });
                 });
             }
-        }
+        })();
         
         // ========== RAPORLAR FONKSİYONLARI ==========
         let currentReportPeriod = 'week';
@@ -8465,14 +8572,21 @@ END:VEVENT
             <div class="pwa-banner-icon">📲</div>
             <div class="pwa-banner-text">
                 <h4>Uygulamayı Yükle</h4>
-                <p>Ana ekrana ekle, internet olmadan da kullan</p>
+                <p>Ana ekrana ekle, hızlı erişim sağla</p>
             </div>
         </div>
         <div class="pwa-banner-actions">
             <button class="pwa-btn pwa-btn-close" onclick="closePWABanner()">Şimdi Değil</button>
-            <button class="pwa-btn pwa-btn-install" onclick="installPWA()">📲 Yükle</button>
+            <button class="pwa-btn pwa-btn-install" id="pwaBannerInstallBtn" onclick="installPWA()">📲 Yükle</button>
         </div>
     </div>
+    <script>
+        // iOS'ta buton metnini değiştir
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+            const btn = document.getElementById('pwaBannerInstallBtn');
+            if (btn) btn.textContent = '📲 Nasıl Yapılır?';
+        }
+    </script>
     
     <!-- Push Notification Banner -->
     <div id="pushBanner" class="push-banner" style="display: none;">
