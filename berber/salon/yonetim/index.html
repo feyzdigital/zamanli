@@ -2037,16 +2037,95 @@
             border: 2px dashed var(--primary);
         }
         
-        /* ========== MOBILE RESPONSIVE ========== */
+        /* Quick Add Popup */
+        .quick-add-popup {
+            position: fixed;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+        
+        .quick-add-popup.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .quick-add-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 0.75rem;
+            min-width: 180px;
+            position: relative;
+        }
+        
+        .quick-add-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--slate-600);
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--slate-100);
+        }
+        
+        .quick-add-btn {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-add-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .quick-add-close {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            background: var(--slate-100);
+            border: none;
+            border-radius: 50%;
+            font-size: 0.65rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--slate-500);
+        }
+        
+        .quick-add-close:hover {
+            background: var(--slate-200);
+        }
+        
+        /* ========== MOBILE RESPONSIVE - TAM DÜZENLEME ========== */
         .btn-icon-only { display: none; }
         .btn-text { display: inline; }
         .header-user-name { display: none; }
         .btn-logout { display: inline-flex; }
         
+        /* Tablet (768px ve altı) */
         @media (max-width: 768px) {
             /* Header */
             .header {
-                padding: 0.75rem 1rem;
+                padding: 0.5rem 0.75rem;
+                position: sticky;
+                top: 0;
+                z-index: 100;
             }
             
             .header-container {
@@ -2060,7 +2139,7 @@
             }
             
             .header-logo {
-                font-size: 1rem;
+                font-size: 0.9rem;
                 flex-shrink: 0;
             }
             
@@ -2076,11 +2155,11 @@
             }
             
             .header-salon-name {
-                font-size: 0.8rem;
+                font-size: 0.75rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-width: 80px;
+                max-width: 100px;
             }
             
             .header-salon-type {
@@ -2088,7 +2167,7 @@
             }
             
             .header-right {
-                gap: 0.5rem;
+                gap: 0.35rem;
                 flex-shrink: 0;
             }
             
@@ -2100,242 +2179,642 @@
             }
             
             .btn-logout {
-                padding: 0.4rem 0.6rem;
-                font-size: 0.75rem;
+                padding: 0.35rem 0.5rem;
+                font-size: 0.7rem;
             }
             
             .btn-outline.btn-sm {
-                padding: 0.4rem 0.5rem;
-                font-size: 0.75rem;
+                padding: 0.35rem 0.45rem;
+                font-size: 0.7rem;
             }
             
             /* Main Content */
             .main {
-                padding: 1rem;
+                padding: 0.5rem;
             }
             
-            /* Stats Grid */
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .main.new-layout {
+                padding: 0.5rem;
                 gap: 0.5rem;
             }
             
-            .stat-card {
-                padding: 0.75rem;
-                min-height: auto;
-            }
-            
-            .stat-header {
-                margin-bottom: 0.35rem;
-            }
-            
-            .stat-icon {
-                width: 32px;
-                height: 32px;
-                font-size: 0.9rem;
-            }
-            
-            .stat-value {
-                font-size: 1.25rem;
-            }
-            
-            .stat-label {
-                font-size: 0.7rem;
-            }
-            
-            /* Tabs */
-            .tabs {
-                padding: 0.35rem;
-                gap: 0.25rem;
-            }
-            
-            .tab {
-                padding: 0.6rem 0.9rem;
-                font-size: 0.85rem;
-            }
-            
-            /* Cards */
-            .card {
-                border-radius: var(--radius);
-            }
-            
-            .card-header {
-                padding: 1rem;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
-            }
-            
-            .card-header .btn {
-                width: 100%;
-            }
-            
-            /* Appointments */
-            .appointment-card {
-                padding: 1rem;
-            }
-            
-            .appointment-main {
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-            
-            .appointment-left {
-                width: 100%;
-            }
-            
-            .appointment-right {
-                width: 100%;
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-            }
-            
-            .appointment-actions {
+            /* Top Bar Stats */
+            .top-bar {
+                padding: 0.5rem;
+                gap: 0.5rem;
                 flex-wrap: wrap;
             }
             
-            /* Services */
-            .service-item {
+            .top-bar-stats {
+                flex: 1;
+                min-width: 180px;
+                gap: 0.35rem;
+            }
+            
+            .mini-stat {
+                padding: 0.35rem 0.5rem;
+                min-width: 55px;
+            }
+            
+            .mini-stat-value {
+                font-size: 0.95rem !important;
+            }
+            
+            .mini-stat-label {
+                font-size: 0.55rem !important;
+            }
+            
+            .menu-toggle-btn {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            /* Split View */
+            .main-split-view {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .calendar-panel,
+            .requests-panel {
+                max-height: none;
+                min-height: auto;
+            }
+            
+            .calendar-panel {
+                order: 1;
+            }
+            
+            .requests-panel {
+                order: 2;
+                max-height: 35vh;
+            }
+            
+            .panel-header {
+                padding: 0.5rem 0.75rem;
+                flex-wrap: wrap;
+                gap: 0.35rem;
+            }
+            
+            .panel-header h3 {
+                font-size: 0.85rem;
+            }
+            
+            /* Calendar Controls */
+            .calendar-controls-inline {
+                gap: 0.2rem;
+            }
+            
+            .calendar-controls-inline .cal-nav-btn {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.75rem;
+            }
+            
+            .cal-today-btn-small {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.65rem;
+            }
+            
+            .week-range-text {
+                font-size: 0.65rem;
+                min-width: 65px;
+            }
+            
+            /* Weekly Calendar */
+            .weekly-calendar,
+            .weekly-calendar-new {
+                max-height: 40vh;
+                min-height: 180px;
+            }
+            
+            /* Side Panel Tabs */
+            .side-tabs {
+                gap: 0;
+            }
+            
+            .side-tab {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+            }
+            
+            .side-tab-badge {
+                width: 16px;
+                height: 16px;
+                font-size: 0.6rem;
+            }
+            
+            /* Request Cards */
+            .request-card {
+                padding: 0.6rem;
+                gap: 0.5rem;
+            }
+            
+            .request-time {
+                font-size: 0.7rem;
+                padding: 0.25rem 0.4rem;
+            }
+            
+            .request-info h4 {
+                font-size: 0.85rem;
+            }
+            
+            .request-meta {
+                font-size: 0.7rem;
+                gap: 0.35rem;
+            }
+            
+            .request-actions {
+                gap: 0.25rem;
+            }
+            
+            .request-actions .btn-sm {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.65rem;
+            }
+            
+            /* Hidden Tabs Section */
+            .hidden-tabs-section {
+                padding: 0.5rem;
+            }
+            
+            .tab-nav {
+                gap: 0.25rem;
+                padding: 0.5rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .tab {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.7rem;
+                white-space: nowrap;
+            }
+            
+            /* Appointments Tab */
+            .appointments-header {
+                padding: 0.5rem 0.75rem;
+                gap: 0.35rem;
+            }
+            
+            .appointments-title {
+                font-size: 0.9rem !important;
+            }
+            
+            .view-toggle {
+                padding: 2px;
+            }
+            
+            .view-btn {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.7rem;
+            }
+            
+            .appointments-filters {
+                padding: 0.5rem 0.75rem;
+                gap: 0.25rem;
+            }
+            
+            .filter-btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.7rem;
+            }
+            
+            /* Appointment Cards */
+            .appointment-card {
                 flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
-                padding: 0.875rem;
+                gap: 0.5rem;
+                padding: 0.75rem;
             }
             
-            .service-left {
+            .appointment-date {
                 width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.5rem;
+                border-radius: 8px;
             }
             
-            .service-right {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .service-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 1.1rem;
-            }
-            
-            /* Staff */
-            .staff-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.75rem;
-            }
-            
-            .staff-card {
-                padding: 1rem;
-            }
-            
-            .staff-avatar {
-                width: 50px;
-                height: 50px;
+            .appointment-day {
                 font-size: 1.25rem;
+            }
+            
+            .appointment-month {
+                font-size: 0.7rem;
+            }
+            
+            .appointment-time {
+                margin-left: auto;
+                font-size: 0.9rem;
+            }
+            
+            .appointment-info h4 {
+                font-size: 0.9rem;
+            }
+            
+            .appointment-details {
+                font-size: 0.75rem;
+                flex-wrap: wrap;
+            }
+            
+            .appointment-actions {
+                flex-direction: row;
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            /* Calendar Controls for appointments tab */
+            .calendar-controls {
+                padding: 0.5rem 0.75rem;
+                gap: 0.35rem;
+            }
+            
+            .cal-nav-btn {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+            .cal-today-btn {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.75rem;
+            }
+            
+            .week-range {
+                font-size: 0.8rem;
+                min-width: 100px;
             }
             
             /* Settings */
             .settings-section {
                 padding: 1rem;
+                margin-bottom: 0.75rem;
             }
             
-            /* Hours Grid */
-            .hours-grid {
-                gap: 0.5rem;
+            .settings-title {
+                font-size: 0.95rem;
             }
             
-            .hours-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
-                padding: 0.75rem;
+            .form-label {
+                font-size: 0.8rem;
             }
             
-            .hours-inputs {
-                width: 100%;
-            }
-            
-            .hours-input {
-                flex: 1;
+            .form-input {
+                padding: 0.6rem;
+                font-size: 0.9rem;
             }
             
             /* Modal */
             .modal {
+                width: 95%;
+                max-width: 400px;
                 margin: 0.5rem;
-                max-height: calc(100vh - 1rem);
+                max-height: 90vh;
             }
             
             .modal-header {
-                padding: 1rem;
+                padding: 0.75rem 1rem;
             }
             
             .modal-title {
-                font-size: 1.1rem;
+                font-size: 1rem;
             }
             
             .modal-body {
                 padding: 1rem;
+                max-height: 60vh;
+                overflow-y: auto;
             }
             
             .modal-footer {
-                padding: 1rem;
-                flex-direction: column;
-            }
-            
-            .modal-footer .btn {
-                width: 100%;
-            }
-            
-            /* Form */
-            .form-row {
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-            
-            .form-row > * {
-                width: 100%;
-            }
-            
-            /* Toast */
-            .toast {
-                left: 1rem;
-                right: 1rem;
-                bottom: 1rem;
-            }
-        }
-        
-        @media (max-width: 360px) {
-            .stats-grid {
+                padding: 0.75rem 1rem;
                 gap: 0.35rem;
             }
             
-            .stat-card {
+            .modal-footer .btn {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+            }
+            
+            /* Quick Add Popup */
+            .quick-add-content {
+                min-width: 160px;
                 padding: 0.6rem;
             }
             
-            .stat-icon {
-                width: 28px;
-                height: 28px;
+            .quick-add-header {
+                font-size: 0.7rem;
+            }
+            
+            .quick-add-btn {
+                padding: 0.5rem 0.75rem;
                 font-size: 0.8rem;
             }
             
-            .stat-value {
-                font-size: 1.1rem;
+            /* Reports */
+            .report-section {
+                padding: 0.75rem;
             }
             
-            .stat-label {
+            .report-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+            
+            .report-stat {
+                padding: 0.75rem;
+            }
+            
+            .report-stat-value {
+                font-size: 1.25rem;
+            }
+            
+            .detailed-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+            
+            .detail-stat-card {
+                padding: 0.6rem;
+                font-size: 0.8rem;
+            }
+            
+            .hourly-bars {
+                height: 80px;
+            }
+            
+            /* Mobile Menu */
+            .mobile-menu-overlay.active {
+                display: flex;
+            }
+            
+            .mobile-menu {
+                width: 85%;
+                max-width: 300px;
+            }
+            
+            .mobile-menu-header {
+                padding: 1rem;
+            }
+            
+            .mobile-menu-nav a {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* Küçük telefon (480px ve altı) */
+        @media (max-width: 480px) {
+            .header {
+                padding: 0.4rem 0.5rem;
+            }
+            
+            .header-logo {
+                font-size: 0.85rem;
+            }
+            
+            .header-salon-name {
+                font-size: 0.7rem;
+                max-width: 70px;
+            }
+            
+            .btn-logout {
+                padding: 0.3rem 0.4rem;
                 font-size: 0.65rem;
             }
             
-            .staff-grid {
-                grid-template-columns: 1fr;
+            .main,
+            .main.new-layout {
+                padding: 0.35rem;
+            }
+            
+            .top-bar {
+                padding: 0.35rem;
+            }
+            
+            .mini-stat {
+                padding: 0.3rem 0.4rem;
+                min-width: 50px;
+            }
+            
+            .mini-stat-value {
+                font-size: 0.85rem !important;
+            }
+            
+            .mini-stat-label {
+                font-size: 0.5rem !important;
+            }
+            
+            .menu-toggle-btn {
+                padding: 0.35rem 0.6rem;
+                font-size: 0.75rem;
+            }
+            
+            .panel-header {
+                padding: 0.4rem 0.5rem;
+            }
+            
+            .panel-header h3 {
+                font-size: 0.8rem;
+            }
+            
+            .btn-add-appointment {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.7rem;
+            }
+            
+            .week-range-text {
+                font-size: 0.6rem;
+                min-width: 60px;
+            }
+            
+            .calendar-controls-inline .cal-nav-btn {
+                padding: 0.2rem 0.35rem;
+                font-size: 0.7rem;
+            }
+            
+            .cal-today-btn-small {
+                padding: 0.2rem 0.35rem;
+                font-size: 0.6rem;
+            }
+            
+            .weekly-calendar,
+            .weekly-calendar-new {
+                max-height: 35vh;
+                min-height: 150px;
+                grid-template-columns: 28px repeat(7, 1fr);
+                grid-auto-rows: minmax(24px, auto);
+                font-size: 0.55rem;
+            }
+            
+            .cal-header {
+                padding: 0.15rem 0.05rem;
+            }
+            
+            .cal-header-day {
+                font-size: 0.4rem;
+            }
+            
+            .cal-header-date {
+                font-size: 0.65rem;
+            }
+            
+            .cal-time-slot {
+                font-size: 0.5rem;
+                padding: 0.05rem;
+            }
+            
+            .cal-cell {
+                min-height: 24px;
+            }
+            
+            .cal-appointment {
+                padding: 0.1rem 0.15rem;
+                font-size: 0.45rem;
+                border-radius: 2px;
+            }
+            
+            .side-tab {
+                padding: 0.4rem 0.5rem;
+                font-size: 0.7rem;
+            }
+            
+            .request-card {
+                padding: 0.5rem;
+            }
+            
+            .request-time {
+                font-size: 0.65rem;
+                padding: 0.2rem 0.35rem;
+            }
+            
+            .request-info h4 {
+                font-size: 0.8rem;
+            }
+            
+            .request-meta {
+                font-size: 0.65rem;
+            }
+            
+            .request-actions .btn-sm {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.6rem;
             }
             
             .tab {
-                padding: 0.5rem 0.6rem;
-                font-size: 0.8rem;
+                padding: 0.35rem 0.5rem;
+                font-size: 0.65rem;
+            }
+            
+            .appointments-title {
+                font-size: 0.85rem !important;
+            }
+            
+            .view-btn {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.65rem;
+            }
+            
+            .filter-btn {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.65rem;
+            }
+            
+            .appointment-card {
+                padding: 0.6rem;
+            }
+            
+            .appointment-day {
+                font-size: 1.1rem;
+            }
+            
+            .appointment-info h4 {
+                font-size: 0.85rem;
+            }
+            
+            .appointment-details {
+                font-size: 0.7rem;
+            }
+            
+            .modal {
+                width: 98%;
+                margin: 0.25rem;
+            }
+            
+            .modal-body {
+                padding: 0.75rem;
+            }
+            
+            .settings-section {
+                padding: 0.75rem;
+            }
+            
+            .report-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .report-stat-value {
+                font-size: 1.1rem;
+            }
+            
+            .detailed-stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .quick-add-content {
+                min-width: 140px;
+                padding: 0.5rem;
+            }
+            
+            .quick-add-btn {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.75rem;
             }
         }
+        
+        /* Çok küçük telefon (360px ve altı) */
+        @media (max-width: 360px) {
+            .header-salon-name {
+                max-width: 50px;
+                font-size: 0.65rem;
+            }
+            
+            .mini-stat {
+                min-width: 45px;
+                padding: 0.25rem 0.35rem;
+            }
+            
+            .mini-stat-value {
+                font-size: 0.8rem !important;
+            }
+            
+            .weekly-calendar,
+            .weekly-calendar-new {
+                grid-template-columns: 25px repeat(7, 1fr);
+            }
+            
+            .cal-header-day {
+                font-size: 0.35rem;
+            }
+            
+            .cal-header-date {
+                font-size: 0.6rem;
+            }
+            
+            .cal-appointment {
+                font-size: 0.4rem;
+            }
+            
+            .view-btn {
+                padding: 0.2rem 0.35rem;
+                font-size: 0.6rem;
+            }
+            
+            .tab {
+                padding: 0.3rem 0.4rem;
+                font-size: 0.6rem;
+            }
+        }
+        
         
         /* Logo ve Galeri Yükleme */
         .logo-upload-area {
@@ -6117,6 +6596,7 @@ Panel: ${window.location.href}`);
                         <div class="cal-cell ${isPast || isClosed ? 'past' : ''}" 
                              data-date="${dateStr}" 
                              data-time="${timeStr}"
+                             onclick="handleCellClick(event, '${dateStr}', '${timeStr}')"
                              ondrop="handleDrop(event)" 
                              ondragover="handleDragOver(event)"
                              ondragleave="handleDragLeave(event)">
@@ -6146,6 +6626,119 @@ Panel: ${window.location.href}`);
         
         // Sürükle-Bırak Fonksiyonları
         let draggedAppointmentId = null;
+        
+        // Takvim hücresine tıklama - boş yere tıklayınca randevu ekleme popup'ı
+        function handleCellClick(event, date, time) {
+            // Eğer randevu kartına tıklandıysa işlem yapma
+            if (event.target.classList.contains('cal-appointment')) {
+                return;
+            }
+            
+            // Geçmiş tarihlere tıklamayı engelle
+            const today = new Date().toISOString().split('T')[0];
+            if (date < today) {
+                showToast('Geçmiş tarihlere randevu eklenemez', 'info');
+                return;
+            }
+            
+            // Quick add popup göster
+            showQuickAddPopup(event, date, time);
+        }
+        
+        // Hızlı randevu ekleme popup'ı
+        function showQuickAddPopup(event, date, time) {
+            // Mevcut popup varsa kaldır
+            const existingPopup = document.getElementById('quickAddPopup');
+            if (existingPopup) existingPopup.remove();
+            
+            // Tarih formatla
+            const dateObj = new Date(date);
+            const dayName = DAYS_TR[DAY_KEYS[dateObj.getDay()]];
+            const formattedDate = `${dateObj.getDate()} ${MONTHS_TR[dateObj.getMonth()]}`;
+            
+            // Popup oluştur
+            const popup = document.createElement('div');
+            popup.id = 'quickAddPopup';
+            popup.className = 'quick-add-popup';
+            popup.innerHTML = `
+                <div class="quick-add-content">
+                    <div class="quick-add-header">
+                        <span>📅 ${dayName}, ${formattedDate}</span>
+                        <span>🕐 ${time}</span>
+                    </div>
+                    <button class="quick-add-btn" onclick="openManualAppointmentWithDate('${date}', '${time}')">
+                        ➕ Randevu Ekle
+                    </button>
+                    <button class="quick-add-close" onclick="closeQuickAddPopup()">✕</button>
+                </div>
+            `;
+            
+            document.body.appendChild(popup);
+            
+            // Pozisyonu ayarla
+            const rect = event.target.getBoundingClientRect();
+            const popupRect = popup.getBoundingClientRect();
+            
+            let left = rect.left + rect.width / 2 - popupRect.width / 2;
+            let top = rect.bottom + 5;
+            
+            // Ekran dışına taşmasını engelle
+            if (left < 10) left = 10;
+            if (left + popupRect.width > window.innerWidth - 10) {
+                left = window.innerWidth - popupRect.width - 10;
+            }
+            if (top + popupRect.height > window.innerHeight - 10) {
+                top = rect.top - popupRect.height - 5;
+            }
+            
+            popup.style.left = `${left}px`;
+            popup.style.top = `${top}px`;
+            popup.classList.add('show');
+            
+            // Dışına tıklayınca kapat
+            setTimeout(() => {
+                document.addEventListener('click', closeQuickAddOnOutsideClick);
+            }, 100);
+        }
+        
+        function closeQuickAddPopup() {
+            const popup = document.getElementById('quickAddPopup');
+            if (popup) {
+                popup.classList.remove('show');
+                setTimeout(() => popup.remove(), 200);
+            }
+            document.removeEventListener('click', closeQuickAddOnOutsideClick);
+        }
+        
+        function closeQuickAddOnOutsideClick(e) {
+            const popup = document.getElementById('quickAddPopup');
+            if (popup && !popup.contains(e.target) && !e.target.classList.contains('cal-cell')) {
+                closeQuickAddPopup();
+            }
+        }
+        
+        // Tarih ve saat ile manuel randevu modal'ını aç
+        function openManualAppointmentWithDate(date, time) {
+            closeQuickAddPopup();
+            openManualAppointmentModal();
+            
+            // Tarih ve saati ayarla
+            setTimeout(() => {
+                const dateInput = document.getElementById('manualAppointmentDate');
+                const timeSelect = document.getElementById('manualAppointmentTime');
+                
+                if (dateInput) dateInput.value = date;
+                if (timeSelect) {
+                    // Saati bul ve seç
+                    for (let option of timeSelect.options) {
+                        if (option.value === time || option.value.startsWith(time.split(':')[0])) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                }
+            }, 100);
+        }
         
         function handleDragStart(event, appointmentId) {
             draggedAppointmentId = appointmentId;
@@ -6986,6 +7579,7 @@ Panel: ${window.location.href}`);
                         <div class="cal-cell ${isPast || isClosed ? 'past' : ''}" 
                              data-date="${dateStr}" 
                              data-time="${timeStr}"
+                             onclick="handleCellClick(event, '${dateStr}', '${timeStr}')"
                              ondrop="handleDropNew(event)" 
                              ondragover="handleDragOver(event)"
                              ondragleave="handleDragLeave(event)">
