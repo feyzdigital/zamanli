@@ -1592,6 +1592,51 @@
             transform: translateX(24px);
         }
         
+        /* Toggle Switch - Yeni Stil */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-switch .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: var(--slate-300);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+        
+        .toggle-switch .toggle-slider:before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--success);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
         /* Modal */
         .modal-overlay {
             position: fixed;
@@ -3492,6 +3537,96 @@
                         </button>
                     </form>
                 </div>
+                
+                <!-- Gelişmiş Ayarlar (Opsiyonel) -->
+                <div class="settings-section" style="border: 2px dashed var(--slate-200); background: var(--slate-50);">
+                    <div class="settings-title" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>⚙️ Gelişmiş Ayarlar</span>
+                        <span style="font-size: 0.7rem; background: var(--primary); color: white; padding: 0.15rem 0.5rem; border-radius: 10px;">Opsiyonel</span>
+                    </div>
+                    <p class="settings-desc" style="margin-bottom: 1rem;">Bu ayarlar işletmeniz için ek özellikler sağlar. Değiştirmeden önce dikkatli düşünün.</p>
+                    
+                    <!-- Otomatik Onay -->
+                    <div class="advanced-option">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: white; border-radius: 8px; margin-bottom: 0.75rem;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--slate-700);">✅ Otomatik Randevu Onayı</div>
+                                <div style="font-size: 0.75rem; color: var(--slate-500);">Yeni randevular manuel onay gerektirmeden otomatik onaylanır</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingAutoApprove" onchange="saveAdvancedSetting('autoApprove', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Randevu İptal Süresi -->
+                    <div class="advanced-option">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: white; border-radius: 8px; margin-bottom: 0.75rem;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--slate-700);">⏰ Minimum İptal Süresi</div>
+                                <div style="font-size: 0.75rem; color: var(--slate-500);">Müşteri kaç saat önceye kadar iptal edebilir?</div>
+                            </div>
+                            <select id="settingMinCancelHours" class="form-input" style="width: auto; padding: 0.4rem 0.6rem;" onchange="saveAdvancedSetting('minCancelHours', this.value)">
+                                <option value="0">Sınırsız</option>
+                                <option value="1">1 saat</option>
+                                <option value="2">2 saat</option>
+                                <option value="4">4 saat</option>
+                                <option value="12">12 saat</option>
+                                <option value="24">24 saat</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Randevu Aralığı -->
+                    <div class="advanced-option">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: white; border-radius: 8px; margin-bottom: 0.75rem;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--slate-700);">📅 Randevu Aralığı</div>
+                                <div style="font-size: 0.75rem; color: var(--slate-500);">Randevu slotları kaç dakikada bir olsun?</div>
+                            </div>
+                            <select id="settingSlotInterval" class="form-input" style="width: auto; padding: 0.4rem 0.6rem;" onchange="saveAdvancedSetting('slotInterval', this.value)">
+                                <option value="15">15 dakika</option>
+                                <option value="30">30 dakika</option>
+                                <option value="45">45 dakika</option>
+                                <option value="60">60 dakika</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Maksimum İleri Randevu -->
+                    <div class="advanced-option">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: white; border-radius: 8px; margin-bottom: 0.75rem;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--slate-700);">📆 Maksimum İleri Tarih</div>
+                                <div style="font-size: 0.75rem; color: var(--slate-500);">Müşteri en fazla kaç gün sonrası için randevu alabilir?</div>
+                            </div>
+                            <select id="settingMaxAdvanceDays" class="form-input" style="width: auto; padding: 0.4rem 0.6rem;" onchange="saveAdvancedSetting('maxAdvanceDays', this.value)">
+                                <option value="7">1 hafta</option>
+                                <option value="14">2 hafta</option>
+                                <option value="30">1 ay</option>
+                                <option value="60">2 ay</option>
+                                <option value="90">3 ay</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- SMS/WhatsApp Hatırlatma -->
+                    <div class="advanced-option">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: white; border-radius: 8px;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem; color: var(--slate-700);">📱 Hatırlatma Bildirimi</div>
+                                <div style="font-size: 0.75rem; color: var(--slate-500);">Randevudan önce müşteriye WhatsApp hatırlatması</div>
+                            </div>
+                            <select id="settingReminderHours" class="form-input" style="width: auto; padding: 0.4rem 0.6rem;" onchange="saveAdvancedSetting('reminderHours', this.value)">
+                                <option value="0">Kapalı</option>
+                                <option value="1">1 saat önce</option>
+                                <option value="2">2 saat önce</option>
+                                <option value="24">1 gün önce</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -3988,6 +4123,7 @@
                 renderTodayAppointments();
                 updateStats();
                 loadReports();
+                loadAdvancedSettings(); // Gelişmiş ayarları yükle
             }, 500);
         }
         
@@ -4235,6 +4371,9 @@
         }
         
         // Load Appointments
+        // Global listener referansı
+        let appointmentsListener = null;
+        
         async function loadAppointments() {
             try {
                 const snapshot = await db.collection('appointments')
@@ -4253,8 +4392,10 @@
                     appointments = appointments.filter(a => a.staffId === currentStaffId || a.staffName === currentStaffName);
                 }
                 
-                updateStats();
-                renderAppointments();
+                refreshAllViews();
+                
+                // Real-time listener'ı başlat (ilk yüklemeden sonra)
+                startAppointmentsListener();
                 
             } catch (error) {
                 console.error('Error loading appointments:', error);
@@ -4274,13 +4415,148 @@
                         appointments = appointments.filter(a => a.staffId === currentStaffId || a.staffName === currentStaffName);
                     }
                     
-                    updateStats();
-                    renderAppointments();
+                    refreshAllViews();
+                    startAppointmentsListener();
                 } catch (e) {
                     console.error('Fallback also failed:', e);
                 }
             }
         }
+        
+        // ========== REAL-TIME SYNC SİSTEMİ ==========
+        
+        // Tüm görünümleri güncelle
+        function refreshAllViews() {
+            try {
+                updateStats();
+                renderAppointments();
+                renderWeeklyCalendar();
+                renderWeeklyCalendarNew();
+                renderPendingRequests();
+                renderTodayAppointments();
+            } catch (e) {
+                console.error('[Sync] Görünüm güncelleme hatası:', e);
+            }
+        }
+        
+        // Real-time listener başlat
+        function startAppointmentsListener() {
+            // Mevcut listener varsa kapat
+            if (appointmentsListener) {
+                appointmentsListener();
+                appointmentsListener = null;
+            }
+            
+            if (!salon?.id) {
+                console.log('[Sync] Salon ID yok, listener başlatılamadı');
+                return;
+            }
+            
+            console.log('[Sync] Real-time listener başlatılıyor...');
+            
+            try {
+                appointmentsListener = db.collection('appointments')
+                    .where('salonId', '==', salon.id)
+                    .onSnapshot(
+                        (snapshot) => {
+                            let hasChanges = false;
+                            
+                            snapshot.docChanges().forEach(change => {
+                                const apt = { id: change.doc.id, ...change.doc.data() };
+                                
+                                if (change.type === 'added') {
+                                    // Yeni randevu - listede yoksa ekle
+                                    const exists = appointments.find(a => a.id === apt.id);
+                                    if (!exists) {
+                                        appointments.push(apt);
+                                        hasChanges = true;
+                                        console.log('[Sync] Yeni randevu eklendi:', apt.customerName);
+                                        
+                                        // Yeni randevu bildirimi (sadece bekleyen için)
+                                        if (apt.status === 'pending' && NotificationManager?.notifyNewAppointment) {
+                                            NotificationManager.notifyNewAppointment(apt);
+                                        }
+                                    }
+                                } else if (change.type === 'modified') {
+                                    // Randevu güncellendi
+                                    const index = appointments.findIndex(a => a.id === apt.id);
+                                    if (index !== -1) {
+                                        const oldStatus = appointments[index].status;
+                                        appointments[index] = apt;
+                                        hasChanges = true;
+                                        console.log('[Sync] Randevu güncellendi:', apt.customerName, oldStatus, '→', apt.status);
+                                        
+                                        // Durum değişikliği bildirimi
+                                        if (oldStatus !== apt.status) {
+                                            showStatusChangeToast(apt, oldStatus);
+                                        }
+                                    }
+                                } else if (change.type === 'removed') {
+                                    // Randevu silindi
+                                    const index = appointments.findIndex(a => a.id === apt.id);
+                                    if (index !== -1) {
+                                        appointments.splice(index, 1);
+                                        hasChanges = true;
+                                        console.log('[Sync] Randevu silindi:', apt.customerName);
+                                    }
+                                }
+                            });
+                            
+                            // Değişiklik varsa görünümleri güncelle
+                            if (hasChanges) {
+                                // Personel modunda filtreleme
+                                if (isStaffMode && currentStaffId) {
+                                    appointments = appointments.filter(a => 
+                                        a.staffId === currentStaffId || a.staffName === currentStaffName
+                                    );
+                                }
+                                
+                                refreshAllViews();
+                            }
+                        },
+                        (error) => {
+                            console.error('[Sync] Listener hatası:', error);
+                            // Hata durumunda 5 saniye sonra tekrar dene
+                            setTimeout(() => {
+                                console.log('[Sync] Listener yeniden başlatılıyor...');
+                                startAppointmentsListener();
+                            }, 5000);
+                        }
+                    );
+                
+                console.log('[Sync] Listener aktif');
+            } catch (e) {
+                console.error('[Sync] Listener başlatılamadı:', e);
+            }
+        }
+        
+        // Durum değişikliği bildirimi
+        function showStatusChangeToast(apt, oldStatus) {
+            const statusLabels = {
+                pending: 'Bekliyor',
+                confirmed: 'Onaylandı',
+                cancelled: 'İptal Edildi',
+                completed: 'Tamamlandı'
+            };
+            
+            const message = `${apt.customerName}: ${statusLabels[oldStatus] || oldStatus} → ${statusLabels[apt.status] || apt.status}`;
+            
+            if (apt.status === 'cancelled') {
+                showToast(message, 'error');
+            } else if (apt.status === 'confirmed') {
+                showToast(message, 'success');
+            } else {
+                showToast(message, 'info');
+            }
+        }
+        
+        // Sayfa kapatılırken listener'ı temizle
+        window.addEventListener('beforeunload', () => {
+            if (appointmentsListener) {
+                appointmentsListener();
+                appointmentsListener = null;
+            }
+        });
         
         // Update Stats
         function updateStats() {
@@ -4412,17 +4688,31 @@
             }).join('');
         }
         
-        // Update Appointment Status
+        // Update Appointment Status - Güvenilir versiyon
         async function updateAppointmentStatus(id, status) {
+            // İşlem başladığını göster
+            const loadingToast = showToast('İşleniyor...', 'info');
+            
             try {
-                await db.collection('appointments').doc(id).update({ status });
+                // Firestore güncelle
+                await db.collection('appointments').doc(id).update({ 
+                    status: status,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: isStaffMode ? currentStaffName : 'salon_owner'
+                });
                 
-                // Update local data
+                // Lokal veriyi güncelle (real-time listener da güncelleyecek ama hemen göster)
                 const apt = appointments.find(a => a.id === id);
-                if (apt) apt.status = status;
+                if (apt) {
+                    apt.status = status;
+                    apt.updatedAt = new Date().toISOString();
+                }
                 
-                updateStats();
-                renderAppointments();
+                // Görünümleri güncelle
+                refreshAllViews();
+                
+                // Toast'u kapat
+                if (loadingToast && loadingToast.remove) loadingToast.remove();
                 
                 // Onaylandıysa WhatsApp seçeneği sun
                 if (status === 'confirmed' && apt) {
@@ -4431,12 +4721,24 @@
                     // İptal için slot açma seçeneği ile birlikte modal göster
                     showCancelledSlotModal(apt);
                 } else {
-                    showToast('Randevu güncellendi', 'success');
+                    showToast('Randevu güncellendi ✓', 'success');
                 }
                 
             } catch (error) {
                 console.error('Error updating appointment:', error);
-                showToast('Bir hata oluştu', 'error');
+                if (loadingToast && loadingToast.remove) loadingToast.remove();
+                
+                // Hata durumunda kullanıcıya bilgi ver
+                if (error.code === 'permission-denied') {
+                    showToast('Yetkiniz yok. Lütfen tekrar giriş yapın.', 'error');
+                } else if (error.code === 'unavailable') {
+                    showToast('İnternet bağlantınızı kontrol edin', 'error');
+                } else {
+                    showToast('Bir hata oluştu. Tekrar deneyin.', 'error');
+                }
+                
+                // Veriyi yeniden yükle (tutarlılık için)
+                setTimeout(() => loadAppointments(), 1000);
             }
         }
         
@@ -5590,6 +5892,53 @@ Panel: ${window.location.href}`);
             }
         }
         
+        // ========== GELİŞMİŞ AYARLAR ==========
+        
+        // Gelişmiş ayarları yükle
+        function loadAdvancedSettings() {
+            const settings = salon?.advancedSettings || {};
+            
+            // Otomatik onay
+            const autoApprove = document.getElementById('settingAutoApprove');
+            if (autoApprove) autoApprove.checked = settings.autoApprove || false;
+            
+            // Minimum iptal süresi
+            const minCancelHours = document.getElementById('settingMinCancelHours');
+            if (minCancelHours) minCancelHours.value = settings.minCancelHours || '0';
+            
+            // Randevu aralığı
+            const slotInterval = document.getElementById('settingSlotInterval');
+            if (slotInterval) slotInterval.value = settings.slotInterval || '30';
+            
+            // Maksimum ileri tarih
+            const maxAdvanceDays = document.getElementById('settingMaxAdvanceDays');
+            if (maxAdvanceDays) maxAdvanceDays.value = settings.maxAdvanceDays || '30';
+            
+            // Hatırlatma
+            const reminderHours = document.getElementById('settingReminderHours');
+            if (reminderHours) reminderHours.value = settings.reminderHours || '0';
+        }
+        
+        // Gelişmiş ayar kaydet
+        async function saveAdvancedSetting(key, value) {
+            try {
+                const currentSettings = salon?.advancedSettings || {};
+                currentSettings[key] = value;
+                
+                await db.collection('salons').doc(salon.id).update({
+                    advancedSettings: currentSettings
+                });
+                
+                salon.advancedSettings = currentSettings;
+                showToast('Ayar kaydedildi ✓', 'success');
+                
+                console.log('[Settings] Gelişmiş ayar kaydedildi:', key, value);
+            } catch (error) {
+                console.error('Gelişmiş ayar kaydetme hatası:', error);
+                showToast('Ayar kaydedilemedi', 'error');
+            }
+        }
+        
         // Setup Tabs
         function setupTabs() {
             document.querySelectorAll('.tab').forEach(tab => {
@@ -6001,6 +6350,11 @@ Panel: ${window.location.href}`);
                         <button class="btn btn-outline btn-sm" onclick="openWhatsApp('${apt.customerPhone}', '${apt.customerName}')">
                             📱 WhatsApp
                         </button>
+                        ${apt.status !== 'cancelled' && apt.status !== 'completed' ? `
+                            <button class="btn btn-outline btn-sm" onclick="openEditAppointmentModal('${apt.id}')" style="color: var(--primary);">
+                                ✏️ Düzenle
+                            </button>
+                        ` : ''}
                         ${apt.status === 'pending' ? `
                             <button class="btn btn-success btn-sm" onclick="updateAppointmentStatus('${apt.id}', 'confirmed'); closeAppointmentDetailModal();">
                                 ✅ Onayla
@@ -6025,6 +6379,203 @@ Panel: ${window.location.href}`);
         function closeAppointmentDetailModal() {
             const modal = document.getElementById('appointmentDetailModal');
             if (modal) modal.classList.remove('active');
+        }
+        
+        // ========== RANDEVU DÜZENLEME ==========
+        
+        function openEditAppointmentModal(appointmentId) {
+            const apt = appointments.find(a => a.id === appointmentId);
+            if (!apt) return;
+            
+            closeAppointmentDetailModal();
+            
+            let modal = document.getElementById('editAppointmentModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'editAppointmentModal';
+                modal.className = 'modal-overlay';
+                document.body.appendChild(modal);
+            }
+            
+            // Hizmetler ve personel seçenekleri
+            const services = salon?.services || [];
+            const staff = salon?.staff || [];
+            
+            const serviceOptions = services.map((s, i) => {
+                const name = typeof s === 'string' ? s : s.name;
+                const price = typeof s === 'object' ? s.price : 0;
+                const selected = name === apt.service ? 'selected' : '';
+                return `<option value="${i}" data-name="${name}" data-price="${price}" ${selected}>${name} - ${price}₺</option>`;
+            }).join('');
+            
+            const staffOptions = staff.map(s => {
+                const selected = (s.name === apt.staffName || s.id === apt.staffId) ? 'selected' : '';
+                return `<option value="${s.id}" data-name="${s.name}" ${selected}>${s.name}</option>`;
+            }).join('');
+            
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 420px;">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;">
+                        <h3 class="modal-title">✏️ Randevu Düzenle</h3>
+                        <button class="modal-close" onclick="closeEditAppointmentModal()" style="color: white;">×</button>
+                    </div>
+                    <div class="modal-body" style="padding: 1.25rem;">
+                        <form id="editAppointmentForm" onsubmit="saveEditedAppointment(event, '${apt.id}')">
+                            <!-- Uyarı -->
+                            <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
+                                <div style="font-size: 0.8rem; color: #92400e;">
+                                    ⚠️ <strong>Dikkat:</strong> Değişiklikler müşteriye otomatik bildirilmez. Gerekirse WhatsApp ile bilgilendirin.
+                                </div>
+                            </div>
+                            
+                            <!-- Müşteri Bilgisi (sadece görüntüleme) -->
+                            <div style="background: var(--slate-50); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">
+                                <div style="font-weight: 600;">${escapeHtml(apt.customerName)}</div>
+                                <div style="font-size: 0.85rem; color: var(--slate-500);">📞 0${apt.customerPhone}</div>
+                            </div>
+                            
+                            <!-- Tarih ve Saat -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                                <div>
+                                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">📅 Tarih</label>
+                                    <input type="date" id="editDate" class="form-input" value="${apt.date}" required style="width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">🕐 Saat</label>
+                                    <input type="time" id="editTime" class="form-input" value="${apt.time}" required style="width: 100%;">
+                                </div>
+                            </div>
+                            
+                            <!-- Hizmet -->
+                            <div style="margin-bottom: 1rem;">
+                                <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">✂️ Hizmet</label>
+                                <select id="editService" class="form-input" required style="width: 100%;">
+                                    ${serviceOptions}
+                                </select>
+                            </div>
+                            
+                            <!-- Personel -->
+                            <div style="margin-bottom: 1rem;">
+                                <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">👤 Personel</label>
+                                <select id="editStaff" class="form-input" style="width: 100%;">
+                                    <option value="">Belirtilmemiş</option>
+                                    ${staffOptions}
+                                </select>
+                            </div>
+                            
+                            <!-- Butonlar -->
+                            <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
+                                <button type="button" class="btn btn-outline" onclick="closeEditAppointmentModal()" style="flex: 1;">
+                                    İptal
+                                </button>
+                                <button type="submit" class="btn btn-primary" style="flex: 2;">
+                                    💾 Değişiklikleri Kaydet
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+        
+        function closeEditAppointmentModal() {
+            const modal = document.getElementById('editAppointmentModal');
+            if (modal) modal.classList.remove('active');
+        }
+        
+        async function saveEditedAppointment(event, appointmentId) {
+            event.preventDefault();
+            
+            const apt = appointments.find(a => a.id === appointmentId);
+            if (!apt) return;
+            
+            const newDate = document.getElementById('editDate').value;
+            const newTime = document.getElementById('editTime').value;
+            const serviceSelect = document.getElementById('editService');
+            const staffSelect = document.getElementById('editStaff');
+            
+            const serviceOption = serviceSelect.selectedOptions[0];
+            const serviceName = serviceOption?.dataset?.name || apt.service;
+            const servicePrice = parseInt(serviceOption?.dataset?.price) || apt.servicePrice;
+            
+            const staffOption = staffSelect.selectedOptions[0];
+            const staffId = staffSelect.value || null;
+            const staffName = staffOption?.dataset?.name || null;
+            
+            // Değişiklik var mı kontrol et
+            const hasChanges = newDate !== apt.date || 
+                              newTime !== apt.time || 
+                              serviceName !== apt.service ||
+                              staffName !== apt.staffName;
+            
+            if (!hasChanges) {
+                showToast('Değişiklik yapılmadı', 'info');
+                closeEditAppointmentModal();
+                return;
+            }
+            
+            const loadingToast = showToast('Kaydediliyor...', 'info');
+            
+            try {
+                const updates = {
+                    date: newDate,
+                    time: newTime,
+                    service: serviceName,
+                    serviceName: serviceName,
+                    servicePrice: servicePrice,
+                    staffId: staffId,
+                    staffName: staffName,
+                    updatedAt: new Date().toISOString(),
+                    editedBy: isStaffMode ? currentStaffName : 'salon_owner',
+                    editHistory: firebase.firestore.FieldValue.arrayUnion({
+                        date: new Date().toISOString(),
+                        changes: {
+                            oldDate: apt.date,
+                            newDate: newDate,
+                            oldTime: apt.time,
+                            newTime: newTime,
+                            oldService: apt.service,
+                            newService: serviceName
+                        },
+                        editedBy: isStaffMode ? currentStaffName : 'salon_owner'
+                    })
+                };
+                
+                await db.collection('appointments').doc(appointmentId).update(updates);
+                
+                // Lokal güncelle
+                Object.assign(apt, {
+                    date: newDate,
+                    time: newTime,
+                    service: serviceName,
+                    serviceName: serviceName,
+                    servicePrice: servicePrice,
+                    staffId: staffId,
+                    staffName: staffName,
+                    updatedAt: new Date().toISOString()
+                });
+                
+                if (loadingToast && loadingToast.remove) loadingToast.remove();
+                
+                refreshAllViews();
+                closeEditAppointmentModal();
+                showToast('Randevu güncellendi ✓', 'success');
+                
+                // WhatsApp ile bilgilendirme öner
+                setTimeout(() => {
+                    if (confirm('Müşteriye değişiklik hakkında WhatsApp mesajı göndermek ister misiniz?')) {
+                        const msg = encodeURIComponent(`Merhaba ${apt.customerName}, randevunuz güncellendi: ${formatDateTR(newDate)} ${newTime}. ${salon.name}`);
+                        window.open(`https://wa.me/90${apt.customerPhone}?text=${msg}`, '_blank');
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error('Randevu düzenleme hatası:', error);
+                if (loadingToast && loadingToast.remove) loadingToast.remove();
+                showToast('Kaydetme hatası. Tekrar deneyin.', 'error');
+            }
         }
         
         // Ödeme kaydet
@@ -6266,27 +6817,38 @@ Panel: ${window.location.href}`);
         
         // Hızlı onaylama
         async function quickApprove(appointmentId) {
+            const loadingToast = showToast('Onaylanıyor...', 'info');
+            
             try {
                 await db.collection('appointments').doc(appointmentId).update({ 
                     status: 'confirmed',
-                    updatedAt: new Date().toISOString()
+                    updatedAt: new Date().toISOString(),
+                    confirmedAt: new Date().toISOString(),
+                    confirmedBy: isStaffMode ? currentStaffName : 'salon_owner'
                 });
                 
                 const apt = appointments.find(a => a.id === appointmentId);
                 if (apt) {
                     apt.status = 'confirmed';
+                    apt.confirmedAt = new Date().toISOString();
+                }
+                
+                if (loadingToast && loadingToast.remove) loadingToast.remove();
+                
+                // Tüm görünümleri güncelle
+                refreshAllViews();
+                
+                // WhatsApp bildirimi seçeneği
+                if (apt) {
                     showNotificationModal(apt, 'confirmed');
                 }
                 
-                renderPendingRequests();
-                renderTodayAppointments();
-                renderWeeklyCalendarNew();
-                updateStats();
-                renderAppointments();
-                
             } catch (error) {
                 console.error('Quick approve error:', error);
-                showToast('Hata oluştu', 'error');
+                if (loadingToast && loadingToast.remove) loadingToast.remove();
+                showToast('Hata oluştu. Tekrar deneyin.', 'error');
+                // Veriyi yeniden yükle
+                setTimeout(() => loadAppointments(), 1000);
             }
         }
         
@@ -6294,27 +6856,38 @@ Panel: ${window.location.href}`);
         async function quickReject(appointmentId) {
             if (!confirm('Bu randevuyu iptal etmek istediğinize emin misiniz?')) return;
             
+            const loadingToast = showToast('İptal ediliyor...', 'info');
+            
             try {
                 await db.collection('appointments').doc(appointmentId).update({ 
                     status: 'cancelled',
-                    updatedAt: new Date().toISOString()
+                    updatedAt: new Date().toISOString(),
+                    cancelledAt: new Date().toISOString(),
+                    cancelledBy: isStaffMode ? currentStaffName : 'salon_owner'
                 });
                 
                 const apt = appointments.find(a => a.id === appointmentId);
                 if (apt) {
                     apt.status = 'cancelled';
+                    apt.cancelledAt = new Date().toISOString();
+                }
+                
+                if (loadingToast && loadingToast.remove) loadingToast.remove();
+                
+                // Tüm görünümleri güncelle
+                refreshAllViews();
+                
+                // Slot açma modal'ı
+                if (apt) {
                     showCancelledSlotModal(apt);
                 }
                 
-                renderPendingRequests();
-                renderTodayAppointments();
-                renderWeeklyCalendarNew();
-                updateStats();
-                renderAppointments();
-                
             } catch (error) {
                 console.error('Quick reject error:', error);
-                showToast('Hata oluştu', 'error');
+                if (loadingToast && loadingToast.remove) loadingToast.remove();
+                showToast('Hata oluştu. Tekrar deneyin.', 'error');
+                // Veriyi yeniden yükle
+                setTimeout(() => loadAppointments(), 1000);
             }
         }
         
