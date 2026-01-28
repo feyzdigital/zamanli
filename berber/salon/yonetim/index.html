@@ -3517,201 +3517,6 @@
             background: var(--primary);
             color: white;
         }
-        
-        /* ========== AYARLAR BÖLÜMÜ STİLLERİ ========== */
-        .services-settings-list,
-        .staff-settings-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-        
-        .service-settings-item,
-        .staff-settings-item {
-            background: white;
-            border: 1px solid var(--slate-200);
-            border-radius: var(--radius);
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        
-        .service-settings-item:hover,
-        .staff-settings-item:hover {
-            border-color: var(--primary);
-            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
-        }
-        
-        .service-settings-info,
-        .staff-settings-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .service-settings-icon,
-        .staff-settings-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            background: var(--slate-100);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            flex-shrink: 0;
-        }
-        
-        .staff-settings-avatar {
-            background: var(--primary);
-            color: white;
-            font-weight: 700;
-            font-size: 1rem;
-        }
-        
-        .service-settings-details h4,
-        .staff-settings-details h4 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--slate-800);
-            margin-bottom: 0.15rem;
-        }
-        
-        .service-settings-details p,
-        .staff-settings-details p {
-            font-size: 0.8rem;
-            color: var(--slate-500);
-        }
-        
-        .service-settings-price {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--primary);
-            white-space: nowrap;
-        }
-        
-        .service-settings-actions,
-        .staff-settings-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .staff-hours-card {
-            background: white;
-            border: 1px solid var(--slate-200);
-            border-radius: var(--radius);
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .staff-hours-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--slate-100);
-        }
-        
-        .staff-hours-header h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--slate-800);
-        }
-        
-        .staff-hours-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--slate-600);
-        }
-        
-        .staff-hours-grid {
-            display: grid;
-            gap: 0.5rem;
-        }
-        
-        .staff-hour-row {
-            display: grid;
-            grid-template-columns: 100px 1fr 1fr auto;
-            gap: 0.5rem;
-            align-items: center;
-            padding: 0.5rem;
-            background: var(--slate-50);
-            border-radius: 8px;
-        }
-        
-        .staff-hour-row.disabled {
-            opacity: 0.5;
-        }
-        
-        .day-label {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--slate-700);
-        }
-        
-        .break-time-item {
-            background: white;
-            border: 1px solid var(--slate-200);
-            border-radius: var(--radius);
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 0.75rem;
-        }
-        
-        .break-time-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .break-time-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: var(--warning-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-        
-        @media (max-width: 640px) {
-            .service-settings-item,
-            .staff-settings-item {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .service-settings-info,
-            .staff-settings-info {
-                width: 100%;
-            }
-            
-            .service-settings-price {
-                margin-top: 0.5rem;
-            }
-            
-            .service-settings-actions,
-            .staff-settings-actions {
-                margin-top: 0.5rem;
-                justify-content: flex-end;
-            }
-            
-            .staff-hour-row {
-                grid-template-columns: 1fr;
-                gap: 0.25rem;
-            }
-        }
     </style>
     
     <!-- Chart.js CDN -->
@@ -3839,8 +3644,13 @@
                 <a href="#" data-menu-tab="reports" onclick="showHiddenTabs('reports'); return false;">
                     <span class="menu-icon">📊</span> Raporlar
                 </a>
-                <a href="#" data-menu-tab="settings" onclick="showHiddenTabs('settings'); return false;">
-                    <span class="menu-icon">⚙️</span> Ayarlar
+                <!-- Salon Ayarları - Sadece salon sahibi görecek -->
+                <a href="#" data-menu-tab="settings" id="menuSalonSettings" onclick="showHiddenTabs('settings'); return false;">
+                    <span class="menu-icon">⚙️</span> Salon Ayarları
+                </a>
+                <!-- Ayarlarım - Personel için -->
+                <a href="#" id="menuMySettings" onclick="openStaffSettingsModal(); closeMobileMenu(); return false;" style="display:none;">
+                    <span class="menu-icon">👤</span> Ayarlarım
                 </a>
                 <div class="menu-divider"></div>
                 <a href="#" id="mobileViewSalonBtn" target="_blank">
@@ -4387,55 +4197,6 @@
                                 <option value="24">1 gün önce</option>
                             </select>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- ============ HİZMET YÖNETİMİ BÖLÜMÜ ============ -->
-                <div class="settings-section" id="settingsServicesSection">
-                    <div class="settings-title" style="display: flex; align-items: center; justify-content: space-between;">
-                        <span>✂️ Hizmet Yönetimi</span>
-                        <button class="btn btn-primary btn-sm" onclick="openServiceModalFromSettings()">+ Hizmet Ekle</button>
-                    </div>
-                    <p class="settings-desc">Salonunuzda sunduğunuz hizmetleri ve fiyatlarını buradan yönetebilirsiniz.</p>
-                    
-                    <div id="settingsServiceList" class="services-settings-list" style="margin-top: 1rem;">
-                        <!-- Hizmetler JavaScript ile yüklenecek -->
-                    </div>
-                </div>
-                
-                <!-- ============ PERSONEL ÇALIŞMA SAATLERİ ============ -->
-                <div class="settings-section" id="settingsStaffHoursSection">
-                    <div class="settings-title">👥 Personel Çalışma Saatleri</div>
-                    <p class="settings-desc">Her personel için ayrı çalışma saatleri tanımlayabilirsiniz. Tanımlanmayan personeller salon çalışma saatlerini kullanır.</p>
-                    
-                    <div id="settingsStaffHoursList" style="margin-top: 1rem;">
-                        <!-- Personel çalışma saatleri JavaScript ile yüklenecek -->
-                    </div>
-                </div>
-                
-                <!-- ============ PERSONEL YÖNETİMİ ============ -->
-                <div class="settings-section" id="settingsStaffSection">
-                    <div class="settings-title" style="display: flex; align-items: center; justify-content: space-between;">
-                        <span>👤 Personel Yönetimi</span>
-                        <button class="btn btn-primary btn-sm" onclick="openStaffModal()">+ Personel Ekle</button>
-                    </div>
-                    <p class="settings-desc">Personel ekleyin, düzenleyin ve her biri için ayrı PIN tanımlayın.</p>
-                    
-                    <div id="settingsStaffList" class="staff-settings-list" style="margin-top: 1rem;">
-                        <!-- Personeller JavaScript ile yüklenecek -->
-                    </div>
-                </div>
-                
-                <!-- ============ MOLA SAATLERİ ============ -->
-                <div class="settings-section" id="settingsBreakSection">
-                    <div class="settings-title" style="display: flex; align-items: center; justify-content: space-between;">
-                        <span>☕ Mola Saatleri</span>
-                        <button class="btn btn-outline btn-sm" onclick="addBreakTime()">+ Mola Ekle</button>
-                    </div>
-                    <p class="settings-desc">Randevu alınamayacak mola saatlerini tanımlayın.</p>
-                    
-                    <div id="settingsBreakList" style="margin-top: 1rem;">
-                        <!-- Mola saatleri JavaScript ile yüklenecek -->
                     </div>
                 </div>
             </div>
@@ -5319,8 +5080,8 @@
         function applyStaffModeRestrictions() {
             console.log('[Staff Mode] Kısıtlamalar uygulanıyor...');
             
-            // 1. TAMAMEN GİZLENECEK/KALDIRILACAK SEKMELER (settings HARİÇ - personel kendi ayarlarını görebilir)
-            const hiddenTabs = ['staff', 'services', 'hours'];
+            // 1. TAMAMEN GİZLENECEK/KALDIRILACAK SEKMELER (settings DAHİL - personel salon ayarlarına erişemez)
+            const hiddenTabs = ['staff', 'services', 'hours', 'settings'];
             
             // Tab butonlarını gizle (masaüstü)
             document.querySelectorAll('.tab[data-tab]').forEach(btn => {
@@ -5336,35 +5097,24 @@
                 if (tabContent) tabContent.remove();
             });
             
-            // 2. MOBİL MENÜ - Kısıtlı sekmeler (settings hariç)
+            // 2. MOBİL MENÜ - Salon Ayarları gizle, Ayarlarım göster
+            const menuSalonSettings = document.getElementById('menuSalonSettings');
+            if (menuSalonSettings) {
+                menuSalonSettings.style.display = 'none';
+            }
+            
+            const menuMySettings = document.getElementById('menuMySettings');
+            if (menuMySettings) {
+                menuMySettings.style.display = 'flex';
+            }
+            
+            // Diğer gizli menü öğeleri
             document.querySelectorAll('.mobile-menu-nav a[data-menu-tab]').forEach(link => {
                 const tabName = link.getAttribute('data-menu-tab');
                 if (hiddenTabs.includes(tabName)) {
                     link.style.display = 'none';
                 }
             });
-            
-            // 3. AYARLAR SEKMESİ - Personel için sadece temel bilgiler
-            setTimeout(() => {
-                // Personel için gelişmiş ayarları ve hassas bölümleri gizle
-                const settingsTab = document.getElementById('tab-settings');
-                if (settingsTab) {
-                    // Hizmet yönetimi, personel yönetimi, PIN değiştir bölümlerini gizle
-                    const sectionsToHide = ['settingsServicesSection', 'settingsStaffSection', 'settingsStaffHoursSection', 'settingsBreakSection'];
-                    sectionsToHide.forEach(id => {
-                        const section = document.getElementById(id);
-                        if (section) section.style.display = 'none';
-                    });
-                    
-                    // PIN değiştir bölümünü gizle (form içinde)
-                    settingsTab.querySelectorAll('.settings-section').forEach(section => {
-                        const title = section.querySelector('.settings-title');
-                        if (title && (title.textContent.includes('PIN') || title.textContent.includes('Gelişmiş'))) {
-                            section.style.display = 'none';
-                        }
-                    });
-                }
-            }, 200);
             
             // 3. RANDEVULAR - Başlığı değiştir
             const appointmentsTitle = document.querySelector('.appointments-title');
@@ -7392,326 +7142,6 @@ Panel: ${window.location.href}`);
             // QR Kod
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(location.origin + '/berber/salon/?slug=' + salon.slug)}`;
             document.getElementById('qrCodeDisplay').innerHTML = `<img src="${qrUrl}" alt="QR Kod" id="qrImage" style="width:180px;height:180px;">`;
-            
-            // Yeni eklenen bölümleri yükle
-            loadSettingsServices();
-            loadSettingsStaff();
-            loadSettingsStaffHours();
-            loadSettingsBreaks();
-        }
-        
-        // ============ AYARLAR - HİZMET YÖNETİMİ ============
-        function loadSettingsServices() {
-            const services = salon.services || [];
-            const container = document.getElementById('settingsServiceList');
-            
-            if (services.length === 0) {
-                container.innerHTML = '<p class="empty-text">Henüz hizmet eklenmemiş. "Hizmet Ekle" butonuna tıklayarak başlayın.</p>';
-                return;
-            }
-            
-            container.innerHTML = services.map((svc, idx) => `
-                <div class="service-settings-item" data-service-id="${svc.id || idx}">
-                    <div class="service-settings-info">
-                        <div class="service-settings-icon">${svc.icon || '✂️'}</div>
-                        <div class="service-settings-details">
-                            <h4>${escapeHtml(svc.name)}</h4>
-                            <p>${svc.duration || 30} dakika • ${svc.active !== false ? '✅ Aktif' : '⏸️ Pasif'}</p>
-                        </div>
-                    </div>
-                    <div class="service-settings-price">${svc.price || 0} ₺</div>
-                    <div class="service-settings-actions">
-                        <button class="btn btn-outline btn-sm" onclick="editServiceFromSettings(${idx})">✏️</button>
-                        <button class="btn btn-outline btn-sm" onclick="toggleServiceStatus(${idx})">${svc.active !== false ? '⏸️' : '▶️'}</button>
-                        <button class="btn btn-outline btn-sm" style="color: var(--danger);" onclick="deleteServiceFromSettings(${idx})">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function openServiceModalFromSettings() {
-            openServiceModal();
-        }
-        
-        function editServiceFromSettings(idx) {
-            const svc = salon.services[idx];
-            if (!svc) return;
-            
-            // Service modal'ı düzenleme modunda aç
-            openServiceModal(svc, idx);
-        }
-        
-        async function toggleServiceStatus(idx) {
-            const services = salon.services || [];
-            if (!services[idx]) return;
-            
-            services[idx].active = services[idx].active === false ? true : false;
-            
-            try {
-                await db.collection('salons').doc(salon.id).update({ services });
-                salon.services = services;
-                loadSettingsServices();
-                loadServices(); // Ana hizmet listesini de güncelle
-                showToast(services[idx].active ? 'Hizmet aktif edildi' : 'Hizmet pasif edildi', 'success');
-            } catch (e) {
-                showToast('Hata: ' + e.message, 'error');
-            }
-        }
-        
-        async function deleteServiceFromSettings(idx) {
-            if (!confirm('Bu hizmeti silmek istediğinize emin misiniz?')) return;
-            
-            const services = salon.services || [];
-            services.splice(idx, 1);
-            
-            try {
-                await db.collection('salons').doc(salon.id).update({ services });
-                salon.services = services;
-                loadSettingsServices();
-                loadServices();
-                showToast('Hizmet silindi', 'success');
-            } catch (e) {
-                showToast('Hata: ' + e.message, 'error');
-            }
-        }
-        
-        // ============ AYARLAR - PERSONEL YÖNETİMİ ============
-        function loadSettingsStaff() {
-            const staff = salon.staff || [];
-            const container = document.getElementById('settingsStaffList');
-            
-            if (staff.length === 0) {
-                container.innerHTML = '<p class="empty-text">Henüz personel eklenmemiş.</p>';
-                return;
-            }
-            
-            container.innerHTML = staff.map((st, idx) => `
-                <div class="staff-settings-item" data-staff-id="${st.id || idx}">
-                    <div class="staff-settings-info">
-                        <div class="staff-settings-avatar">${st.name.charAt(0).toUpperCase()}</div>
-                        <div class="staff-settings-details">
-                            <h4>${escapeHtml(st.name)} ${st.isOwner ? '<span style="font-size:0.7rem;background:var(--primary);color:white;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.25rem;">👑 Sahip</span>' : ''}</h4>
-                            <p>${escapeHtml(st.role || st.title || 'Personel')} • PIN: ${st.pin || '****'}</p>
-                        </div>
-                    </div>
-                    <div class="staff-settings-actions">
-                        <button class="btn btn-outline btn-sm" onclick="editStaffFromSettings(${idx})">✏️</button>
-                        ${!st.isOwner ? `<button class="btn btn-outline btn-sm" style="color: var(--danger);" onclick="deleteStaffFromSettings(${idx})">🗑️</button>` : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function editStaffFromSettings(idx) {
-            const st = salon.staff[idx];
-            if (!st) return;
-            openStaffModal(st, idx);
-        }
-        
-        async function deleteStaffFromSettings(idx) {
-            const st = salon.staff[idx];
-            if (st.isOwner) {
-                showToast('Salon sahibi silinemez', 'error');
-                return;
-            }
-            
-            if (!confirm(`"${st.name}" adlı personeli silmek istediğinize emin misiniz?`)) return;
-            
-            const staff = salon.staff || [];
-            staff.splice(idx, 1);
-            
-            try {
-                await db.collection('salons').doc(salon.id).update({ staff });
-                salon.staff = staff;
-                loadSettingsStaff();
-                loadStaff();
-                showToast('Personel silindi', 'success');
-            } catch (e) {
-                showToast('Hata: ' + e.message, 'error');
-            }
-        }
-        
-        // ============ AYARLAR - PERSONEL ÇALIŞMA SAATLERİ ============
-        function loadSettingsStaffHours() {
-            const staff = salon.staff || [];
-            const container = document.getElementById('settingsStaffHoursList');
-            
-            if (staff.length === 0) {
-                container.innerHTML = '<p class="empty-text">Personel çalışma saatlerini ayarlamak için önce personel ekleyin.</p>';
-                return;
-            }
-            
-            const days = [
-                { key: 'mon', name: 'Pazartesi' },
-                { key: 'tue', name: 'Salı' },
-                { key: 'wed', name: 'Çarşamba' },
-                { key: 'thu', name: 'Perşembe' },
-                { key: 'fri', name: 'Cuma' },
-                { key: 'sat', name: 'Cumartesi' },
-                { key: 'sun', name: 'Pazar' }
-            ];
-            
-            const salonHours = salon.workingHours || {};
-            
-            container.innerHTML = staff.map((st, idx) => {
-                const staffHours = st.workingHours || {};
-                const useCustom = st.useCustomHours || false;
-                
-                return `
-                    <div class="staff-hours-card" data-staff-idx="${idx}">
-                        <div class="staff-hours-header">
-                            <h4>👤 ${escapeHtml(st.name)}</h4>
-                            <label class="staff-hours-toggle">
-                                <input type="checkbox" ${useCustom ? 'checked' : ''} onchange="toggleStaffCustomHours(${idx}, this.checked)">
-                                <span>Özel saatler kullan</span>
-                            </label>
-                        </div>
-                        <div class="staff-hours-grid" style="${!useCustom ? 'opacity:0.5;pointer-events:none;' : ''}">
-                            ${days.map(d => {
-                                const h = useCustom ? (staffHours[d.key] || salonHours[d.key] || { open: '09:00', close: '19:00', closed: false }) : (salonHours[d.key] || { open: '09:00', close: '19:00', closed: false });
-                                return `
-                                    <div class="staff-hour-row ${h.closed ? 'disabled' : ''}">
-                                        <span class="day-label">${d.name}</span>
-                                        <input type="time" class="form-input" value="${h.open || '09:00'}" data-staff="${idx}" data-day="${d.key}" data-type="open" ${h.closed ? 'disabled' : ''} style="padding:0.4rem;">
-                                        <input type="time" class="form-input" value="${h.close || '19:00'}" data-staff="${idx}" data-day="${d.key}" data-type="close" ${h.closed ? 'disabled' : ''} style="padding:0.4rem;">
-                                        <label style="display:flex;align-items:center;gap:0.25rem;font-size:0.8rem;">
-                                            <input type="checkbox" ${h.closed ? 'checked' : ''} data-staff="${idx}" data-day="${d.key}" data-type="closed" onchange="toggleStaffDayClosed(${idx}, '${d.key}', this.checked)">
-                                            <span>Kapalı</span>
-                                        </label>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                        <button class="btn btn-primary btn-sm" style="margin-top:1rem;" onclick="saveStaffHours(${idx})" ${!useCustom ? 'disabled' : ''}>Kaydet</button>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        async function toggleStaffCustomHours(idx, useCustom) {
-            const staff = salon.staff || [];
-            if (!staff[idx]) return;
-            
-            staff[idx].useCustomHours = useCustom;
-            
-            try {
-                await db.collection('salons').doc(salon.id).update({ staff });
-                salon.staff = staff;
-                loadSettingsStaffHours();
-            } catch (e) {
-                showToast('Hata: ' + e.message, 'error');
-            }
-        }
-        
-        function toggleStaffDayClosed(staffIdx, day, closed) {
-            const row = document.querySelector(`.staff-hour-row input[data-staff="${staffIdx}"][data-day="${day}"][data-type="open"]`).closest('.staff-hour-row');
-            if (closed) {
-                row.classList.add('disabled');
-                row.querySelectorAll('input[type="time"]').forEach(i => i.disabled = true);
-            } else {
-                row.classList.remove('disabled');
-                row.querySelectorAll('input[type="time"]').forEach(i => i.disabled = false);
-            }
-        }
-        
-        async function saveStaffHours(idx) {
-            const staff = salon.staff || [];
-            if (!staff[idx]) return;
-            
-            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-            const workingHours = {};
-            
-            days.forEach(day => {
-                const openInput = document.querySelector(`input[data-staff="${idx}"][data-day="${day}"][data-type="open"]`);
-                const closeInput = document.querySelector(`input[data-staff="${idx}"][data-day="${day}"][data-type="close"]`);
-                const closedInput = document.querySelector(`input[data-staff="${idx}"][data-day="${day}"][data-type="closed"]`);
-                
-                workingHours[day] = {
-                    open: openInput?.value || '09:00',
-                    close: closeInput?.value || '19:00',
-                    closed: closedInput?.checked || false
-                };
-            });
-            
-            staff[idx].workingHours = workingHours;
-            
-            try {
-                await db.collection('salons').doc(salon.id).update({ staff });
-                salon.staff = staff;
-                showToast('Personel çalışma saatleri kaydedildi', 'success');
-            } catch (e) {
-                showToast('Hata: ' + e.message, 'error');
-            }
-        }
-        
-        // ============ AYARLAR - MOLA SAATLERİ ============
-        function loadSettingsBreaks() {
-            const breaks = salon.breaks || [];
-            const container = document.getElementById('settingsBreakList');
-            
-            if (breaks.length === 0) {
-                container.innerHTML = '<p class="empty-text">Mola saati tanımlanmamış. Gerekirse "Mola Ekle" butonunu kullanın.</p>';
-                return;
-            }
-            
-            container.innerHTML = breaks.map((brk, idx) => `
-                <div class="break-time-item">
-                    <div class="break-time-info">
-                        <div class="break-time-icon">☕</div>
-                        <div>
-                            <strong>${brk.name || 'Mola'}</strong>
-                            <p style="font-size:0.85rem;color:var(--slate-500);">${brk.start || '12:00'} - ${brk.end || '13:00'}</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteBreak(${idx})">🗑️</button>
-                </div>
-            `).join('');
-        }
-        
-        function addBreakTime() {
-            const name = prompt('Mola adı (örn: Öğle Molası):');
-            if (!name) return;
-            
-            const start = prompt('Başlangıç saati (örn: 12:00):', '12:00');
-            if (!start) return;
-            
-            const end = prompt('Bitiş saati (örn: 13:00):', '13:00');
-            if (!end) return;
-            
-            const breaks = salon.breaks || [];
-            breaks.push({ name, start, end });
-            
-            db.collection('salons').doc(salon.id).update({ breaks })
-                .then(() => {
-                    salon.breaks = breaks;
-                    loadSettingsBreaks();
-                    showToast('Mola eklendi', 'success');
-                })
-                .catch(e => showToast('Hata: ' + e.message, 'error'));
-        }
-        
-        async function deleteBreak(idx) {
-            if (!confirm('Bu molayı silmek istediğinize emin misiniz?')) return;
-            
-            const breaks = salon.breaks || [];
-            breaks.splice(idx, 1);
-            
-            try {
-                await db.collection('salons').doc(salon.id).update({ breaks });
-                salon.breaks = breaks;
-                loadSettingsBreaks();
-                showToast('Mola silindi', 'success');
-            } catch (e) {
-                showToast('Hata: ' + e.message, 'error');
-            }
-        }
-        
-        // Helper: HTML escape
-        function escapeHtml(str) {
-            if (!str) return '';
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
         }
         
         // QR Kod İndir
