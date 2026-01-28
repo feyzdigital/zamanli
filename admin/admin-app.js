@@ -50,12 +50,37 @@ function initAdmin() {
 }
 
 function checkAuth() {
+    console.log('[Admin] checkAuth çağrıldı');
     const session = localStorage.getItem('zamanli_admin');
+    
     if (session) {
-        const { pin, expiry } = JSON.parse(session);
-        if (pin === ADMIN_CONFIG.superAdminPin && new Date(expiry) > new Date()) { AdminState.isLoggedIn = true; loadAllData(); }
-        else { localStorage.removeItem('zamanli_admin'); renderLogin(); }
-    } else renderLogin();
+        try {
+            const { pin, expiry } = JSON.parse(session);
+            console.log('[Admin] Session bulundu, expiry:', expiry);
+            
+            if (pin === ADMIN_CONFIG.superAdminPin && new Date(expiry) > new Date()) {
+                console.log('[Admin] Oturum geçerli, veri yükleniyor...');
+                AdminState.isLoggedIn = true;
+                
+                // Biraz bekleyip loadAllData çağır (DOM hazır olsun)
+                setTimeout(() => {
+                    console.log('[Admin] loadAllData tetikleniyor...');
+                    loadAllData();
+                }, 100);
+            } else {
+                console.log('[Admin] Oturum süresi dolmuş veya PIN hatalı');
+                localStorage.removeItem('zamanli_admin');
+                renderLogin();
+            }
+        } catch (e) {
+            console.error('[Admin] Session parse hatası:', e);
+            localStorage.removeItem('zamanli_admin');
+            renderLogin();
+        }
+    } else {
+        console.log('[Admin] Session yok, login gösteriliyor');
+        renderLogin();
+    }
 }
 
 function login() {
