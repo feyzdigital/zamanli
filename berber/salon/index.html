@@ -2120,98 +2120,75 @@
             errorEl.textContent = '';
             
             try {
-                let snapshot = null;
+                let foundSalon = null;
+                let foundSalonId = null;
                 let isStaffLogin = false;
                 let staffInfo = null;
                 
-                // 1. SALON SAHİBİ GİRİŞİ - phone field ile 11 haneli
-                snapshot = await db.collection('salons')
-                    .where('phone', '==', phone11)
-                    .limit(1)
-                    .get();
+                // TÜM SALONLARI ÇEK (personel araması için de gerekli)
+                const allSalons = await db.collection('salons').get();
                 
-                // 2. phone field ile 10 haneli
-                if (snapshot.empty) {
-                    snapshot = await db.collection('salons')
-                        .where('phone', '==', phone10)
-                        .limit(1)
-                        .get();
-                }
-                
-                // 3. mobilePhone field ile 11 haneli
-                if (snapshot.empty) {
-                    snapshot = await db.collection('salons')
-                        .where('mobilePhone', '==', phone11)
-                        .limit(1)
-                        .get();
-                }
-                
-                // 4. mobilePhone field ile 10 haneli
-                if (snapshot.empty) {
-                    snapshot = await db.collection('salons')
-                        .where('mobilePhone', '==', phone10)
-                        .limit(1)
-                        .get();
-                }
-                
-                // 5. PERSONEL GİRİŞİ - staff array'inde telefon ara
-                if (snapshot.empty) {
-                    // Tüm salonları çek ve staff içinde ara (index olmadığı için)
-                    const allSalons = await db.collection('salons').get();
+                // 1. ÖNCE PERSONEL KONTROLÜ YAP (staff array'inde telefon + PIN eşleşmesi)
+                for (const doc of allSalons.docs) {
+                    const salonData = doc.data();
+                    const staff = salonData.staff || [];
                     
+                    // Personel telefonunu ve PIN'ini kontrol et
+                    const foundStaff = staff.find(s => {
+                        const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
+                        return staffPhone === phone10 && s.pin === pin;
+                    });
+                    
+                    if (foundStaff) {
+                        // Personel bulundu ve PIN doğru
+                        isStaffLogin = true;
+                        staffInfo = foundStaff;
+                        foundSalon = salonData;
+                        foundSalonId = doc.id;
+                        console.log('[Login] Personel girişi başarılı:', foundStaff.name);
+                        break;
+                    }
+                }
+                
+                // 2. PERSONEL BULUNAMADIYSA SALON SAHİBİ KONTROLÜ
+                if (!foundSalon) {
                     for (const doc of allSalons.docs) {
                         const salonData = doc.data();
-                        const staff = salonData.staff || [];
+                        const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
+                        const salonMobile = (salonData.mobilePhone || '').replace(/\D/g, '').slice(-10);
                         
-                        // Personel telefonunu kontrol et
-                        const foundStaff = staff.find(s => {
-                            const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                            return staffPhone === phone10;
-                        });
-                        
-                        if (foundStaff) {
-                            // Personel bulundu - PIN kontrolü
-                            if (foundStaff.pin === pin) {
-                                isStaffLogin = true;
-                                staffInfo = foundStaff;
-                                snapshot = { 
-                                    empty: false, 
-                                    docs: [{ 
-                                        id: doc.id, 
-                                        data: () => salonData 
-                                    }] 
-                                };
+                        // Telefon eşleşiyor mu?
+                        if (salonPhone === phone10 || salonMobile === phone10) {
+                            // PIN kontrolü - salon PIN veya owner staff PIN
+                            let pinValid = salonData.pin === pin;
+                            
+                            // Staff içinde owner varsa onun PIN'ini de kontrol et
+                            if (!pinValid && salonData.staff) {
+                                const owner = salonData.staff.find(s => s.isOwner === true);
+                                if (owner && owner.pin === pin) {
+                                    pinValid = true;
+                                }
+                            }
+                            
+                            if (pinValid) {
+                                foundSalon = salonData;
+                                foundSalonId = doc.id;
+                                console.log('[Login] Salon sahibi girişi başarılı:', salonData.name);
                                 break;
+                            } else {
+                                // Telefon doğru ama PIN yanlış
+                                throw new Error('PIN kodu hatalı');
                             }
                         }
                     }
                 }
                 
-                if (snapshot.empty) {
+                // 3. HİÇBİRİ BULUNAMADIYSA HATA
+                if (!foundSalon) {
                     throw new Error('Bu telefon ile kayıtlı salon veya personel bulunamadı');
                 }
                 
-                const salonData = snapshot.docs[0].data();
-                
-                // Salon sahibi girişi için PIN kontrolü
-                if (!isStaffLogin) {
-                    // Önce salon PIN'ini kontrol et
-                    let pinValid = salonData.pin === pin;
-                    
-                    // Salon PIN'i yoksa veya eşleşmiyorsa, staff'ta patron olarak ara
-                    if (!pinValid && salonData.staff) {
-                        const owner = salonData.staff.find(s => s.isOwner === true);
-                        if (owner && owner.pin === pin) {
-                            pinValid = true;
-                        }
-                    }
-                    
-                    if (!pinValid) {
-                        throw new Error('PIN kodu hatalı');
-                    }
-                }
-                
-                const slug = salonData.slug || snapshot.docs[0].id;
+                const slug = foundSalon.slug || foundSalonId;
                 
                 // Personel girişi ise staff bilgisini URL'e ekle
                 if (isStaffLogin && staffInfo) {
@@ -2222,6 +2199,7 @@
                 }
                 
             } catch (error) {
+                console.error('[Login] Hata:', error);
                 errorEl.textContent = error.message;
                 btn.disabled = false;
                 btn.textContent = 'Giriş Yap';
