@@ -983,15 +983,7 @@ function showQRCodeModal(salonId) {
         </div>
     `;
 }
-                </div>
-                <div class="modal-footer">
-                    <button onclick="closeModal()" class="btn btn-outline">İptal</button>
-                    <button onclick="saveNewPin('${id}')" class="btn btn-primary">Kaydet</button>
-                </div>
-            </div>
-        </div>
-    `;
-}
+
 
 function generateRandomPin() {
     const pin = Math.floor(1000 + Math.random() * 9000).toString();
