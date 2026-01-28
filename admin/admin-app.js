@@ -34,8 +34,8 @@ function checkAuth() {
     const session = localStorage.getItem('zamanli_admin');
     if (session) {
         try {
-            const { pinHash, expiry } = JSON.parse(session);
-            if (pinHash === ADMIN_CONFIG.superAdminPinHash && new Date(expiry) > new Date()) {
+            const { verified, expiry } = JSON.parse(session);
+            if (verified === true && new Date(expiry) > new Date()) {
                 AdminState.isLoggedIn = true; loadAllData(); return;
             }
         } catch (e) {}
@@ -48,7 +48,7 @@ function login() {
     const pin = document.getElementById('pinInput').value;
     if (ADMIN_CONFIG.verifySuperAdmin(pin)) {
         const expiry = new Date(); expiry.setHours(expiry.getHours() + 24);
-        localStorage.setItem('zamanli_admin', JSON.stringify({ pinHash: ADMIN_CONFIG.superAdminPinHash, expiry: expiry.toISOString() }));
+        localStorage.setItem('zamanli_admin', JSON.stringify({ verified: true, expiry: expiry.toISOString() }));
         AdminState.isLoggedIn = true; loadAllData();
     } else { showToast('Geçersiz şifre!', 'error'); document.getElementById('pinInput').value = ''; }
 }
@@ -366,8 +366,8 @@ function changeAdminPassword() {
         return;
     }
     
-    if (newPass.length < 8) {
-        showToast('Yeni şifre en az 8 karakter olmalı!', 'error');
+    if (newPass.length < 6) {
+        showToast('Yeni şifre en az 6 karakter olmalı!', 'error');
         return;
     }
     
@@ -376,14 +376,14 @@ function changeAdminPassword() {
         return;
     }
     
-    // Yeni hash'i oluştur ve göster
-    const newHash = ADMIN_CONFIG.hashPassword(newPass);
+    // Yeni base64 encoded şifreyi oluştur
+    const newEncoded = btoa(newPass);
     
     // Kullanıcıya bilgi ver
-    alert('Yeni şifre hash\\'i: ' + newHash + '\\n\\nBu hash\\'i admin-config.js dosyasındaki superAdminPinHash değerine yapıştırın.\\n\\nDosyayı güncelledikten sonra yeni şifrenizi kullanabilirsiniz.');
+    alert('Yeni şifre kodu: ' + newEncoded + '\n\nBu kodu admin-config.js dosyasindaki _sp degerine yapistirin.\n\nDosyayi guncelledikten sonra yeni sifrenizi kullanabilirsiniz.');
     
     closeModal();
-    showToast('Hash kopyalandı! admin-config.js dosyasını güncelleyin.', 'success');
+    showToast('Kod olusturuldu! admin-config.js dosyasini guncelleyin.', 'success');
 }
 
 // ==================== ACTIONS ====================

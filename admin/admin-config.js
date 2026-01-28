@@ -12,30 +12,25 @@ const ADMIN_CONFIG = {
         templateApproval: 'template_k0an00y',
         publicKey: 'DFMgbrmsjlK0hxlc5'
     },
-    // Süper Admin şifresi - SHA256 hash olarak saklanıyor (güvenlik için)
-    // Varsayılan şifre: "ZamanliAdmin2026!" 
-    // Değiştirmek için: console'da hashPassword('yeni_sifre') yazın ve hash'i buraya kopyalayın
-    superAdminPinHash: 'a7f5f35426b927411fc9231b56382173e3e5e3f42e0b8a7e8c67e3e14f5d6c89',
-    // Şifre doğrulama fonksiyonu
+    // Süper Admin şifresi (base64 encoded)
+    // Varsayılan: "admin2026"
+    // Değiştirmek için: btoa('yeni_sifre') ile encode edip buraya yazın
+    _sp: 'YWRtaW4yMDI2',
+    // Şifre doğrulama
     verifySuperAdmin: function(input) {
-        return this.hashPassword(input) === this.superAdminPinHash;
+        try {
+            return input === atob(this._sp);
+        } catch(e) {
+            return false;
+        }
     },
-    hashPassword: function(str) {
-        // Basit hash fonksiyonu (üretimde daha güçlü bir yöntem kullanılmalı)
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
+    // Mevcut şifreyi al (sadece değiştirme için)
+    getSuperAdminPin: function() {
+        try {
+            return atob(this._sp);
+        } catch(e) {
+            return '';
         }
-        // Hash'i hex string'e çevir ve uzat
-        const baseHash = Math.abs(hash).toString(16).padStart(8, '0');
-        // Ek güvenlik için string'i tekrarla ve karıştır
-        let finalHash = '';
-        for (let i = 0; i < 8; i++) {
-            finalHash += baseHash.split('').reverse().join('') + baseHash;
-        }
-        return finalHash.substring(0, 64);
     },
     categories: {
         berber: { name: 'Berber', icon: '💈', color: '#10B981' },

@@ -3748,13 +3748,20 @@
             </p>
             
             <form id="loginForm" onsubmit="handleLogin(event)">
+                <!-- Salon ID alanı - URL'de slug yoksa göster -->
+                <div class="form-group" id="salonIdGroup" style="display:none;">
+                    <label class="form-label">Salon Kodu veya Telefon</label>
+                    <input type="text" id="loginSalonId" class="form-input" placeholder="Salon slug veya telefon numarası">
+                    <p style="font-size:0.75rem;color:var(--slate-400);margin-top:0.25rem;">Salon linkinizden alabilirsiniz (örn: benim-salonum)</p>
+                </div>
+                
                 <div class="form-group">
                     <label class="form-label">Telefon Numarası</label>
                     <input type="tel" id="loginPhone" class="form-input" placeholder="05XX XXX XX XX" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">PIN Kodu</label>
-                    <input type="password" id="loginPin" class="form-input" placeholder="4 haneli PIN" maxlength="6" required>
+                    <input type="password" id="loginPin" class="form-input" placeholder="4-6 haneli PIN" maxlength="6" required>
                     <p id="loginError" class="form-error" style="display: none;"></p>
                 </div>
                 <button type="submit" class="btn btn-primary">
@@ -3763,7 +3770,7 @@
             </form>
             <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--slate-500);">
                 PIN kodunuzu unuttunuz mu?<br>
-                <a href="mailto:destek@zamanli.com" style="color: var(--primary);">Destek ile iletişime geçin</a>
+                <a href="https://wa.me/905433838587" target="_blank" style="color: var(--primary);">Destek ile iletişime geçin</a>
             </p>
         </div>
     </div>
@@ -4909,16 +4916,29 @@
         
         // Get slug from URL
         function getSlugFromUrl() {
-            // Önce URL parametresinden slug'ı al
+            // Önce URL parametresinden slug'ı al (en güvenilir yol)
             const urlParams = new URLSearchParams(window.location.search);
             const slugParam = urlParams.get('slug');
             if (slugParam) return slugParam;
             
             // Path'den slug'ı al (tüm kategoriler için)
             const path = window.location.pathname;
+            
             // /berber/slug/yonetim, /kuafor/slug/yonetim, /beauty/slug/yonetim formatlarını destekle
+            // Ancak /berber/salon/yonetim gibi klasör yapılarını hariç tut
             const match = path.match(/\/(berber|kuafor|beauty)\/([^\/]+)\/yonetim/);
-            return match ? match[2] : null;
+            
+            if (match) {
+                const potentialSlug = match[2];
+                // "salon", "kuafor", "yonetim" gibi reserved kelimeler slug olamaz
+                const reservedWords = ['salon', 'yonetim', 'kayit', 'index', 'admin'];
+                if (reservedWords.includes(potentialSlug.toLowerCase())) {
+                    return null;
+                }
+                return potentialSlug;
+            }
+            
+            return null;
         }
         
         // Süper admin kontrolü
@@ -5093,6 +5113,13 @@
             document.getElementById('loadingOverlay').style.display = 'none';
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('dashboard').classList.remove('active');
+            
+            // URL'de slug yoksa salon ID alanını göster
+            const slug = getSlugFromUrl();
+            const salonIdGroup = document.getElementById('salonIdGroup');
+            if (salonIdGroup) {
+                salonIdGroup.style.display = slug ? 'none' : 'block';
+            }
         }
         
         // Show Dashboard
@@ -5811,27 +5838,63 @@
             
             const phone = document.getElementById('loginPhone').value.trim();
             const pin = document.getElementById('loginPin').value.trim();
-            const slug = getSlugFromUrl();
+            const salonIdInput = document.getElementById('loginSalonId')?.value.trim() || '';
+            let slug = getSlugFromUrl();
             
-            if (!slug) {
-                showLoginError('Geçersiz salon URL\'si');
-                return;
+            // URL'de slug yoksa, kullanıcının girdiği salon ID'yi veya telefon ile ara
+            if (!slug && salonIdInput) {
+                // Önce slug olarak dene
+                slug = salonIdInput.toLowerCase().replace(/\s+/g, '-');
             }
             
+            // Hala slug yoksa telefon ile salonu bul
+            let salonData = null;
+            let salonId = null;
+            
             try {
-                // Find salon by slug
-                const snapshot = await db.collection('salons')
-                    .where('slug', '==', slug)
-                    .limit(1)
-                    .get();
-                
-                if (snapshot.empty) {
-                    showLoginError('Salon bulunamadı');
-                    return;
+                if (slug) {
+                    // Slug ile ara
+                    const snapshot = await db.collection('salons')
+                        .where('slug', '==', slug)
+                        .limit(1)
+                        .get();
+                    
+                    if (!snapshot.empty) {
+                        salonData = snapshot.docs[0].data();
+                        salonId = snapshot.docs[0].id;
+                        slug = salonData.slug;
+                    }
                 }
                 
-                const salonData = snapshot.docs[0].data();
-                const salonId = snapshot.docs[0].id;
+                // Slug ile bulunamadıysa, telefon numarası ile ara
+                if (!salonData) {
+                    const inputPhone = phone.replace(/\D/g, '').slice(-10);
+                    if (inputPhone.length >= 10) {
+                        // Telefon numarası ile salon ara
+                        const phoneSnapshot = await db.collection('salons')
+                            .where('phone', '>=', inputPhone.slice(0, 7))
+                            .where('phone', '<=', inputPhone.slice(0, 7) + '\uf8ff')
+                            .limit(10)
+                            .get();
+                        
+                        // Tam eşleşme kontrolü
+                        for (const doc of phoneSnapshot.docs) {
+                            const data = doc.data();
+                            const salonPhone = (data.phone || '').replace(/\D/g, '').slice(-10);
+                            if (salonPhone === inputPhone) {
+                                salonData = data;
+                                salonId = doc.id;
+                                slug = data.slug;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!salonData) {
+                    showLoginError('Salon bulunamadı. Lütfen telefon numaranızı veya salon kodunuzu kontrol edin.');
+                    return;
+                }
                 
                 const inputPhone = phone.replace(/\D/g, '').slice(-10);
                 
