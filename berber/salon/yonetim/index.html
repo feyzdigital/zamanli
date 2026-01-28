@@ -4559,20 +4559,8 @@
                 document.getElementById('headerSalonName').textContent = currentStaffName + ' (Personel)';
                 document.getElementById('headerAvatar').textContent = currentStaffName.charAt(0).toUpperCase();
                 
-                // Personel modunda gizlenecek sekmeler
-                const restrictedTabs = ['settings-tab', 'staff-section', 'services-section'];
-                restrictedTabs.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = 'none';
-                });
-                
-                // Sadece "Randevularım" tab'ını göster
-                const tabBtns = document.querySelectorAll('.tab-btn');
-                tabBtns.forEach(btn => {
-                    if (btn.dataset.tab !== 'appointments') {
-                        btn.style.display = 'none';
-                    }
-                });
+                // Personel modunda tüm kısıtlamaları uygula
+                applyStaffModeRestrictions();
                 
                 // Personel banner'ı göster
                 showStaffBanner();
@@ -4745,6 +4733,150 @@
         function logoutSuperAdmin() {
             // Sadece bu salon'dan çık, admin session'ı koru
             window.location.href = '/admin/';
+        }
+        
+        // ========== PERSONEL MODU KISITLAMALARI ==========
+        function applyStaffModeRestrictions() {
+            console.log('[Staff Mode] Kısıtlamalar uygulanıyor...');
+            
+            // 1. TAMAMEN GİZLENECEK SEKMELER
+            const hiddenTabs = ['staff', 'settings'];
+            
+            // Tab butonlarını gizle
+            document.querySelectorAll('.tab[data-tab]').forEach(btn => {
+                const tabName = btn.dataset.tab;
+                if (hiddenTabs.includes(tabName)) {
+                    btn.style.display = 'none';
+                }
+            });
+            
+            // Tab içeriklerini tamamen kaldır (DOM'dan sil)
+            hiddenTabs.forEach(tabName => {
+                const tabContent = document.getElementById(`tab-${tabName}`);
+                if (tabContent) tabContent.remove();
+            });
+            
+            // 2. MOBİL MENÜ - Kısıtlı sekmeler
+            document.querySelectorAll('.mobile-menu-nav a[data-tab]').forEach(link => {
+                const tabName = link.dataset.tab;
+                if (hiddenTabs.includes(tabName)) {
+                    link.parentElement.style.display = 'none';
+                }
+            });
+            
+            // 3. RANDEVULAR - Başlığı değiştir
+            const appointmentsTitle = document.querySelector('.appointments-title');
+            if (appointmentsTitle) {
+                appointmentsTitle.textContent = '📅 Randevularım';
+            }
+            
+            // 4. HİZMETLER SEKMESİ - Sadece görüntüleme
+            setTimeout(() => {
+                const servicesTab = document.getElementById('tab-services');
+                if (servicesTab) {
+                    // Tüm butonları gizle
+                    servicesTab.querySelectorAll('button, .btn').forEach(btn => {
+                        btn.style.display = 'none';
+                    });
+                    // Başlığı değiştir
+                    const header = servicesTab.querySelector('.card-header h3, .section-title');
+                    if (header) header.textContent = '✂️ Hizmetler (Görüntüleme)';
+                    // Bilgi notu ekle
+                    const note = document.createElement('div');
+                    note.style.cssText = 'background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:0.75rem;margin:0.5rem 0;font-size:0.85rem;color:#92400e;';
+                    note.innerHTML = '⚠️ Hizmet düzenleme yetkisi salon sahibine aittir';
+                    servicesTab.insertBefore(note, servicesTab.firstChild);
+                }
+            }, 200);
+            
+            // 5. ÇALIŞMA SAATLERİ - Sadece görüntüleme
+            setTimeout(() => {
+                const hoursTab = document.getElementById('tab-hours');
+                if (hoursTab) {
+                    // Tüm inputları devre dışı bırak
+                    hoursTab.querySelectorAll('input, select').forEach(el => {
+                        el.disabled = true;
+                        el.style.opacity = '0.6';
+                        el.style.pointerEvents = 'none';
+                    });
+                    // Tüm butonları gizle
+                    hoursTab.querySelectorAll('button, .btn').forEach(btn => {
+                        btn.style.display = 'none';
+                    });
+                    // Başlığı değiştir
+                    const header = hoursTab.querySelector('.card-header h3, .section-title');
+                    if (header) header.textContent = '🕐 Çalışma Saatleri (Görüntüleme)';
+                    // Bilgi notu ekle
+                    const note = document.createElement('div');
+                    note.style.cssText = 'background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:0.75rem;margin:0.5rem 0;font-size:0.85rem;color:#92400e;';
+                    note.innerHTML = '⚠️ Çalışma saatleri düzenleme yetkisi salon sahibine aittir';
+                    hoursTab.insertBefore(note, hoursTab.firstChild);
+                }
+            }, 200);
+            
+            // 6. MÜŞTERİLER - Başlık değiştir
+            setTimeout(() => {
+                const customersTab = document.getElementById('tab-customers');
+                if (customersTab) {
+                    const header = customersTab.querySelector('.card-header h3, .section-title, h3');
+                    if (header) header.textContent = '👥 Müşterilerim';
+                }
+            }, 200);
+            
+            // 7. RAPORLAR - Başlık değiştir
+            setTimeout(() => {
+                const reportsTab = document.getElementById('tab-reports');
+                if (reportsTab) {
+                    const header = reportsTab.querySelector('.card-header h3, .section-title, h3');
+                    if (header) header.textContent = '📊 Performansım';
+                    // Personel performansı bölümünü gizle (sadece kendi verisi var)
+                    const staffPerformance = document.getElementById('staffPerformance');
+                    if (staffPerformance) {
+                        staffPerformance.parentElement.style.display = 'none';
+                    }
+                }
+            }, 200);
+            
+            // 8. ÜST BAR - Hassas istatistikleri gizle
+            const topBarStats = document.querySelector('.top-bar-stats');
+            if (topBarStats) {
+                topBarStats.querySelectorAll('.mini-stat').forEach((stat, index) => {
+                    // Sadece ilk 2 stat'ı göster (bekleyen ve bugünkü)
+                    if (index > 1) {
+                        stat.style.display = 'none';
+                    }
+                });
+            }
+            
+            // 9. SALON BİLGİLERİ HEADER - Düzenle butonunu gizle
+            setTimeout(() => {
+                document.querySelectorAll('[onclick*="openSalonEditModal"], [onclick*="editSalon"]').forEach(btn => {
+                    btn.style.display = 'none';
+                });
+            }, 100);
+            
+            // 10. RANDEVU DETAY MODAL'da personel değiştirme engelle
+            // Bu showAppointmentDetail içinde kontrol edilecek
+            
+            console.log('[Staff Mode] Kısıtlamalar uygulandı');
+        }
+        
+        // Personel modu yetki kontrolü - işlem öncesi çağrılacak
+        function checkStaffPermission(action) {
+            if (!isStaffMode) return true; // Salon sahibi her şeyi yapabilir
+            
+            const blockedActions = [
+                'addStaff', 'editStaff', 'deleteStaff',
+                'editService', 'addService', 'deleteService',
+                'editHours', 'saveHours',
+                'editSalon', 'saveSalonSettings'
+            ];
+            
+            if (blockedActions.includes(action)) {
+                showToast('Bu işlem için yetkiniz yok', 'error');
+                return false;
+            }
+            return true;
         }
         
         // Personel modu banner'ı
@@ -5498,6 +5630,12 @@ ${salon.name}`;
         
         // Service Modal
         function openServiceModal(index = null) {
+            // PERSONEL MODU KONTROLÜ
+            if (isStaffMode) {
+                showToast('Hizmet ekleme/düzenleme yetkiniz yok', 'error');
+                return;
+            }
+            
             document.getElementById('serviceModalTitle').textContent = index !== null ? 'Hizmet Düzenle' : 'Hizmet Ekle';
             document.getElementById('serviceIndex').value = index !== null ? index : '';
             
@@ -5525,6 +5663,13 @@ ${salon.name}`;
         
         async function saveService(e) {
             e.preventDefault();
+            
+            // PERSONEL MODU KONTROLÜ
+            if (isStaffMode) {
+                showToast('Hizmet ekleme/düzenleme yetkiniz yok', 'error');
+                closeServiceModal();
+                return;
+            }
             
             const index = document.getElementById('serviceIndex').value;
             const service = {
@@ -5556,6 +5701,12 @@ ${salon.name}`;
         }
         
         async function deleteService(index) {
+            // PERSONEL MODU KONTROLÜ
+            if (isStaffMode) {
+                showToast('Hizmet silme yetkiniz yok', 'error');
+                return;
+            }
+            
             if (!confirm('Bu hizmeti silmek istediğinize emin misiniz?')) return;
             
             let services = salon.services || [...APP_CONFIG.categories.berber.services];
@@ -5674,6 +5825,12 @@ ${salon.name}`;
         
         // Staff Modal
         function openStaffModal(index = null) {
+            // PERSONEL MODU KONTROLÜ
+            if (isStaffMode) {
+                showToast('Personel ekleme/düzenleme yetkiniz yok', 'error');
+                return;
+            }
+            
             // Yeni personel ekleme kontrolü
             if (index === null && !canAddStaff()) {
                 openUpgradeModal();
@@ -5844,6 +6001,13 @@ Panel: ${window.location.href}`);
         async function saveStaff(e) {
             e.preventDefault();
             
+            // PERSONEL MODU KONTROLÜ
+            if (isStaffMode) {
+                showToast('Personel ekleme/düzenleme yetkiniz yok', 'error');
+                closeStaffModal();
+                return;
+            }
+            
             const index = document.getElementById('staffIndex').value;
             const phone = document.getElementById('staffPhone').value.replace(/\D/g, '');
             const pinFromModal = document.getElementById('staffPinInput').value;
@@ -5936,6 +6100,12 @@ Panel: ${window.location.href}`);
         }
         
         async function deleteStaff(index) {
+            // PERSONEL MODU KONTROLÜ
+            if (isStaffMode) {
+                showToast('Personel silme yetkiniz yok', 'error');
+                return;
+            }
+            
             if (!confirm('Bu personeli silmek istediğinize emin misiniz?')) return;
             
             let staff = salon.staff || [];
@@ -5991,6 +6161,12 @@ Panel: ${window.location.href}`);
         }
         
         async function saveWorkingHours() {
+            // PERSONEL MODU KONTROLÜ
+            if (isStaffMode) {
+                showToast('Çalışma saatleri düzenleme yetkiniz yok', 'error');
+                return;
+            }
+            
             const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             const workingHours = {};
             
@@ -6204,6 +6380,13 @@ Panel: ${window.location.href}`);
                 snap.docs.forEach(doc => {
                     const apt = doc.data();
                     const phone = apt.customerPhone;
+                    
+                    // PERSONEL MODU: Sadece kendi müşterilerini göster
+                    if (isStaffMode && currentStaffId) {
+                        if (apt.staffId !== currentStaffId && apt.staffName !== currentStaffName) {
+                            return; // Bu randevu bu personele ait değil, atla
+                        }
+                    }
                     
                     if (!customerMap[phone]) {
                         customerMap[phone] = {
@@ -8017,7 +8200,14 @@ END:VEVENT
             }
             
             const startDateStr = startDate.toISOString().split('T')[0];
-            const periodAppointments = appointments.filter(a => a.date >= startDateStr);
+            let periodAppointments = appointments.filter(a => a.date >= startDateStr);
+            
+            // PERSONEL MODU: Sadece kendi randevularını filtrele
+            if (isStaffMode && currentStaffId) {
+                periodAppointments = periodAppointments.filter(a => 
+                    a.staffId === currentStaffId || a.staffName === currentStaffName
+                );
+            }
             
             // Özet istatistikler
             const total = periodAppointments.length;
@@ -8366,11 +8556,25 @@ END:VEVENT
             const select = document.getElementById('manualStaffSelect');
             const staff = salon?.staff || [];
             
+            // PERSONEL MODU: Sadece kendisini seçebilsin
+            if (isStaffMode && currentStaffId) {
+                select.innerHTML = '';
+                const currentStaff = staff.find(s => s.id === currentStaffId || s.name === currentStaffName);
+                if (currentStaff) {
+                    select.innerHTML = `<option value="${currentStaff.id || currentStaff.name}" data-name="${currentStaff.name}" selected>${currentStaff.name}</option>`;
+                }
+                select.disabled = true;
+                select.style.opacity = '0.7';
+                return;
+            }
+            
             select.innerHTML = '<option value="">Personel Seçin (Opsiyonel)</option>';
+            select.disabled = false;
+            select.style.opacity = '1';
             
             staff.forEach(s => {
                 if (s.active !== false) {
-                    select.innerHTML += `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`;
+                    select.innerHTML += `<option value="${s.id || s.name}" data-name="${s.name}">${s.name}</option>`;
                 }
             });
         }
