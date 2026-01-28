@@ -2121,8 +2121,10 @@
             
             try {
                 let snapshot = null;
+                let isStaffLogin = false;
+                let staffInfo = null;
                 
-                // 1. phone field ile 11 haneli
+                // 1. SALON SAHİBİ GİRİŞİ - phone field ile 11 haneli
                 snapshot = await db.collection('salons')
                     .where('phone', '==', phone11)
                     .limit(1)
@@ -2152,18 +2154,72 @@
                         .get();
                 }
                 
+                // 5. PERSONEL GİRİŞİ - staff array'inde telefon ara
                 if (snapshot.empty) {
-                    throw new Error('Bu telefon ile kayıtlı salon bulunamadı');
+                    // Tüm salonları çek ve staff içinde ara (index olmadığı için)
+                    const allSalons = await db.collection('salons').get();
+                    
+                    for (const doc of allSalons.docs) {
+                        const salonData = doc.data();
+                        const staff = salonData.staff || [];
+                        
+                        // Personel telefonunu kontrol et
+                        const foundStaff = staff.find(s => {
+                            const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
+                            return staffPhone === phone10;
+                        });
+                        
+                        if (foundStaff) {
+                            // Personel bulundu - PIN kontrolü
+                            if (foundStaff.pin === pin) {
+                                isStaffLogin = true;
+                                staffInfo = foundStaff;
+                                snapshot = { 
+                                    empty: false, 
+                                    docs: [{ 
+                                        id: doc.id, 
+                                        data: () => salonData 
+                                    }] 
+                                };
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (snapshot.empty) {
+                    throw new Error('Bu telefon ile kayıtlı salon veya personel bulunamadı');
                 }
                 
                 const salonData = snapshot.docs[0].data();
                 
-                if (salonData.pin !== pin) {
-                    throw new Error('PIN kodu hatalı');
+                // Salon sahibi girişi için PIN kontrolü
+                if (!isStaffLogin) {
+                    // Önce salon PIN'ini kontrol et
+                    let pinValid = salonData.pin === pin;
+                    
+                    // Salon PIN'i yoksa veya eşleşmiyorsa, staff'ta patron olarak ara
+                    if (!pinValid && salonData.staff) {
+                        const owner = salonData.staff.find(s => s.isOwner === true);
+                        if (owner && owner.pin === pin) {
+                            pinValid = true;
+                        }
+                    }
+                    
+                    if (!pinValid) {
+                        throw new Error('PIN kodu hatalı');
+                    }
                 }
                 
                 const slug = salonData.slug || snapshot.docs[0].id;
-                window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
+                
+                // Personel girişi ise staff bilgisini URL'e ekle
+                if (isStaffLogin && staffInfo) {
+                    const staffId = staffInfo.id || staffInfo.name;
+                    window.location.href = `/berber/salon/yonetim/?slug=${slug}&staff=${encodeURIComponent(staffId)}&staffName=${encodeURIComponent(staffInfo.name)}`;
+                } else {
+                    window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
+                }
                 
             } catch (error) {
                 errorEl.textContent = error.message;
@@ -2224,24 +2280,27 @@
                 
                 salon = { id: snap.docs[0].id, ...salonData };
                 
-                // Load subcollections
-                const [staffSnap, svcSnap] = await Promise.all([
-                    db.collection('salons').doc(salon.id).collection('staff').get(),
-                    db.collection('salons').doc(salon.id).collection('services').get()
-                ]);
+                // ÖNCELİK: Ana dokümandaki verileri kullan (yönetim paneli buraya kaydediyor)
+                // Subcollection'lar eski/legacy veri için fallback olarak kullanılır
                 
-                salon.staffList = staffSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                // Aktif servisleri filtrele (hem boolean hem string destekle)
-                salon.serviceList = svcSnap.docs
-                    .map(d => ({ id: d.id, ...d.data() }))
-                    .filter(s => s.active === true || s.active === 'true' || s.active === undefined);
-                
-                // Subcollection boşsa ana dokümandaki verileri kullan
-                if (salon.serviceList.length === 0 && salon.services) {
+                // Hizmetler - önce ana dokümandan
+                if (salon.services && salon.services.length > 0) {
                     salon.serviceList = salon.services.filter(s => s.active !== false && s.active !== 'false');
+                } else {
+                    // Fallback: subcollection'dan
+                    const svcSnap = await db.collection('salons').doc(salon.id).collection('services').get();
+                    salon.serviceList = svcSnap.docs
+                        .map(d => ({ id: d.id, ...d.data() }))
+                        .filter(s => s.active === true || s.active === 'true' || s.active === undefined);
                 }
-                if (salon.staffList.length === 0 && salon.staff) {
+                
+                // Personel - önce ana dokümandan
+                if (salon.staff && salon.staff.length > 0) {
                     salon.staffList = salon.staff;
+                } else {
+                    // Fallback: subcollection'dan
+                    const staffSnap = await db.collection('salons').doc(salon.id).collection('staff').get();
+                    salon.staffList = staffSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 }
                 
                 console.log('Salon loaded:', salon.name, 'Staff:', salon.staffList.length, 'Services:', salon.serviceList.length);
