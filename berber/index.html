@@ -1903,56 +1903,53 @@
             try {
                 // Telefon formatları: 5XXXXXXXXX (10 hane) ve 05XXXXXXXXX (11 hane)
                 const phone10 = phone.slice(-10);
-                const phone11 = '0' + phone10;
                 
-                let snapshot = null;
+                // TÜM salonları çek (active filtresi kaldırıldı - bazı salonlarda field olmayabilir)
+                const allSalons = await db.collection('salons').get();
                 
-                // 1. phone field ile 11 haneli dene
-                snapshot = await db.collection('salons')
-                    .where('phone', '==', phone11)
-                    .where('active', '==', true)
-                    .get();
+                let foundSalon = null;
+                let foundSalonId = null;
                 
-                // 2. phone field ile 10 haneli dene
-                if (snapshot.empty) {
-                    snapshot = await db.collection('salons')
-                        .where('phone', '==', phone10)
-                        .where('active', '==', true)
-                        .get();
-                }
-                
-                // 3. mobilePhone field ile 11 haneli dene
-                if (snapshot.empty) {
-                    snapshot = await db.collection('salons')
-                        .where('mobilePhone', '==', phone11)
-                        .where('active', '==', true)
-                        .get();
-                }
-                
-                // 4. mobilePhone field ile 10 haneli dene
-                if (snapshot.empty) {
-                    snapshot = await db.collection('salons')
-                        .where('mobilePhone', '==', phone10)
-                        .where('active', '==', true)
-                        .get();
-                }
-                
-                if (snapshot.empty) {
-                    errorEl.textContent = 'Bu telefon numarasına kayıtlı aktif salon bulunamadı';
-                    errorEl.style.display = 'block';
-                } else {
-                    // Salon bulundu, PIN kontrolü yap
-                    const doc = snapshot.docs[0];
-                    const salon = doc.data();
+                for (const doc of allSalons.docs) {
+                    const salonData = doc.data();
+                    const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
+                    const salonMobile = (salonData.mobilePhone || '').replace(/\D/g, '').slice(-10);
                     
-                    if (salon.pin === pin) {
-                        // PIN doğru, yönlendir
-                        const slug = salon.slug;
-                        window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
-                    } else {
-                        errorEl.textContent = 'PIN kodu hatalı';
-                        errorEl.style.display = 'block';
+                    // Telefon eşleşiyor mu?
+                    if (salonPhone === phone10 || salonMobile === phone10) {
+                        // PIN kontrolü - salon PIN veya owner staff PIN
+                        let pinValid = salonData.pin === pin;
+                        
+                        // Staff içinde owner varsa onun PIN'ini de kontrol et
+                        if (!pinValid && salonData.staff) {
+                            const owner = salonData.staff.find(s => s.isOwner === true);
+                            if (owner && owner.pin === pin) {
+                                pinValid = true;
+                            }
+                        }
+                        
+                        if (pinValid) {
+                            foundSalon = salonData;
+                            foundSalonId = doc.id;
+                            console.log('[Login] Salon sahibi girişi başarılı:', salonData.name);
+                            break;
+                        } else {
+                            // Telefon doğru ama PIN yanlış
+                            errorEl.textContent = 'PIN kodu hatalı';
+                            errorEl.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'Giriş Yap';
+                            return;
+                        }
                     }
+                }
+                
+                if (foundSalon) {
+                    const slug = foundSalon.slug || foundSalonId;
+                    window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
+                } else {
+                    errorEl.textContent = 'Bu telefon numarasına kayıtlı salon bulunamadı';
+                    errorEl.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Login error:', error);
@@ -1990,26 +1987,53 @@
             try {
                 const phoneToSearch = phone.slice(-10);
                 
-                // Tüm aktif salonları al ve personelleri kontrol et
-                const salonsSnap = await db.collection('salons')
-                    .where('active', '==', true)
-                    .get();
+                // TÜM salonları al (active filtresi kaldırıldı - bazı salonlarda active field olmayabilir)
+                const salonsSnap = await db.collection('salons').get();
                 
                 let foundStaff = null;
                 let foundSalon = null;
                 
                 for (const salonDoc of salonsSnap.docs) {
-                    const staffSnap = await db.collection('salons').doc(salonDoc.id)
-                        .collection('staff')
-                        .where('phone', '==', phoneToSearch)
-                        .get();
+                    const salonData = salonDoc.data();
                     
-                    if (!staffSnap.empty) {
-                        const staffData = staffSnap.docs[0].data();
-                        if (staffData.pin === pin) {
-                            foundStaff = { id: staffSnap.docs[0].id, ...staffData };
-                            foundSalon = { id: salonDoc.id, ...salonDoc.data() };
-                            break;
+                    // ANA DOKÜMANDAN staff array'ini kontrol et (yönetim paneli buraya kaydediyor)
+                    const staffArray = salonData.staff || [];
+                    
+                    // Telefon ve PIN eşleşmesi ara
+                    const matchedStaff = staffArray.find(s => {
+                        const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
+                        return staffPhone === phoneToSearch && s.pin === pin;
+                    });
+                    
+                    if (matchedStaff) {
+                        foundStaff = { 
+                            id: matchedStaff.id || matchedStaff.name, 
+                            ...matchedStaff 
+                        };
+                        foundSalon = { id: salonDoc.id, ...salonData };
+                        console.log('[Login] Personel bulundu:', matchedStaff.name, 'Salon:', salonData.name);
+                        break;
+                    }
+                    
+                    // Fallback: subcollection'dan da kontrol et (eski veriler için)
+                    if (!foundStaff) {
+                        try {
+                            const staffSnap = await db.collection('salons').doc(salonDoc.id)
+                                .collection('staff')
+                                .where('phone', '==', phoneToSearch)
+                                .get();
+                            
+                            if (!staffSnap.empty) {
+                                const staffData = staffSnap.docs[0].data();
+                                if (staffData.pin === pin) {
+                                    foundStaff = { id: staffSnap.docs[0].id, ...staffData };
+                                    foundSalon = { id: salonDoc.id, ...salonData };
+                                    console.log('[Login] Personel subcollection\'dan bulundu:', staffData.name);
+                                    break;
+                                }
+                            }
+                        } catch (e) {
+                            // Subcollection hatası - devam et
                         }
                     }
                 }
@@ -2023,7 +2047,7 @@
                         salonSlug: foundSalon.slug,
                         category: foundSalon.category || 'berber'
                     }));
-                    window.location.href = `/berber/salon/yonetim/?slug=${foundSalon.slug}&staff=${foundStaff.id}`;
+                    window.location.href = `/berber/salon/yonetim/?slug=${foundSalon.slug}&staff=${encodeURIComponent(foundStaff.id)}&staffName=${encodeURIComponent(foundStaff.name)}`;
                 } else {
                     errorEl.textContent = 'Telefon veya PIN hatalı';
                     errorEl.style.display = 'block';
