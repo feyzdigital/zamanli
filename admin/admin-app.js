@@ -59,14 +59,46 @@ async function loadAllData() {
 async function loadSalonDetails(id) {
     AdminState.loading = true; renderApp();
     try {
-        AdminState.selectedSalon = AdminState.salons.find(s => s.id === id);
-        const staffSnap = await db.collection('salons').doc(id).collection('staff').get();
-        AdminState.salonStaff = staffSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        if (AdminState.salonStaff.length === 0 && AdminState.selectedSalon.staff) AdminState.salonStaff = AdminState.selectedSalon.staff;
-        const svcSnap = await db.collection('salons').doc(id).collection('services').get();
-        AdminState.salonServices = svcSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const aptSnap = await db.collection('salons').doc(id).collection('appointments').orderBy('date', 'desc').limit(50).get();
+        // Güncel veriyi Firestore'dan çek (cache'den değil)
+        const salonDoc = await db.collection('salons').doc(id).get();
+        if (!salonDoc.exists) {
+            showToast('Salon bulunamadi', 'error');
+            AdminState.currentView = 'dashboard';
+            AdminState.loading = false; renderApp();
+            return;
+        }
+        
+        AdminState.selectedSalon = { id: salonDoc.id, ...salonDoc.data() };
+        
+        // AdminState.salons'u da güncelle
+        const salonIndex = AdminState.salons.findIndex(s => s.id === id);
+        if (salonIndex >= 0) {
+            AdminState.salons[salonIndex] = AdminState.selectedSalon;
+        }
+        
+        // ÖNCELİK: Ana dokümandaki array'leri kullan (yönetim paneli buraya kaydediyor)
+        // Subcollection sadece fallback olarak kullanılır
+        
+        // Personel - önce ana dokümandan
+        if (AdminState.selectedSalon.staff && AdminState.selectedSalon.staff.length > 0) {
+            AdminState.salonStaff = AdminState.selectedSalon.staff.map((s, i) => ({ id: s.id || 'staff-' + i, ...s }));
+        } else {
+            const staffSnap = await db.collection('salons').doc(id).collection('staff').get();
+            AdminState.salonStaff = staffSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+        
+        // Hizmetler - önce ana dokümandan
+        if (AdminState.selectedSalon.services && AdminState.selectedSalon.services.length > 0) {
+            AdminState.salonServices = AdminState.selectedSalon.services.map((s, i) => ({ id: s.id || 'svc-' + i, ...s }));
+        } else {
+            const svcSnap = await db.collection('salons').doc(id).collection('services').get();
+            AdminState.salonServices = svcSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+        
+        // Randevular - appointments collection'dan
+        const aptSnap = await db.collection('appointments').where('salonId', '==', id).orderBy('date', 'desc').limit(50).get();
         AdminState.salonAppointments = aptSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
         AdminState.currentView = 'salon-detail'; AdminState.detailTab = 'info';
     } catch (e) { console.error(e); showToast('Detaylar yuklenirken hata', 'error'); }
     AdminState.loading = false; renderApp();
@@ -389,7 +421,15 @@ async function addStaff() {
     const pin = document.getElementById('staffPin').value.trim();
     if (!name) { showToast('Ad gerekli', 'error'); return; }
     const sid = AdminState.selectedSalon.id;
-    try { await db.collection('salons').doc(sid).collection('staff').doc('staff-' + Date.now()).set({ name, role: role || 'Berber', pin, active: true, createdAt: new Date().toISOString() }); showToast('Eklendi!', 'success'); closeModal(); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { 
+        // Ana dokümandaki staff array'ine ekle
+        const newStaff = { id: 'staff-' + Date.now(), name, role: role || 'Berber', title: role || 'Berber', pin: pin || '000000', phone: '', active: true, createdAt: new Date().toISOString() };
+        const currentStaff = AdminState.selectedSalon.staff || [];
+        currentStaff.push(newStaff);
+        await db.collection('salons').doc(sid).update({ staff: currentStaff }); 
+        AdminState.selectedSalon.staff = currentStaff;
+        showToast('Eklendi!', 'success'); closeModal(); await loadSalonDetails(sid); 
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
 function showEditStaffModal(staffId) {
@@ -399,13 +439,38 @@ function showEditStaffModal(staffId) {
 
 async function updateStaff(staffId) {
     const sid = AdminState.selectedSalon.id;
-    try { await db.collection('salons').doc(sid).collection('staff').doc(staffId).update({ name: document.getElementById('staffName').value.trim(), role: document.getElementById('staffRole').value.trim(), pin: document.getElementById('staffPin').value.trim(), active: document.getElementById('staffActive').checked, updatedAt: new Date().toISOString() }); showToast('Kaydedildi!', 'success'); closeModal(); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { 
+        // Ana dokümandaki staff array'ini güncelle
+        const currentStaff = AdminState.selectedSalon.staff || [];
+        const staffIndex = currentStaff.findIndex(s => s.id === staffId);
+        if (staffIndex >= 0) {
+            currentStaff[staffIndex] = { 
+                ...currentStaff[staffIndex],
+                name: document.getElementById('staffName').value.trim(), 
+                role: document.getElementById('staffRole').value.trim(), 
+                title: document.getElementById('staffRole').value.trim(), 
+                pin: document.getElementById('staffPin').value.trim(), 
+                active: document.getElementById('staffActive').checked, 
+                updatedAt: new Date().toISOString() 
+            };
+            await db.collection('salons').doc(sid).update({ staff: currentStaff });
+            AdminState.selectedSalon.staff = currentStaff;
+        }
+        showToast('Kaydedildi!', 'success'); closeModal(); await loadSalonDetails(sid); 
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
 async function deleteStaff(staffId) {
     if (!confirm('Silmek istediginize emin misiniz?')) return;
     const sid = AdminState.selectedSalon.id;
-    try { await db.collection('salons').doc(sid).collection('staff').doc(staffId).delete(); showToast('Silindi', 'success'); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { 
+        // Ana dokümandaki staff array'inden sil
+        const currentStaff = AdminState.selectedSalon.staff || [];
+        const newStaff = currentStaff.filter(s => s.id !== staffId);
+        await db.collection('salons').doc(sid).update({ staff: newStaff });
+        AdminState.selectedSalon.staff = newStaff;
+        showToast('Silindi', 'success'); await loadSalonDetails(sid); 
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
 function showAddServiceModal() {
@@ -418,7 +483,15 @@ async function addService() {
     const duration = parseInt(document.getElementById('svcDuration').value) || 30;
     if (!name || price <= 0) { showToast('Ad ve fiyat gerekli', 'error'); return; }
     const sid = AdminState.selectedSalon.id;
-    try { await db.collection('salons').doc(sid).collection('services').doc('svc-' + Date.now()).set({ name, price, duration, active: true, createdAt: new Date().toISOString() }); showToast('Eklendi!', 'success'); closeModal(); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { 
+        // Ana dokümandaki services array'ine ekle
+        const newService = { id: name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(), name, price, duration, icon: '✂️', active: true, createdAt: new Date().toISOString() };
+        const currentServices = AdminState.selectedSalon.services || [];
+        currentServices.push(newService);
+        await db.collection('salons').doc(sid).update({ services: currentServices }); 
+        AdminState.selectedSalon.services = currentServices;
+        showToast('Eklendi!', 'success'); closeModal(); await loadSalonDetails(sid); 
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
 function showEditServiceModal(svcId) {
@@ -428,13 +501,37 @@ function showEditServiceModal(svcId) {
 
 async function updateService(svcId) {
     const sid = AdminState.selectedSalon.id;
-    try { await db.collection('salons').doc(sid).collection('services').doc(svcId).update({ name: document.getElementById('svcName').value.trim(), price: parseInt(document.getElementById('svcPrice').value) || 0, duration: parseInt(document.getElementById('svcDuration').value) || 30, active: document.getElementById('svcActive').checked, updatedAt: new Date().toISOString() }); showToast('Kaydedildi!', 'success'); closeModal(); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { 
+        // Ana dokümandaki services array'ini güncelle
+        const currentServices = AdminState.selectedSalon.services || [];
+        const svcIndex = currentServices.findIndex(s => s.id === svcId);
+        if (svcIndex >= 0) {
+            currentServices[svcIndex] = { 
+                ...currentServices[svcIndex],
+                name: document.getElementById('svcName').value.trim(), 
+                price: parseInt(document.getElementById('svcPrice').value) || 0, 
+                duration: parseInt(document.getElementById('svcDuration').value) || 30, 
+                active: document.getElementById('svcActive').checked, 
+                updatedAt: new Date().toISOString() 
+            };
+            await db.collection('salons').doc(sid).update({ services: currentServices });
+            AdminState.selectedSalon.services = currentServices;
+        }
+        showToast('Kaydedildi!', 'success'); closeModal(); await loadSalonDetails(sid); 
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
 async function deleteService(svcId) {
     if (!confirm('Silmek istediginize emin misiniz?')) return;
     const sid = AdminState.selectedSalon.id;
-    try { await db.collection('salons').doc(sid).collection('services').doc(svcId).delete(); showToast('Silindi', 'success'); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { 
+        // Ana dokümandaki services array'inden sil
+        const currentServices = AdminState.selectedSalon.services || [];
+        const newServices = currentServices.filter(s => s.id !== svcId);
+        await db.collection('salons').doc(sid).update({ services: newServices });
+        AdminState.selectedSalon.services = newServices;
+        showToast('Silindi', 'success'); await loadSalonDetails(sid); 
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
 // PIN Degistirme
