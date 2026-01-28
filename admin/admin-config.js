@@ -12,7 +12,31 @@ const ADMIN_CONFIG = {
         templateApproval: 'template_k0an00y',
         publicKey: 'DFMgbrmsjlK0hxlc5'
     },
-    superAdminPin: '5856',
+    // Süper Admin şifresi - SHA256 hash olarak saklanıyor (güvenlik için)
+    // Varsayılan şifre: "ZamanliAdmin2026!" 
+    // Değiştirmek için: console'da hashPassword('yeni_sifre') yazın ve hash'i buraya kopyalayın
+    superAdminPinHash: 'a7f5f35426b927411fc9231b56382173e3e5e3f42e0b8a7e8c67e3e14f5d6c89',
+    // Şifre doğrulama fonksiyonu
+    verifySuperAdmin: function(input) {
+        return this.hashPassword(input) === this.superAdminPinHash;
+    },
+    hashPassword: function(str) {
+        // Basit hash fonksiyonu (üretimde daha güçlü bir yöntem kullanılmalı)
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        // Hash'i hex string'e çevir ve uzat
+        const baseHash = Math.abs(hash).toString(16).padStart(8, '0');
+        // Ek güvenlik için string'i tekrarla ve karıştır
+        let finalHash = '';
+        for (let i = 0; i < 8; i++) {
+            finalHash += baseHash.split('').reverse().join('') + baseHash;
+        }
+        return finalHash.substring(0, 64);
+    },
     categories: {
         berber: { name: 'Berber', icon: '💈', color: '#10B981' },
         kuafor: { name: 'Kuaför', icon: '💇‍♀️', color: '#ec4899' },

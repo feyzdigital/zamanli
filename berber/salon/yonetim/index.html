@@ -5292,8 +5292,8 @@
         function applyStaffModeRestrictions() {
             console.log('[Staff Mode] Kısıtlamalar uygulanıyor...');
             
-            // 1. TAMAMEN GİZLENECEK/KALDIRILACAK SEKMELER (Raporlar HARİÇ - personel kendi performansını görebilir)
-            const hiddenTabs = ['staff', 'settings', 'services', 'hours'];
+            // 1. TAMAMEN GİZLENECEK/KALDIRILACAK SEKMELER (settings HARİÇ - personel kendi ayarlarını görebilir)
+            const hiddenTabs = ['staff', 'services', 'hours'];
             
             // Tab butonlarını gizle (masaüstü)
             document.querySelectorAll('.tab[data-tab]').forEach(btn => {
@@ -5309,13 +5309,35 @@
                 if (tabContent) tabContent.remove();
             });
             
-            // 2. MOBİL MENÜ - Kısıtlı sekmeler (Raporlar hariç)
+            // 2. MOBİL MENÜ - Kısıtlı sekmeler (settings hariç)
             document.querySelectorAll('.mobile-menu-nav a[data-menu-tab]').forEach(link => {
                 const tabName = link.getAttribute('data-menu-tab');
                 if (hiddenTabs.includes(tabName)) {
                     link.style.display = 'none';
                 }
             });
+            
+            // 3. AYARLAR SEKMESİ - Personel için sadece temel bilgiler
+            setTimeout(() => {
+                // Personel için gelişmiş ayarları ve hassas bölümleri gizle
+                const settingsTab = document.getElementById('tab-settings');
+                if (settingsTab) {
+                    // Hizmet yönetimi, personel yönetimi, PIN değiştir bölümlerini gizle
+                    const sectionsToHide = ['settingsServicesSection', 'settingsStaffSection', 'settingsStaffHoursSection', 'settingsBreakSection'];
+                    sectionsToHide.forEach(id => {
+                        const section = document.getElementById(id);
+                        if (section) section.style.display = 'none';
+                    });
+                    
+                    // PIN değiştir bölümünü gizle (form içinde)
+                    settingsTab.querySelectorAll('.settings-section').forEach(section => {
+                        const title = section.querySelector('.settings-title');
+                        if (title && (title.textContent.includes('PIN') || title.textContent.includes('Gelişmiş'))) {
+                            section.style.display = 'none';
+                        }
+                    });
+                }
+            }, 200);
             
             // 3. RANDEVULAR - Başlığı değiştir
             const appointmentsTitle = document.querySelector('.appointments-title');
@@ -9313,8 +9335,14 @@ Panel: ${window.location.href}`);
         
         // Logout
         function logout() {
+            // Tüm oturum verilerini temizle
             localStorage.removeItem('salonSession');
-            window.location.reload();
+            localStorage.removeItem('staffSession');
+            localStorage.removeItem('zamanli_admin');
+            sessionStorage.clear();
+            
+            // Ana sayfaya yönlendir
+            window.location.href = window.location.pathname;
         }
         
         // Show Toast

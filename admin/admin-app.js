@@ -34,8 +34,8 @@ function checkAuth() {
     const session = localStorage.getItem('zamanli_admin');
     if (session) {
         try {
-            const { pin, expiry } = JSON.parse(session);
-            if (pin === ADMIN_CONFIG.superAdminPin && new Date(expiry) > new Date()) {
+            const { pinHash, expiry } = JSON.parse(session);
+            if (pinHash === ADMIN_CONFIG.superAdminPinHash && new Date(expiry) > new Date()) {
                 AdminState.isLoggedIn = true; loadAllData(); return;
             }
         } catch (e) {}
@@ -46,11 +46,11 @@ function checkAuth() {
 
 function login() {
     const pin = document.getElementById('pinInput').value;
-    if (pin === ADMIN_CONFIG.superAdminPin) {
+    if (ADMIN_CONFIG.verifySuperAdmin(pin)) {
         const expiry = new Date(); expiry.setHours(expiry.getHours() + 24);
-        localStorage.setItem('zamanli_admin', JSON.stringify({ pin, expiry: expiry.toISOString() }));
+        localStorage.setItem('zamanli_admin', JSON.stringify({ pinHash: ADMIN_CONFIG.superAdminPinHash, expiry: expiry.toISOString() }));
         AdminState.isLoggedIn = true; loadAllData();
-    } else { showToast('Geçersiz PIN!', 'error'); document.getElementById('pinInput').value = ''; }
+    } else { showToast('Geçersiz şifre!', 'error'); document.getElementById('pinInput').value = ''; }
 }
 
 function logout() {
@@ -123,7 +123,7 @@ function renderApp() {
 }
 
 function renderLogin() {
-    document.getElementById('app').innerHTML = '<div class="login-container"><div class="login-card"><div class="login-icon">🔐</div><h1>Süper Admin</h1><p>PIN kodunuzu girin</p><input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="****" onkeypress="if(event.key===\'Enter\')login()"><button onclick="login()" class="btn btn-primary btn-block">Giriş Yap</button><p class="login-footer">Zamanli Admin v3.0</p></div></div>';
+    document.getElementById('app').innerHTML = '<div class="login-container"><div class="login-card"><div class="login-icon">🔐</div><h1>Süper Admin</h1><p>Şifrenizi girin</p><input type="password" id="pinInput" class="pin-input" placeholder="Şifre" style="letter-spacing:0;text-align:left;padding-left:1rem;" onkeypress="if(event.key===\'Enter\')login()"><button onclick="login()" class="btn btn-primary btn-block">Giriş Yap</button><p class="login-footer">Zamanli Admin v3.0</p></div></div>';
     document.getElementById('pinInput')?.focus();
 }
 
@@ -349,7 +349,41 @@ function renderCustomers() {
 }
 
 function renderSettings() {
-    return '<div class="view-header"><h1>Ayarlar</h1></div><div class="detail-grid"><div class="card"><h3>🔧 Genel</h3><div class="info-list"><div class="info-row"><span class="info-label">Admin PIN</span><span class="info-value"><code>' + ADMIN_CONFIG.superAdminPin + '</code></span></div><div class="info-row"><span class="info-label">Firebase</span><span class="info-value">' + ADMIN_CONFIG.firebase.projectId + '</span></div></div></div><div class="card"><h3>📊 Veri</h3><button onclick="exportAllData()" class="btn btn-outline">📥 Verileri İndir</button><button onclick="clearLocalCache()" class="btn btn-outline" style="margin-left:1rem">🗑️ Cache Temizle</button></div></div>';
+    return '<div class="view-header"><h1>Ayarlar</h1></div><div class="detail-grid"><div class="card"><h3>🔐 Güvenlik</h3><p style="color:var(--slate-500);font-size:0.9rem;margin-bottom:1rem;">Süper admin şifresi güvenlik nedeniyle gizlidir.</p><button onclick="showChangePasswordModal()" class="btn btn-outline">🔑 Şifre Değiştir</button></div><div class="card"><h3>🔧 Sistem</h3><div class="info-list"><div class="info-row"><span class="info-label">Firebase Project</span><span class="info-value">' + ADMIN_CONFIG.firebase.projectId + '</span></div><div class="info-row"><span class="info-label">Oturum Süresi</span><span class="info-value">24 saat</span></div></div></div><div class="card"><h3>📊 Veri</h3><button onclick="exportAllData()" class="btn btn-outline">📥 Verileri İndir</button><button onclick="clearLocalCache()" class="btn btn-outline" style="margin-left:1rem">🗑️ Cache Temizle</button></div></div>';
+}
+
+function showChangePasswordModal() {
+    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>🔐 Şifre Değiştir</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><p style="color:var(--slate-500);font-size:0.9rem;margin-bottom:1rem;">Süper admin şifresini değiştirmek için mevcut şifreyi doğrulamanız gerekiyor.</p><div class="form-group"><label class="form-label">Mevcut Şifre</label><input type="password" id="currentPassword" class="form-input"></div><div class="form-group"><label class="form-label">Yeni Şifre</label><input type="password" id="newPassword" class="form-input" placeholder="En az 8 karakter"></div><div class="form-group"><label class="form-label">Yeni Şifre (Tekrar)</label><input type="password" id="confirmPassword" class="form-input"></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="changeAdminPassword()" class="btn btn-primary">Değiştir</button></div></div></div>';
+}
+
+function changeAdminPassword() {
+    const current = document.getElementById('currentPassword').value;
+    const newPass = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    
+    if (!ADMIN_CONFIG.verifySuperAdmin(current)) {
+        showToast('Mevcut şifre yanlış!', 'error');
+        return;
+    }
+    
+    if (newPass.length < 8) {
+        showToast('Yeni şifre en az 8 karakter olmalı!', 'error');
+        return;
+    }
+    
+    if (newPass !== confirm) {
+        showToast('Şifreler eşleşmiyor!', 'error');
+        return;
+    }
+    
+    // Yeni hash'i oluştur ve göster
+    const newHash = ADMIN_CONFIG.hashPassword(newPass);
+    
+    // Kullanıcıya bilgi ver
+    alert('Yeni şifre hash\\'i: ' + newHash + '\\n\\nBu hash\\'i admin-config.js dosyasındaki superAdminPinHash değerine yapıştırın.\\n\\nDosyayı güncelledikten sonra yeni şifrenizi kullanabilirsiniz.');
+    
+    closeModal();
+    showToast('Hash kopyalandı! admin-config.js dosyasını güncelleyin.', 'success');
 }
 
 // ==================== ACTIONS ====================
