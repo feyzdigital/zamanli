@@ -983,3 +983,482 @@ function showQRCodeModal(salonId) {
         </div>
     `;
 }
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeModal()" class="btn btn-outline">İptal</button>
+                    <button onclick="saveNewPin('${id}')" class="btn btn-primary">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function generateRandomPin() {
+    const pin = Math.floor(1000 + Math.random() * 9000).toString();
+    document.getElementById('newPin').value = pin;
+}
+
+async function saveNewPin(id) {
+    const pin = document.getElementById('newPin').value.trim();
+    if (pin.length !== 4 || !/^\d+$/.test(pin)) {
+        showToast('PIN 4 haneli sayı olmalı', 'error');
+        return;
+    }
+    
+    try {
+        await db.collection('salons').doc(id).update({
+            pin: pin,
+            pinChangedAt: new Date().toISOString()
+        });
+        showToast('PIN değiştirildi: ' + pin, 'success');
+        closeModal();
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+// ==================== STAFF MODALS ====================
+function showAddStaffModal() {
+    document.getElementById('modal').innerHTML = `
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2>Yeni Personel</h2>
+                    <button class="modal-close" onclick="closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Ad Soyad *</label>
+                        <input type="text" id="staffName" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rol / Uzmanlık</label>
+                        <input type="text" id="staffRole" class="form-input" placeholder="Örn: Berber, Kuaför">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefon</label>
+                        <input type="tel" id="staffPhone" class="form-input" placeholder="5XX XXX XX XX">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">PIN (6 haneli)</label>
+                        <input type="text" id="staffPin" class="form-input" maxlength="6" placeholder="000000">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeModal()" class="btn btn-outline">İptal</button>
+                    <button onclick="addStaff()" class="btn btn-primary">Ekle</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function addStaff() {
+    const name = document.getElementById('staffName').value.trim();
+    const role = document.getElementById('staffRole').value.trim();
+    const phone = document.getElementById('staffPhone').value.replace(/\D/g, '').slice(-10);
+    const pin = document.getElementById('staffPin').value.trim();
+    
+    if (!name) {
+        showToast('Ad gerekli', 'error');
+        return;
+    }
+    
+    const sid = AdminState.selectedSalon.id;
+    
+    try {
+        const newStaff = {
+            id: 'staff-' + Date.now(),
+            name,
+            role: role || 'Personel',
+            title: role || 'Personel',
+            phone,
+            pin: pin || '000000',
+            active: true,
+            createdAt: new Date().toISOString()
+        };
+        
+        const currentStaff = AdminState.selectedSalon.staff || [];
+        currentStaff.push(newStaff);
+        
+        await db.collection('salons').doc(sid).update({ staff: currentStaff });
+        
+        showToast('Personel eklendi!', 'success');
+        closeModal();
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+function showEditStaffModal(staffId) {
+    const st = AdminState.salonStaff.find(s => s.id === staffId);
+    if (!st) return;
+    
+    document.getElementById('modal').innerHTML = `
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2>Personel Düzenle</h2>
+                    <button class="modal-close" onclick="closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Ad Soyad</label>
+                        <input type="text" id="staffName" class="form-input" value="${esc(st.name)}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rol / Uzmanlık</label>
+                        <input type="text" id="staffRole" class="form-input" value="${esc(st.role || '')}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefon</label>
+                        <input type="tel" id="staffPhone" class="form-input" value="${st.phone || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">PIN</label>
+                        <input type="text" id="staffPin" class="form-input" value="${st.pin || ''}" maxlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"><input type="checkbox" id="staffActive" ${st.active !== false ? 'checked' : ''}> Aktif</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeModal()" class="btn btn-outline">İptal</button>
+                    <button onclick="updateStaff('${staffId}')" class="btn btn-primary">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function updateStaff(staffId) {
+    const sid = AdminState.selectedSalon.id;
+    
+    try {
+        let currentStaff = AdminState.selectedSalon.staff || [];
+        const staffIndex = currentStaff.findIndex(s => s.id === staffId);
+        
+        if (staffIndex >= 0) {
+            currentStaff[staffIndex] = {
+                ...currentStaff[staffIndex],
+                name: document.getElementById('staffName').value.trim(),
+                role: document.getElementById('staffRole').value.trim(),
+                title: document.getElementById('staffRole').value.trim(),
+                phone: document.getElementById('staffPhone').value.replace(/\D/g, '').slice(-10),
+                pin: document.getElementById('staffPin').value.trim(),
+                active: document.getElementById('staffActive').checked,
+                updatedAt: new Date().toISOString()
+            };
+            
+            await db.collection('salons').doc(sid).update({ staff: currentStaff });
+            showToast('Kaydedildi!', 'success');
+        } else {
+            showToast('Personel bulunamadı', 'error');
+        }
+        
+        closeModal();
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+async function deleteStaff(staffId) {
+    if (!confirm('Bu personeli silmek istediğinize emin misiniz?')) return;
+    
+    const sid = AdminState.selectedSalon.id;
+    
+    try {
+        let currentStaff = AdminState.selectedSalon.staff || [];
+        currentStaff = currentStaff.filter(s => s.id !== staffId);
+        
+        await db.collection('salons').doc(sid).update({ staff: currentStaff });
+        showToast('Personel silindi', 'success');
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+// ==================== SERVICE MODALS ====================
+function showAddServiceModal() {
+    document.getElementById('modal').innerHTML = `
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2>Yeni Hizmet</h2>
+                    <button class="modal-close" onclick="closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Hizmet Adı *</label>
+                        <input type="text" id="svcName" class="form-input" placeholder="Örn: Saç Kesimi">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fiyat (₺) *</label>
+                        <input type="number" id="svcPrice" class="form-input" min="0" placeholder="150">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Süre (dk)</label>
+                        <input type="number" id="svcDuration" class="form-input" value="30" min="5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">İkon</label>
+                        <select id="svcIcon" class="form-select">
+                            <option value="✂️">✂️ Makas</option>
+                            <option value="💈">💈 Berber</option>
+                            <option value="🪒">🪒 Tıraş</option>
+                            <option value="💇">💇 Saç</option>
+                            <option value="💆">💆 Masaj</option>
+                            <option value="💅">💅 Manikür</option>
+                            <option value="🧴">🧴 Bakım</option>
+                            <option value="🎨">🎨 Boya</option>
+                            <option value="✨">✨ Özel</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeModal()" class="btn btn-outline">İptal</button>
+                    <button onclick="addService()" class="btn btn-primary">Ekle</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function addService() {
+    const name = document.getElementById('svcName').value.trim();
+    const price = parseInt(document.getElementById('svcPrice').value) || 0;
+    const duration = parseInt(document.getElementById('svcDuration').value) || 30;
+    const icon = document.getElementById('svcIcon').value;
+    
+    if (!name || price <= 0) {
+        showToast('Ad ve fiyat gerekli', 'error');
+        return;
+    }
+    
+    const sid = AdminState.selectedSalon.id;
+    
+    try {
+        const newService = {
+            id: name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(),
+            name,
+            price,
+            duration,
+            icon,
+            active: true,
+            createdAt: new Date().toISOString()
+        };
+        
+        const currentServices = AdminState.selectedSalon.services || [];
+        currentServices.push(newService);
+        
+        await db.collection('salons').doc(sid).update({ services: currentServices });
+        
+        showToast('Hizmet eklendi!', 'success');
+        closeModal();
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+function showEditServiceModal(svcId) {
+    const sv = AdminState.salonServices.find(s => s.id === svcId);
+    if (!sv) return;
+    
+    document.getElementById('modal').innerHTML = `
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2>Hizmet Düzenle</h2>
+                    <button class="modal-close" onclick="closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Hizmet Adı</label>
+                        <input type="text" id="svcName" class="form-input" value="${esc(sv.name)}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fiyat (₺)</label>
+                        <input type="number" id="svcPrice" class="form-input" value="${sv.price || 0}" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Süre (dk)</label>
+                        <input type="number" id="svcDuration" class="form-input" value="${sv.duration || 30}" min="5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"><input type="checkbox" id="svcActive" ${sv.active !== false ? 'checked' : ''}> Aktif</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeModal()" class="btn btn-outline">İptal</button>
+                    <button onclick="updateService('${svcId}')" class="btn btn-primary">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function updateService(svcId) {
+    const sid = AdminState.selectedSalon.id;
+    
+    try {
+        let currentServices = AdminState.selectedSalon.services || [];
+        const svcIndex = currentServices.findIndex(s => s.id === svcId);
+        
+        if (svcIndex >= 0) {
+            currentServices[svcIndex] = {
+                ...currentServices[svcIndex],
+                name: document.getElementById('svcName').value.trim(),
+                price: parseInt(document.getElementById('svcPrice').value) || 0,
+                duration: parseInt(document.getElementById('svcDuration').value) || 30,
+                active: document.getElementById('svcActive').checked,
+                updatedAt: new Date().toISOString()
+            };
+            
+            await db.collection('salons').doc(sid).update({ services: currentServices });
+            showToast('Kaydedildi!', 'success');
+        } else {
+            showToast('Hizmet bulunamadı', 'error');
+        }
+        
+        closeModal();
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+async function deleteService(svcId) {
+    if (!confirm('Bu hizmeti silmek istediğinize emin misiniz?')) return;
+    
+    const sid = AdminState.selectedSalon.id;
+    
+    try {
+        let currentServices = AdminState.selectedSalon.services || [];
+        currentServices = currentServices.filter(s => s.id !== svcId);
+        
+        await db.collection('salons').doc(sid).update({ services: currentServices });
+        showToast('Hizmet silindi', 'success');
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+// ==================== APPOINTMENT MODALS ====================
+async function deleteAppointment(aptId) {
+    if (!confirm('Bu randevuyu silmek istediğinize emin misiniz?')) return;
+    
+    try {
+        await db.collection('appointments').doc(aptId).delete();
+        showToast('Randevu silindi', 'success');
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+function showEditAppointmentModal(aptId) {
+    const apt = AdminState.salonAppointments.find(a => a.id === aptId);
+    if (!apt) return;
+    
+    document.getElementById('modal').innerHTML = `
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2>Randevu Düzenle</h2>
+                    <button class="modal-close" onclick="closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Müşteri Adı</label>
+                        <input type="text" id="aptCustomerName" class="form-input" value="${esc(apt.customerName || '')}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefon</label>
+                        <input type="tel" id="aptCustomerPhone" class="form-input" value="${apt.customerPhone || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tarih</label>
+                        <input type="date" id="aptDate" class="form-input" value="${apt.date || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Saat</label>
+                        <input type="time" id="aptTime" class="form-input" value="${apt.time || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Durum</label>
+                        <select id="aptStatus" class="form-select">
+                            <option value="pending" ${apt.status === 'pending' ? 'selected' : ''}>Bekliyor</option>
+                            <option value="confirmed" ${apt.status === 'confirmed' ? 'selected' : ''}>Onaylı</option>
+                            <option value="completed" ${apt.status === 'completed' ? 'selected' : ''}>Tamamlandı</option>
+                            <option value="cancelled" ${apt.status === 'cancelled' ? 'selected' : ''}>İptal</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeModal()" class="btn btn-outline">İptal</button>
+                    <button onclick="updateAppointment('${aptId}')" class="btn btn-primary">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function updateAppointment(aptId) {
+    try {
+        await db.collection('appointments').doc(aptId).update({
+            customerName: document.getElementById('aptCustomerName').value.trim(),
+            customerPhone: document.getElementById('aptCustomerPhone').value.replace(/\D/g, '').slice(-10),
+            date: document.getElementById('aptDate').value,
+            time: document.getElementById('aptTime').value,
+            status: document.getElementById('aptStatus').value,
+            updatedAt: new Date().toISOString(),
+            updatedBy: 'admin'
+        });
+        
+        showToast('Randevu güncellendi!', 'success');
+        closeModal();
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+// ==================== UTILITY ACTIONS ====================
+async function loadAllData() {
+    // Listeners zaten aktif, sadece state'i temizle ve yenile
+    AdminState.loading = true;
+    renderApp();
+    
+    setTimeout(() => {
+        AdminState.loading = false;
+        renderApp();
+        showToast('Veriler yenilendi', 'success');
+    }, 500);
+}
+
+function clearAllCache() {
+    localStorage.clear();
+    showToast('Cache temizlendi. Sayfa yenileniyor...', 'success');
+    setTimeout(() => location.reload(), 1000);
+}
+
+async function exportAllData() {
+    try {
+        const data = {
+            salons: AdminState.salons,
+            appointments: AdminState.appointments,
+            exportedAt: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `zamanli-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        
+        showToast('Veriler indirildi', 'success');
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+// ==================== INIT ====================
+console.log('[Zamanli Admin] v2.0 - Süper Admin Paneli');

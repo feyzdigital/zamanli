@@ -18,10 +18,106 @@ const ADMIN_CONFIG = {
         kuafor: { name: 'Kuaför', icon: '💇‍♀️', color: '#ec4899' },
         beauty: { name: 'Güzellik', icon: '💆', color: '#14b8a6' }
     },
+    // Genişletilmiş paket sistemi - anlık güncelleme desteği
     packages: {
-        starter: { name: 'Starter', color: 'slate', limits: { monthlyAppointments: 50, staff: 1 } },
-        pro: { name: 'Pro', color: 'primary', limits: { monthlyAppointments: 500, staff: 5 } },
-        business: { name: 'Business', color: 'success', limits: { monthlyAppointments: -1, staff: -1 } }
+        free: { 
+            name: 'Ücretsiz', 
+            color: 'slate', 
+            price: 0,
+            limits: { 
+                monthlyAppointments: 30, 
+                staff: 1,
+                smsNotifications: false,
+                whatsappNotifications: true,
+                emailNotifications: false,
+                customerManagement: false,
+                reports: false,
+                multiLocation: false,
+                customBranding: false,
+                prioritySupport: false
+            },
+            features: ['Temel randevu yönetimi', 'WhatsApp bildirimleri', 'Online rezervasyon']
+        },
+        starter: { 
+            name: 'Starter', 
+            color: 'blue', 
+            price: 99,
+            limits: { 
+                monthlyAppointments: 100, 
+                staff: 2,
+                smsNotifications: false,
+                whatsappNotifications: true,
+                emailNotifications: true,
+                customerManagement: true,
+                reports: false,
+                multiLocation: false,
+                customBranding: false,
+                prioritySupport: false
+            },
+            features: ['100 aylık randevu', '2 personel', 'Müşteri yönetimi', 'E-posta bildirimleri']
+        },
+        pro: { 
+            name: 'Pro', 
+            color: 'primary', 
+            price: 249,
+            limits: { 
+                monthlyAppointments: 500, 
+                staff: 5,
+                smsNotifications: true,
+                whatsappNotifications: true,
+                emailNotifications: true,
+                customerManagement: true,
+                reports: true,
+                multiLocation: false,
+                customBranding: true,
+                prioritySupport: false
+            },
+            features: ['500 aylık randevu', '5 personel', 'SMS bildirimleri', 'Raporlar', 'Özel marka']
+        },
+        business: { 
+            name: 'Business', 
+            color: 'success', 
+            price: 499,
+            limits: { 
+                monthlyAppointments: -1, // Sınırsız
+                staff: -1, // Sınırsız
+                smsNotifications: true,
+                whatsappNotifications: true,
+                emailNotifications: true,
+                customerManagement: true,
+                reports: true,
+                multiLocation: true,
+                customBranding: true,
+                prioritySupport: true
+            },
+            features: ['Sınırsız randevu', 'Sınırsız personel', 'Çoklu şube', 'Öncelikli destek', 'Tüm özellikler']
+        },
+        enterprise: { 
+            name: 'Enterprise', 
+            color: 'purple', 
+            price: 999,
+            limits: { 
+                monthlyAppointments: -1,
+                staff: -1,
+                smsNotifications: true,
+                whatsappNotifications: true,
+                emailNotifications: true,
+                customerManagement: true,
+                reports: true,
+                multiLocation: true,
+                customBranding: true,
+                prioritySupport: true,
+                apiAccess: true,
+                whiteLabel: true
+            },
+            features: ['Tüm Business özellikleri', 'API erişimi', 'White-label', 'Özel entegrasyonlar']
+        }
+    },
+    // Paket süreleri
+    packageDurations: {
+        monthly: { name: 'Aylık', multiplier: 1, discount: 0 },
+        quarterly: { name: '3 Aylık', multiplier: 3, discount: 10 },
+        yearly: { name: 'Yıllık', multiplier: 12, discount: 20 }
     }
 };
 

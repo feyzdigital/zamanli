@@ -4622,15 +4622,34 @@
         const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
         
         // Paket Limitleri
+        // Paket limitleri - Admin panelinden güncellenir, realtime senkronize
+        // Not: packageLimits salon dokümanında da saklanır, böylece anlık güncelleme olur
         const PACKAGE_LIMITS = {
-            starter: { name: 'Başlangıç', maxStaff: 1, price: 249 },
-            pro: { name: 'Profesyonel', maxStaff: 3, price: 499 },
-            premium: { name: 'Premium', maxStaff: 999, price: 799 }
+            free: { name: 'Ücretsiz', maxStaff: 1, maxAppointments: 30, features: { sms: false, whatsapp: true, reports: false, customerManagement: false } },
+            starter: { name: 'Starter', maxStaff: 2, maxAppointments: 100, features: { sms: false, whatsapp: true, reports: false, customerManagement: true } },
+            pro: { name: 'Pro', maxStaff: 5, maxAppointments: 500, features: { sms: true, whatsapp: true, reports: true, customerManagement: true } },
+            business: { name: 'Business', maxStaff: 999, maxAppointments: 999999, features: { sms: true, whatsapp: true, reports: true, customerManagement: true } },
+            enterprise: { name: 'Enterprise', maxStaff: 999, maxAppointments: 999999, features: { sms: true, whatsapp: true, reports: true, customerManagement: true, apiAccess: true } }
         };
         
         function getPackageLimit() {
-            const pkg = salon?.package || 'starter';
-            return PACKAGE_LIMITS[pkg] || PACKAGE_LIMITS.starter;
+            // Önce salon'daki packageLimits'i kontrol et (admin güncellemesi)
+            if (salon?.packageLimits) {
+                return {
+                    name: PACKAGE_LIMITS[salon?.package || 'free']?.name || 'Ücretsiz',
+                    maxStaff: salon.packageLimits.staff === -1 ? 999 : (salon.packageLimits.staff || 1),
+                    maxAppointments: salon.packageLimits.monthlyAppointments === -1 ? 999999 : (salon.packageLimits.monthlyAppointments || 30),
+                    features: {
+                        sms: salon.packageLimits.smsNotifications || false,
+                        whatsapp: salon.packageLimits.whatsappNotifications !== false,
+                        reports: salon.packageLimits.reports || false,
+                        customerManagement: salon.packageLimits.customerManagement || false
+                    }
+                };
+            }
+            // Fallback: lokal PACKAGE_LIMITS
+            const pkg = salon?.package || 'free';
+            return PACKAGE_LIMITS[pkg] || PACKAGE_LIMITS.free;
         }
         
         function canAddStaff() {
@@ -5350,6 +5369,20 @@
                         if (hasChanges) {
                             console.log('[Salon Listener] Salon güncellendi:', salon.name);
                             
+                            // PAKET DEĞİŞİKLİĞİ KONTROLÜ
+                            if (oldSalon.id && oldSalon.package !== salon.package) {
+                                const pkgLimit = getPackageLimit();
+                                showToast(`🎉 Paketiniz "${pkgLimit.name}" olarak güncellendi!`, 'success');
+                                console.log('[Salon Listener] Paket değişti:', oldSalon.package, '->', salon.package);
+                            }
+                            
+                            // PAKET LİMİTLERİ DEĞİŞİKLİĞİ
+                            if (oldSalon.id && JSON.stringify(oldSalon.packageLimits) !== JSON.stringify(salon.packageLimits)) {
+                                console.log('[Salon Listener] Paket limitleri güncellendi');
+                                // Personel butonunu güncelle
+                                if (typeof updateAddStaffButton === 'function') updateAddStaffButton();
+                            }
+                            
                             // Header'ı güncelle
                             updateSalonHeader();
                             
@@ -5365,8 +5398,8 @@
                             // Ayarları güncelle
                             if (typeof loadSettings === 'function') loadSettings();
                             
-                            // Bildirim göster (ilk yükleme değilse)
-                            if (oldSalon.id) {
+                            // Bildirim göster (ilk yükleme değilse ve paket değişikliği değilse)
+                            if (oldSalon.id && oldSalon.package === salon.package) {
                                 showToast('Salon bilgileri güncellendi', 'info');
                             }
                         }
