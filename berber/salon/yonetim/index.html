@@ -4481,25 +4481,67 @@
                 
                 // 2. Personel modu kontrolü
                 const staffParam = urlParams.get('staff');
+                const staffNameParam = urlParams.get('staffName');
+                
                 if (staffParam) {
+                    console.log('[Init] Personel girişi kontrol ediliyor:', staffParam);
+                    
+                    // Önce sessionStorage'dan kontrol et
                     const staffSession = sessionStorage.getItem('staffSession');
+                    
                     if (staffSession) {
                         try {
                             const session = JSON.parse(staffSession);
-                            if (session.staffId === staffParam) {
+                            console.log('[Init] Staff session:', session);
+                            
+                            // staffId eşleşmesi kontrolü (hem id hem name ile)
+                            if (session.staffId === staffParam || session.staffId === decodeURIComponent(staffParam)) {
                                 isStaffMode = true;
                                 currentStaffId = session.staffId;
                                 currentStaffName = session.staffName;
-                                await loadSalonData(session.salonSlug);
+                                
+                                const targetSlug = slug || session.salonSlug;
+                                console.log('[Init] Personel için salon yükleniyor:', targetSlug);
+                                
+                                await loadSalonData(targetSlug);
                                 if (salon) {
+                                    console.log('[Init] Personel dashboard gösteriliyor');
                                     showDashboard();
                                     return;
                                 }
                             }
                         } catch (e) {
+                            console.error('[Init] Staff session parse hatası:', e);
                             sessionStorage.removeItem('staffSession');
                         }
                     }
+                    
+                    // Session yoksa ama URL'de slug ve staffName varsa, yeni session oluştur
+                    if (slug && staffNameParam) {
+                        console.log('[Init] URL parametrelerinden personel session oluşturuluyor');
+                        
+                        // Yeni session oluştur
+                        const newSession = {
+                            staffId: decodeURIComponent(staffParam),
+                            staffName: decodeURIComponent(staffNameParam),
+                            salonSlug: slug
+                        };
+                        sessionStorage.setItem('staffSession', JSON.stringify(newSession));
+                        
+                        isStaffMode = true;
+                        currentStaffId = newSession.staffId;
+                        currentStaffName = newSession.staffName;
+                        
+                        await loadSalonData(slug);
+                        if (salon) {
+                            console.log('[Init] Personel dashboard gösteriliyor (URL params)');
+                            showDashboard();
+                            return;
+                        }
+                    }
+                    
+                    // Hiçbiri çalışmadıysa login sayfasına yönlendir
+                    console.log('[Init] Personel girişi başarısız, login sayfasına yönlendiriliyor');
                     window.location.href = '/berber/';
                     return;
                 }
