@@ -3763,16 +3763,7 @@
             
             <!-- GİZLİ SEKMELER (Hamburger menüden açılacak) -->
             <div id="hiddenTabs" class="hidden-tabs-container" style="display: none;">
-            <!-- Tabs -->
-            <div class="tabs">
-                <button class="tab active" data-tab="appointments">📅 Randevular</button>
-                <button class="tab" data-tab="customers">👥 Müşteriler</button>
-                <button class="tab" data-tab="services">✂️ Hizmetler</button>
-                <button class="tab" data-tab="staff">👤 Personel</button>
-                <button class="tab" data-tab="hours">🕐 Saatler</button>
-                <button class="tab" data-tab="reports">📊 Raporlar</button>
-                <button class="tab" data-tab="settings">⚙️ Ayarlar</button>
-            </div>
+            <!-- Tabs - KALDIRILDI, hamburger menüden erişilsin -->
             
             <!-- Appointments Tab - Yeni Tasarım -->
             <div id="tab-appointments" class="tab-content active">
@@ -4560,67 +4551,66 @@
                 const staffParam = urlParams.get('staff');
                 const staffNameParam = urlParams.get('staffName');
                 
-                if (staffParam) {
-                    console.log('[Init] Personel girişi kontrol ediliyor:', staffParam);
-                    
-                    // Önce sessionStorage'dan kontrol et
-                    const staffSession = sessionStorage.getItem('staffSession');
-                    
-                    if (staffSession) {
-                        try {
-                            const session = JSON.parse(staffSession);
-                            console.log('[Init] Staff session:', session);
+                // Önce localStorage'dan personel session'ı kontrol et (sayfa yenilemede kaybolmasın)
+                const savedStaffSession = localStorage.getItem('staffSession');
+                
+                if (savedStaffSession) {
+                    try {
+                        const session = JSON.parse(savedStaffSession);
+                        console.log('[Init] Kayıtlı staff session bulundu:', session);
+                        
+                        // Session süresi kontrolü (7 gün)
+                        if (session.expires && session.expires > Date.now()) {
+                            // URL'de slug varsa kontrol et, yoksa session'dan al
+                            const targetSlug = slug || session.salonSlug;
                             
-                            // staffId eşleşmesi kontrolü (hem id hem name ile)
-                            if (session.staffId === staffParam || session.staffId === decodeURIComponent(staffParam)) {
+                            if (targetSlug) {
                                 isStaffMode = true;
                                 currentStaffId = session.staffId;
                                 currentStaffName = session.staffName;
                                 
-                                const targetSlug = slug || session.salonSlug;
-                                console.log('[Init] Personel için salon yükleniyor:', targetSlug);
-                                
+                                console.log('[Init] Personel session geçerli, salon yükleniyor:', targetSlug);
                                 await loadSalonData(targetSlug);
+                                
                                 if (salon) {
                                     console.log('[Init] Personel dashboard gösteriliyor');
                                     showDashboard();
                                     return;
                                 }
                             }
-                        } catch (e) {
-                            console.error('[Init] Staff session parse hatası:', e);
-                            sessionStorage.removeItem('staffSession');
+                        } else {
+                            console.log('[Init] Staff session süresi dolmuş');
+                            localStorage.removeItem('staffSession');
                         }
+                    } catch (e) {
+                        console.error('[Init] Staff session parse hatası:', e);
+                        localStorage.removeItem('staffSession');
                     }
+                }
+                
+                // URL'de staff parametresi varsa yeni session oluştur
+                if (staffParam && slug && staffNameParam) {
+                    console.log('[Init] URL parametrelerinden personel session oluşturuluyor');
                     
-                    // Session yoksa ama URL'de slug ve staffName varsa, yeni session oluştur
-                    if (slug && staffNameParam) {
-                        console.log('[Init] URL parametrelerinden personel session oluşturuluyor');
-                        
-                        // Yeni session oluştur
-                        const newSession = {
-                            staffId: decodeURIComponent(staffParam),
-                            staffName: decodeURIComponent(staffNameParam),
-                            salonSlug: slug
-                        };
-                        sessionStorage.setItem('staffSession', JSON.stringify(newSession));
-                        
-                        isStaffMode = true;
-                        currentStaffId = newSession.staffId;
-                        currentStaffName = newSession.staffName;
-                        
-                        await loadSalonData(slug);
-                        if (salon) {
-                            console.log('[Init] Personel dashboard gösteriliyor (URL params)');
-                            showDashboard();
-                            return;
-                        }
+                    // Yeni session oluştur - localStorage'a kaydet (7 gün)
+                    const newSession = {
+                        staffId: decodeURIComponent(staffParam),
+                        staffName: decodeURIComponent(staffNameParam),
+                        salonSlug: slug,
+                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
+                    };
+                    localStorage.setItem('staffSession', JSON.stringify(newSession));
+                    
+                    isStaffMode = true;
+                    currentStaffId = newSession.staffId;
+                    currentStaffName = newSession.staffName;
+                    
+                    await loadSalonData(slug);
+                    if (salon) {
+                        console.log('[Init] Personel dashboard gösteriliyor (URL params)');
+                        showDashboard();
+                        return;
                     }
-                    
-                    // Hiçbiri çalışmadıysa login sayfasına yönlendir
-                    console.log('[Init] Personel girişi başarısız, login sayfasına yönlendiriliyor');
-                    window.location.href = '/berber/';
-                    return;
                 }
                 
                 // 3. Normal salon sahibi girişi
@@ -4883,7 +4873,7 @@
         function applyStaffModeRestrictions() {
             console.log('[Staff Mode] Kısıtlamalar uygulanıyor...');
             
-            // 1. TAMAMEN GİZLENECEK/KALDIRILACAK SEKMELER
+            // 1. TAMAMEN GİZLENECEK/KALDIRILACAK SEKMELER (Raporlar HARİÇ - personel kendi performansını görebilir)
             const hiddenTabs = ['staff', 'settings', 'services', 'hours'];
             
             // Tab butonlarını gizle (masaüstü)
@@ -4900,7 +4890,7 @@
                 if (tabContent) tabContent.remove();
             });
             
-            // 2. MOBİL MENÜ - Kısıtlı sekmeler
+            // 2. MOBİL MENÜ - Kısıtlı sekmeler (Raporlar hariç)
             document.querySelectorAll('.mobile-menu-nav a[data-menu-tab]').forEach(link => {
                 const tabName = link.getAttribute('data-menu-tab');
                 if (hiddenTabs.includes(tabName)) {
@@ -4923,12 +4913,19 @@
                 }
             }, 200);
             
-            // 5. RAPORLAR SEKMESİNİ DE GİZLE (personel sadece kendi randevularını görsün)
-            const reportsTab = document.getElementById('tab-reports');
-            if (reportsTab) reportsTab.remove();
-            document.querySelectorAll('.mobile-menu-nav a[data-menu-tab="reports"]').forEach(link => {
-                link.style.display = 'none';
-            });
+            // 5. RAPORLAR - Başlık değiştir (personel kendi performansını görebilir)
+            setTimeout(() => {
+                const reportsTab = document.getElementById('tab-reports');
+                if (reportsTab) {
+                    const header = reportsTab.querySelector('.card-header h3, .section-title, h3');
+                    if (header) header.textContent = '📊 Performansım';
+                    // Personel performansı bölümünü gizle (sadece kendi verisi var)
+                    const staffPerformanceSection = reportsTab.querySelector('#staffPerformance')?.closest('.card');
+                    if (staffPerformanceSection) {
+                        staffPerformanceSection.style.display = 'none';
+                    }
+                }
+            }, 200);
             
             // 6. ÜST BAR - Hassas istatistikleri gizle (sadece bekleyen ve bugünkü göster)
             const topBarStats = document.querySelector('.top-bar-stats');
@@ -5013,7 +5010,7 @@
         
         // Personel çıkışı
         function logoutStaff() {
-            sessionStorage.removeItem('staffSession');
+            localStorage.removeItem('staffSession');
             window.location.href = '/berber/';
         }
         
@@ -5076,14 +5073,15 @@
                     });
                     
                     if (matchedStaff) {
-                        // Personel session kaydet
+                        // Personel session kaydet - localStorage'a (sayfa yenilemede kaybolmasın)
                         const staffSession = {
                             staffId: matchedStaff.id || matchedStaff.name,
                             staffName: matchedStaff.name,
                             salonId: salonId,
-                            salonSlug: slug
+                            salonSlug: slug,
+                            expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
                         };
-                        sessionStorage.setItem('staffSession', JSON.stringify(staffSession));
+                        localStorage.setItem('staffSession', JSON.stringify(staffSession));
                         
                         // Personel modunu aktif et
                         isStaffMode = true;
@@ -5340,6 +5338,21 @@
             const seenAppointmentsKey = `seenAppointments_${salon.id}`;
             let seenAppointments = JSON.parse(localStorage.getItem(seenAppointmentsKey) || '[]');
             
+            // ÖNEMLİ: İlk yüklemede tüm MEVCUT randevuları "seen" olarak işaretle
+            // Bu sayede sayfa yenilendiğinde eski randevular için bildirim gelmez
+            const existingAppointmentIds = appointments.map(a => a.id);
+            existingAppointmentIds.forEach(id => {
+                if (!seenAppointments.includes(id)) {
+                    seenAppointments.push(id);
+                }
+            });
+            // Max 500 kayıt tut
+            if (seenAppointments.length > 500) {
+                seenAppointments = seenAppointments.slice(-500);
+            }
+            localStorage.setItem(seenAppointmentsKey, JSON.stringify(seenAppointments));
+            console.log('[Sync] Mevcut randevular seen olarak işaretlendi:', existingAppointmentIds.length);
+            
             try {
                 appointmentsListener = db.collection('appointments')
                     .where('salonId', '==', salon.id)
@@ -5358,10 +5371,11 @@
                                         hasChanges = true;
                                         console.log('[Sync] Yeni randevu eklendi:', apt.customerName);
                                         
-                                        // BİLDİRİM KONTROLÜ:
+                                        // BİLDİRİM KONTROLÜ - ÇOK SIKI KURALLAR:
                                         // 1. Daha önce görülmemişse
-                                        // 2. Son 2 dakika içinde oluşturulmuşsa (yeni randevu)
-                                        // 3. Bekleyen randevu ise
+                                        // 2. Son 60 saniye içinde oluşturulmuşsa
+                                        // 3. Listener başladıktan SONRA oluşturulmuşsa
+                                        // 4. Bekleyen randevu ise
                                         const alreadySeen = seenAppointments.includes(apt.id);
                                         
                                         // Randevu oluşturulma zamanını kontrol et
@@ -5376,31 +5390,34 @@
                                             }
                                         }
                                         
-                                        // Son 2 dakika içinde oluşturulmuş mu?
-                                        const isRecent = createdAt && (Date.now() - createdAt < 2 * 60 * 1000);
+                                        // Son 60 saniye içinde oluşturulmuş mu?
+                                        const isRecent = createdAt && (Date.now() - createdAt < 60 * 1000);
                                         // Listener başladıktan sonra mı oluşturulmuş?
-                                        const isAfterListenerStart = createdAt && (createdAt > listenerStartTime - 5000);
+                                        const isAfterListenerStart = createdAt && (createdAt > listenerStartTime - 3000);
                                         
                                         console.log('[Sync] Bildirim kontrolü:', {
                                             alreadySeen,
                                             isRecent,
                                             isAfterListenerStart,
                                             status: apt.status,
-                                            createdAt: createdAt ? new Date(createdAt).toISOString() : null
+                                            createdAt: createdAt ? new Date(createdAt).toISOString() : null,
+                                            listenerStartTime: new Date(listenerStartTime).toISOString()
                                         });
                                         
+                                        // SADECE gerçekten yeni randevular için bildirim göster
                                         if (!alreadySeen && isRecent && isAfterListenerStart && apt.status === 'pending') {
                                             console.log('[Sync] 🔔 Bildirim gösteriliyor:', apt.customerName);
                                             if (NotificationManager?.notifyNewAppointment) {
                                                 NotificationManager.notifyNewAppointment(apt);
                                             }
                                             showToast(`🔔 Yeni randevu: ${apt.customerName}`, 'info');
+                                        } else {
+                                            console.log('[Sync] Bildirim atlandı - eski randevu');
                                         }
                                         
                                         // Görülen randevulara ekle
                                         if (!alreadySeen) {
                                             seenAppointments.push(apt.id);
-                                            // Max 500 kayıt tut
                                             if (seenAppointments.length > 500) {
                                                 seenAppointments = seenAppointments.slice(-500);
                                             }
