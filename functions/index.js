@@ -16,7 +16,7 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 
 /**
- * Yeni randevu oluşturulduğunda salon sahibine bildirim gönder
+ * Yeni randevu oluşturulduğunda salon sahibine VE ilgili personele bildirim gönder
  * Firestore trigger: appointments koleksiyonu dinlenir
  */
 exports.onNewAppointment = functions
@@ -44,32 +44,64 @@ exports.onNewAppointment = functions
                 }
             }
             
-            // Salonun push token'larını al
-            const tokensSnapshot = await db.collection('push_tokens')
+            // 1. Salon sahibinin push token'larını al
+            const ownerTokensSnapshot = await db.collection('push_tokens')
                 .where('salonId', '==', appointment.salonId)
                 .where('userType', '==', 'salon')
                 .get();
             
-            if (tokensSnapshot.empty) {
-                console.log('[Push] Salon için token bulunamadı:', appointment.salonId);
-                return null;
+            // 2. İlgili personelin push token'larını al (staffId veya staffName ile)
+            let staffTokensSnapshot = null;
+            if (appointment.staffId || appointment.staffName) {
+                // staffId ile dene
+                if (appointment.staffId) {
+                    staffTokensSnapshot = await db.collection('push_tokens')
+                        .where('salonId', '==', appointment.salonId)
+                        .where('userType', '==', 'staff')
+                        .where('staffId', '==', appointment.staffId)
+                        .get();
+                }
+                
+                // staffId ile bulunamadıysa staffName ile dene
+                if ((!staffTokensSnapshot || staffTokensSnapshot.empty) && appointment.staffName) {
+                    staffTokensSnapshot = await db.collection('push_tokens')
+                        .where('salonId', '==', appointment.salonId)
+                        .where('userType', '==', 'staff')
+                        .where('staffName', '==', appointment.staffName)
+                        .get();
+                }
             }
             
-            // Token listesi oluştur
+            // Token listesi oluştur (tekrar eden tokenları önle)
+            const tokenSet = new Set();
             const tokens = [];
-            tokensSnapshot.forEach(doc => {
+            
+            // Salon sahibi tokenları
+            ownerTokensSnapshot.forEach(doc => {
                 const data = doc.data();
-                if (data.token) {
-                    tokens.push(data.token);
+                if (data.token && !tokenSet.has(data.token)) {
+                    tokenSet.add(data.token);
+                    tokens.push({ token: data.token, type: 'salon' });
                 }
             });
             
+            // Personel tokenları
+            if (staffTokensSnapshot && !staffTokensSnapshot.empty) {
+                staffTokensSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.token && !tokenSet.has(data.token)) {
+                        tokenSet.add(data.token);
+                        tokens.push({ token: data.token, type: 'staff', staffName: data.staffName });
+                    }
+                });
+            }
+            
             if (tokens.length === 0) {
-                console.log('[Push] Geçerli token yok');
+                console.log('[Push] Hiç token bulunamadı:', appointment.salonId);
                 return null;
             }
             
-            console.log('[Push] Gönderilecek token sayısı:', tokens.length);
+            console.log('[Push] Gönderilecek token sayısı:', tokens.length, '(Salon:', ownerTokensSnapshot.size, ', Personel:', staffTokensSnapshot?.size || 0, ')');
             
             // Bildirim içeriği
             const notification = {
@@ -79,7 +111,7 @@ exports.onNewAppointment = functions
             
             const clickUrl = salonSlug ? `https://zamanli.com/berber/salon/yonetim/?slug=${salonSlug}` : 'https://zamanli.com/berber/';
             
-            // FCM mesajı
+            // FCM mesajı - SES VE TİTREŞİM AKTİF
             const message = {
                 notification: notification,
                 data: {
@@ -91,23 +123,30 @@ exports.onNewAppointment = functions
                     service: appointment.service || '',
                     date: appointment.date || '',
                     time: appointment.time || '',
-                    click_action: clickUrl
+                    click_action: clickUrl,
+                    playSound: 'true' // Özel ses için flag
                 },
                 webpush: {
+                    headers: {
+                        'Urgency': 'high' // Yüksek öncelik
+                    },
                     notification: {
                         ...notification,
-                        icon: '/icons/icon-192x192.png',
-                        badge: '/icons/icon-72x72.png',
-                        vibrate: [200, 100, 200],
+                        icon: 'https://zamanli.com/icons/icon-192x192.png',
+                        badge: 'https://zamanli.com/icons/icon-72x72.png',
+                        vibrate: [300, 100, 300, 100, 300], // Güçlü titreşim
                         requireInteraction: true,
+                        silent: false, // SES AÇIK
+                        renotify: true,
+                        tag: 'new-appointment-' + appointmentId,
                         actions: [
                             {
                                 action: 'view',
-                                title: 'Görüntüle'
+                                title: '👁️ Görüntüle'
                             },
                             {
                                 action: 'dismiss',
-                                title: 'Kapat'
+                                title: '❌ Kapat'
                             }
                         ]
                     },
@@ -116,45 +155,55 @@ exports.onNewAppointment = functions
                     }
                 },
                 android: {
+                    priority: 'high', // Yüksek öncelik
                     notification: {
                         ...notification,
                         icon: 'ic_notification',
                         color: '#10B981',
-                        sound: 'default',
+                        sound: 'default', // Varsayılan ses
+                        channelId: 'high_importance_channel', // Yüksek önem kanalı
+                        defaultSound: true,
+                        defaultVibrateTimings: true,
+                        notificationPriority: 'PRIORITY_MAX',
+                        visibility: 'PUBLIC',
                         clickAction: 'OPEN_ACTIVITY'
-                    },
-                    priority: 'high'
+                    }
                 },
                 apns: {
+                    headers: {
+                        'apns-priority': '10' // Maksimum öncelik
+                    },
                     payload: {
                         aps: {
                             alert: notification,
-                            sound: 'default',
-                            badge: 1
+                            sound: 'default', // iOS ses
+                            badge: 1,
+                            'content-available': 1,
+                            'mutable-content': 1
                         }
                     }
                 }
             };
             
             // Her token'a gönder
-            const sendPromises = tokens.map(async (token) => {
+            const sendPromises = tokens.map(async (tokenObj) => {
                 try {
                     const response = await messaging.send({
                         ...message,
-                        token: token
+                        token: tokenObj.token
                     });
-                    console.log('[Push] Başarılı:', token.substring(0, 20) + '...', response);
-                    return { success: true, token };
+                    console.log('[Push] Başarılı:', tokenObj.type, tokenObj.token.substring(0, 20) + '...', response);
+                    return { success: true, token: tokenObj.token, type: tokenObj.type };
                 } catch (error) {
-                    console.error('[Push] Hata:', token.substring(0, 20) + '...', error.code);
+                    console.error('[Push] Hata:', tokenObj.type, tokenObj.token.substring(0, 20) + '...', error.code);
                     
                     // Geçersiz token'ı sil
                     if (error.code === 'messaging/invalid-registration-token' ||
                         error.code === 'messaging/registration-token-not-registered') {
-                        await deleteInvalidToken(token);
+                        await deleteInvalidToken(tokenObj.token);
                     }
                     
-                    return { success: false, token, error: error.code };
+                    return { success: false, token: tokenObj.token, type: tokenObj.type, error: error.code };
                 }
             });
             

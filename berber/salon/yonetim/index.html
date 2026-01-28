@@ -5331,33 +5331,47 @@
             
             console.log('[Sync] Real-time listener başlatılıyor...');
             
-            // Listener başlangıç zamanı - bu zamandan SONRA oluşturulan randevular için bildirim göster
+            // Listener başlangıç zamanı
             const listenerStartTime = Date.now();
+            
+            // İLK SNAPSHOT'I ATLA - bu sayede mevcut randevular için bildirim gelmez
+            let isFirstSnapshot = true;
             
             // Görülen randevu ID'lerini localStorage'da tut
             const seenAppointmentsKey = `seenAppointments_${salon.id}`;
             let seenAppointments = JSON.parse(localStorage.getItem(seenAppointmentsKey) || '[]');
             
-            // ÖNEMLİ: İlk yüklemede tüm MEVCUT randevuları "seen" olarak işaretle
-            // Bu sayede sayfa yenilendiğinde eski randevular için bildirim gelmez
-            const existingAppointmentIds = appointments.map(a => a.id);
-            existingAppointmentIds.forEach(id => {
-                if (!seenAppointments.includes(id)) {
-                    seenAppointments.push(id);
+            // Mevcut randevuları seen olarak işaretle
+            appointments.forEach(apt => {
+                if (apt.id && !seenAppointments.includes(apt.id)) {
+                    seenAppointments.push(apt.id);
                 }
             });
-            // Max 500 kayıt tut
             if (seenAppointments.length > 500) {
                 seenAppointments = seenAppointments.slice(-500);
             }
             localStorage.setItem(seenAppointmentsKey, JSON.stringify(seenAppointments));
-            console.log('[Sync] Mevcut randevular seen olarak işaretlendi:', existingAppointmentIds.length);
             
             try {
                 appointmentsListener = db.collection('appointments')
                     .where('salonId', '==', salon.id)
                     .onSnapshot(
                         (snapshot) => {
+                            // İLK SNAPSHOT'I ATLA - mevcut veriler için bildirim gösterme
+                            if (isFirstSnapshot) {
+                                isFirstSnapshot = false;
+                                console.log('[Sync] İlk snapshot atlandı, mevcut randevu sayısı:', snapshot.size);
+                                
+                                // İlk snapshot'taki tüm ID'leri seen olarak işaretle
+                                snapshot.docs.forEach(doc => {
+                                    if (!seenAppointments.includes(doc.id)) {
+                                        seenAppointments.push(doc.id);
+                                    }
+                                });
+                                localStorage.setItem(seenAppointmentsKey, JSON.stringify(seenAppointments));
+                                return; // İlk snapshot için işlem yapma
+                            }
+                            
                             let hasChanges = false;
                             
                             snapshot.docChanges().forEach(change => {
@@ -5371,11 +5385,7 @@
                                         hasChanges = true;
                                         console.log('[Sync] Yeni randevu eklendi:', apt.customerName);
                                         
-                                        // BİLDİRİM KONTROLÜ - ÇOK SIKI KURALLAR:
-                                        // 1. Daha önce görülmemişse
-                                        // 2. Son 60 saniye içinde oluşturulmuşsa
-                                        // 3. Listener başladıktan SONRA oluşturulmuşsa
-                                        // 4. Bekleyen randevu ise
+                                        // BİLDİRİM KONTROLÜ
                                         const alreadySeen = seenAppointments.includes(apt.id);
                                         
                                         // Randevu oluşturulma zamanını kontrol et
@@ -5390,29 +5400,23 @@
                                             }
                                         }
                                         
-                                        // Son 60 saniye içinde oluşturulmuş mu?
-                                        const isRecent = createdAt && (Date.now() - createdAt < 60 * 1000);
-                                        // Listener başladıktan sonra mı oluşturulmuş?
-                                        const isAfterListenerStart = createdAt && (createdAt > listenerStartTime - 3000);
+                                        // Son 30 saniye içinde oluşturulmuş mu?
+                                        const isRecent = createdAt && (Date.now() - createdAt < 30 * 1000);
                                         
                                         console.log('[Sync] Bildirim kontrolü:', {
                                             alreadySeen,
                                             isRecent,
-                                            isAfterListenerStart,
                                             status: apt.status,
-                                            createdAt: createdAt ? new Date(createdAt).toISOString() : null,
-                                            listenerStartTime: new Date(listenerStartTime).toISOString()
+                                            createdAt: createdAt ? new Date(createdAt).toISOString() : null
                                         });
                                         
-                                        // SADECE gerçekten yeni randevular için bildirim göster
-                                        if (!alreadySeen && isRecent && isAfterListenerStart && apt.status === 'pending') {
+                                        // SADECE yeni ve görülmemiş randevular için bildirim göster
+                                        if (!alreadySeen && isRecent && apt.status === 'pending') {
                                             console.log('[Sync] 🔔 Bildirim gösteriliyor:', apt.customerName);
                                             if (NotificationManager?.notifyNewAppointment) {
                                                 NotificationManager.notifyNewAppointment(apt);
                                             }
                                             showToast(`🔔 Yeni randevu: ${apt.customerName}`, 'info');
-                                        } else {
-                                            console.log('[Sync] Bildirim atlandı - eski randevu');
                                         }
                                         
                                         // Görülen randevulara ekle
@@ -8457,42 +8461,46 @@ END:VEVENT
             return true;
         }
         
-        // ========== SERVICE WORKER - YÖNETİM PANELİNDE DEVRE DIŞI ==========
-        // iOS Safari döngü sorununu engellemek için SW tamamen devre dışı
-        (function disableServiceWorker() {
+        // ========== SERVICE WORKER - PUSH BİLDİRİMLER İÇİN AKTİF ==========
+        // Push notification için SW gerekli, sadece cache/update mesajlarını yoksay
+        (function setupServiceWorker() {
             if ('serviceWorker' in navigator) {
-                // SW mesajlarını dinlemeyi engelle
+                // SW'yi kaydet (push notification için gerekli)
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => {
+                        console.log('[Panel] SW registered for push notifications');
+                        
+                        // NotificationManager'a registration'ı bildir
+                        if (typeof NotificationManager !== 'undefined') {
+                            NotificationManager.swRegistration = reg;
+                        }
+                    })
+                    .catch(err => console.log('[Panel] SW registration error:', err));
+                
+                // SW mesajlarını dinle
                 navigator.serviceWorker.addEventListener('message', (e) => {
-                    // Güncelleme mesajlarını yoksay
+                    // Güncelleme mesajlarını yoksay (sayfa yenilemesini engelle)
                     if (e.data?.type === 'SW_UPDATED') {
                         console.log('[Panel] SW update message ignored');
-                        e.stopImmediatePropagation();
+                        return;
+                    }
+                    
+                    // Ses çalma mesajı gelirse
+                    if (e.data?.type === 'PLAY_NOTIFICATION_SOUND') {
+                        console.log('[Panel] Playing notification sound from SW');
+                        if (typeof NotificationManager !== 'undefined') {
+                            NotificationManager.playSound();
+                        }
                     }
                 });
                 
-                // Mevcut SW'leri kaldır
-                navigator.serviceWorker.getRegistrations().then(registrations => {
-                    registrations.forEach(reg => {
-                        reg.unregister().then(() => {
-                            console.log('[Panel] SW unregistered');
-                        });
-                    });
-                }).catch(err => console.log('[Panel] SW unregister error:', err));
-                
-                // Controller change event'ini engelle
+                // Controller change event'ini yoksay (auto-reload engelle)
+                let controllerChangeIgnored = false;
                 navigator.serviceWorker.addEventListener('controllerchange', (e) => {
-                    console.log('[Panel] Controller change ignored');
-                    e.stopImmediatePropagation();
-                });
-            }
-            
-            // Cache'leri temizle
-            if ('caches' in window) {
-                caches.keys().then(names => {
-                    names.forEach(name => {
-                        caches.delete(name);
-                        console.log('[Panel] Cache deleted:', name);
-                    });
+                    if (!controllerChangeIgnored) {
+                        controllerChangeIgnored = true;
+                        console.log('[Panel] Controller change - NOT reloading');
+                    }
                 });
             }
         })();
@@ -9565,16 +9573,25 @@ END:VEVENT
                             // Token'ı Firestore'a kaydet
                             const tokenHash = await this.hashToken(token);
                             
-                            await db.collection('push_tokens').doc(tokenHash).set({
+                            // Personel mi salon sahibi mi?
+                            const tokenData = {
                                 token: token,
                                 salonId: this.salonId,
-                                userType: 'salon',
+                                userType: isStaffMode ? 'staff' : 'salon',
                                 platform: this.detectPlatform(),
                                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                                 lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                            }, { merge: true });
+                            };
                             
-                            console.log('[Notify] FCM Token Firestore\'a kaydedildi');
+                            // Personel ise staffId ekle
+                            if (isStaffMode && currentStaffId) {
+                                tokenData.staffId = currentStaffId;
+                                tokenData.staffName = currentStaffName;
+                            }
+                            
+                            await db.collection('push_tokens').doc(tokenHash).set(tokenData, { merge: true });
+                            
+                            console.log('[Notify] FCM Token Firestore\'a kaydedildi', isStaffMode ? '(Personel)' : '(Salon Sahibi)');
                             
                             // Foreground mesaj dinleyicisi
                             messaging.onMessage((payload) => {

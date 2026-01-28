@@ -31,10 +31,11 @@ messaging.onBackgroundMessage((payload) => {
         body: payload.notification?.body || payload.data?.body || 'Yeni bir bildiriminiz var',
         icon: payload.notification?.icon || '/icons/icon-192x192.png',
         badge: '/icons/icon-72x72.png',
-        vibrate: [200, 100, 200],
+        vibrate: [300, 100, 300, 100, 300], // Güçlü titreşim
         tag: payload.data?.tag || 'zamanli-notification',
         renotify: true,
-        requireInteraction: payload.data?.requireInteraction === 'true',
+        requireInteraction: true, // Kullanıcı kapatana kadar kalır
+        silent: false, // SES AÇIK
         data: {
             url: payload.data?.link || payload.fcmOptions?.link || '/berber/salon/yonetim/',
             ...payload.data
@@ -45,7 +46,25 @@ messaging.onBackgroundMessage((payload) => {
         ]
     };
 
-    return self.registration.showNotification(notificationTitle, notificationOptions);
+    // Bildirim göster
+    self.registration.showNotification(notificationTitle, notificationOptions);
+    
+    // Ek olarak ses çalmayı dene (bazı tarayıcılarda çalışır)
+    try {
+        // Clients'a ses çalması için mesaj gönder
+        self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(clients => {
+            clients.forEach(client => {
+                client.postMessage({
+                    type: 'PLAY_NOTIFICATION_SOUND',
+                    data: payload.data
+                });
+            });
+        });
+    } catch (e) {
+        console.log('[SW] Ses mesajı gönderilemedi:', e);
+    }
+    
+    return;
 });
 
 const CACHE_VERSION = 'v4.1';
