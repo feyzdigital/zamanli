@@ -3652,11 +3652,6 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <!-- Personel Ayarları Butonu (sadece personel modunda görünür) -->
-                    <button id="staffSettingsBtn" onclick="openStaffSettingsModal()" class="btn btn-outline btn-sm" style="display: none;">
-                        <span class="btn-icon-only">⚙️</span>
-                        <span class="btn-text">Profilim</span>
-                    </button>
                     <a href="#" id="viewSalonBtn" class="btn btn-outline btn-sm" target="_blank">
                         <span class="btn-icon-only">👁️</span>
                         <span class="btn-text">Salonu Görüntüle</span>
@@ -4853,12 +4848,6 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
             
-            // Profilim butonunu varsayılan olarak gizle
-            const staffSettingsBtn = document.getElementById('staffSettingsBtn');
-            if (staffSettingsBtn) {
-                staffSettingsBtn.style.display = 'none';
-            }
-            
             // Süper admin modu ise özel banner göster
             if (isSuperAdminMode) {
                 document.getElementById('headerSalonName').textContent = salon.name + ' (Admin)';
@@ -4875,15 +4864,9 @@
                 
                 // Personel banner'ı göster
                 showStaffBanner();
-                
-                // Personel için Profilim butonunu göster
-                if (staffSettingsBtn) {
-                    staffSettingsBtn.style.display = '';
-                }
             } else {
                 document.getElementById('headerSalonName').textContent = salon.name;
                 document.getElementById('headerAvatar').textContent = salon.name.charAt(0).toUpperCase();
-                // Salon sahibi için Profilim butonu gizli kalacak
             }
             
             // Mobil menü bilgilerini güncelle
@@ -5262,14 +5245,14 @@
             
             document.getElementById('staffSettingsModal').innerHTML = `
                 <div class="modal-overlay active" onclick="closeStaffSettingsModal(event)">
-                    <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
-                        <div class="modal-header">
-                            <h2>⚙️ Ayarlarım</h2>
-                            <button class="modal-close" onclick="closeStaffSettingsModal()">×</button>
+                    <div class="modal-content staff-settings-modal-content" onclick="event.stopPropagation()" style="max-width: 600px; max-height: 90vh; overflow-y: auto; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 12px 12px 0 0;">
+                            <h2 style="color: white;">⚙️ Ayarlarım</h2>
+                            <button class="modal-close" onclick="closeStaffSettingsModal()" style="color: white;">×</button>
                         </div>
                         
                         <!-- Tabs -->
-                        <div style="display: flex; border-bottom: 2px solid var(--slate-200); background: var(--slate-50);">
+                        <div style="display: flex; border-bottom: 2px solid rgba(16, 185, 129, 0.3); background: rgba(255,255,255,0.7);">
                             <button type="button" id="staffSettingsTabProfile" class="staff-settings-tab active" onclick="switchStaffSettingsTab('profile')" style="flex: 1; padding: 0.75rem; font-size: 0.85rem; font-weight: 600; border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;">
                                 👤 Profil
                             </button>
@@ -5284,40 +5267,40 @@
                         <!-- Profil Tab -->
                         <div id="staffSettingsPanelProfile" class="staff-settings-panel">
                             <form onsubmit="saveStaffSettings(event)">
-                                <div class="modal-body">
+                                <div class="modal-body" style="background: transparent;">
                                     <div class="form-group" style="text-align: center; margin-bottom: 1.5rem;">
-                                        <div class="staff-avatar-large" id="staffSettingsAvatar" style="width: 100px; height: 100px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1rem; overflow: hidden;">
+                                        <div class="staff-avatar-large" id="staffSettingsAvatar" style="width: 100px; height: 100px; border-radius: 50%; background: white; border: 3px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
                                             ${staff.photo ? `<img src="${staff.photo}" style="width: 100%; height: 100%; object-fit: cover;">` : staff.name.charAt(0).toUpperCase()}
                                         </div>
-                                        <label class="btn btn-outline btn-sm" style="cursor: pointer;">
+                                        <label class="btn btn-outline btn-sm" style="cursor: pointer; background: white;">
                                             📷 Fotoğraf Değiştir
                                             <input type="file" accept="image/*" onchange="previewStaffSettingsPhoto(event)" style="display: none;">
                                         </label>
                                         <input type="hidden" id="staffSettingsPhotoData" value="${staff.photo || ''}">
                                     </div>
                                     
-                                    <div class="form-group">
+                                    <div class="form-group" style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem;">
                                         <label class="form-label">Ad Soyad</label>
                                         <input type="text" id="staffSettingsName" class="form-input" value="${staff.name}" required>
                                     </div>
                                     
-                                    <div class="form-group">
+                                    <div class="form-group" style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem;">
                                         <label class="form-label">Telefon</label>
                                         <input type="tel" id="staffSettingsPhone" class="form-input" value="${staff.phone || ''}" placeholder="5XX XXX XX XX">
                                         <small style="color: var(--slate-500);">WhatsApp bildirimleri için kullanılır</small>
                                     </div>
                                     
-                                    <div class="form-group">
+                                    <div class="form-group" style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem;">
                                         <label class="form-label">Uzmanlık / Rol</label>
                                         <input type="text" id="staffSettingsRole" class="form-input" value="${staff.role || staff.title || ''}" placeholder="Örn: Berber, Kuaför">
                                     </div>
                                     
-                                    <div class="form-group">
+                                    <div class="form-group" style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem;">
                                         <label class="form-label">PIN Değiştir</label>
                                         <input type="password" id="staffSettingsPin" class="form-input" placeholder="Yeni PIN (boş bırakırsan değişmez)" maxlength="6">
                                     </div>
                                 </div>
-                                <div class="modal-footer">
+                                <div class="modal-footer" style="background: rgba(255,255,255,0.7); border-top: 1px solid rgba(16, 185, 129, 0.2);">
                                     <button type="button" class="btn btn-outline" onclick="closeStaffSettingsModal()">İptal</button>
                                     <button type="submit" class="btn btn-primary">💾 Profili Kaydet</button>
                                 </div>
@@ -5326,11 +5309,13 @@
                         
                         <!-- Çalışma Saatleri Tab -->
                         <div id="staffSettingsPanelHours" class="staff-settings-panel" style="display: none;">
-                            <div class="modal-body">
-                                <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 1rem;">Kendi çalışma saatlerinizi belirleyebilirsiniz. Müşteriler sadece bu saatler içinde randevu alabilir.</p>
+                            <div class="modal-body" style="background: transparent;">
+                                <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 1rem; background: white; padding: 0.75rem; border-radius: 8px;">Kendi çalışma saatlerinizi belirleyebilirsiniz. Müşteriler sadece bu saatler içinde randevu alabilir.</p>
+                                <div style="background: white; padding: 1rem; border-radius: 8px;">
                                 ${hoursHtml}
+                                </div>
                             </div>
-                            <div class="modal-footer">
+                            <div class="modal-footer" style="background: rgba(255,255,255,0.7); border-top: 1px solid rgba(16, 185, 129, 0.2);">
                                 <button type="button" class="btn btn-outline" onclick="closeStaffSettingsModal()">İptal</button>
                                 <button type="button" class="btn btn-primary" onclick="saveStaffWorkingHours()">💾 Saatleri Kaydet</button>
                             </div>
@@ -5338,11 +5323,13 @@
                         
                         <!-- Hizmetler Tab -->
                         <div id="staffSettingsPanelServices" class="staff-settings-panel" style="display: none;">
-                            <div class="modal-body">
-                                <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 1rem;">⚠️ Fiyat değişiklikleri salon sahibinin onayına tabidir. Değişiklik talepleri salon sahibine bildirilir.</p>
+                            <div class="modal-body" style="background: transparent;">
+                                <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 1rem; background: #fef3c7; padding: 0.75rem; border-radius: 8px; border: 1px solid #f59e0b;">⚠️ Fiyat değişiklikleri salon sahibinin onayına tabidir. Değişiklik talepleri salon sahibine bildirilir.</p>
+                                <div style="background: white; padding: 1rem; border-radius: 8px;">
                                 ${services.length === 0 ? '<p style="text-align: center; color: var(--slate-400); padding: 2rem;">Henüz hizmet eklenmemiş</p>' : servicesHtml}
+                                </div>
                             </div>
-                            <div class="modal-footer">
+                            <div class="modal-footer" style="background: rgba(255,255,255,0.7); border-top: 1px solid rgba(16, 185, 129, 0.2);">
                                 <button type="button" class="btn btn-outline" onclick="closeStaffSettingsModal()">İptal</button>
                                 <button type="button" class="btn btn-primary" onclick="requestServicePriceChange()">📤 Fiyat Değişikliği Talep Et</button>
                             </div>
