@@ -2925,6 +2925,7 @@
                     serviceDuration: selectedService.duration || 30,
                     staffId: selectedStaff?.id || selectedStaff?.name || null,
                     staffName: selectedStaff?.name || 'Belirtilmedi',
+                    staffPhone: selectedStaff?.phone || null, // Personel telefonu - WhatsApp için
                     date: selectedDate.toISOString().split('T')[0],
                     time: selectedTime,
                     status: 'pending',
@@ -3065,8 +3066,12 @@ Görüşmek üzere!`;
 
 Onayınızı bekliyorum. Teşekkürler!`;
             
-            const phone = (apt.salonPhone || '').replace(/\D/g, '');
-            if (phone) window.open(`https://wa.me/90${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+            // Personel telefonu varsa ona, yoksa salon telefonuna yönlendir
+            const staffPhone = (apt.staffPhone || '').replace(/\D/g, '');
+            const salonPhone = (apt.salonPhone || '').replace(/\D/g, '');
+            const targetPhone = staffPhone || salonPhone;
+            
+            if (targetPhone) window.open(`https://wa.me/90${targetPhone}?text=${encodeURIComponent(msg)}`, '_blank');
         }
         
         function closeSuccessModal() {

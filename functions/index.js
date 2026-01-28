@@ -16,7 +16,8 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 
 /**
- * Yeni randevu oluşturulduğunda salon sahibine VE ilgili personele bildirim gönder
+ * Yeni randevu oluşturulduğunda SADECE ilgili personele bildirim gönder
+ * Eğer personel atanmamışsa salon sahibine gönder
  * Firestore trigger: appointments koleksiyonu dinlenir
  */
 exports.onNewAppointment = functions
@@ -44,15 +45,14 @@ exports.onNewAppointment = functions
                 }
             }
             
-            // 1. Salon sahibinin push token'larını al
-            const ownerTokensSnapshot = await db.collection('push_tokens')
-                .where('salonId', '==', appointment.salonId)
-                .where('userType', '==', 'salon')
-                .get();
+            // Token listesi oluştur
+            const tokenSet = new Set();
+            const tokens = [];
             
-            // 2. İlgili personelin push token'larını al (staffId veya staffName ile)
-            let staffTokensSnapshot = null;
+            // ÖNCE: Personel atanmışsa SADECE personele gönder
             if (appointment.staffId || appointment.staffName) {
+                let staffTokensSnapshot = null;
+                
                 // staffId ile dene
                 if (appointment.staffId) {
                     staffTokensSnapshot = await db.collection('push_tokens')
@@ -70,38 +70,41 @@ exports.onNewAppointment = functions
                         .where('staffName', '==', appointment.staffName)
                         .get();
                 }
+                
+                // Personel tokenları ekle
+                if (staffTokensSnapshot && !staffTokensSnapshot.empty) {
+                    staffTokensSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.token && !tokenSet.has(data.token)) {
+                            tokenSet.add(data.token);
+                            tokens.push({ token: data.token, type: 'staff', staffName: data.staffName });
+                        }
+                    });
+                    console.log('[Push] Sadece personele gönderilecek:', tokens.length);
+                }
             }
             
-            // Token listesi oluştur (tekrar eden tokenları önle)
-            const tokenSet = new Set();
-            const tokens = [];
-            
-            // Salon sahibi tokenları
-            ownerTokensSnapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.token && !tokenSet.has(data.token)) {
-                    tokenSet.add(data.token);
-                    tokens.push({ token: data.token, type: 'salon' });
-                }
-            });
-            
-            // Personel tokenları
-            if (staffTokensSnapshot && !staffTokensSnapshot.empty) {
-                staffTokensSnapshot.forEach(doc => {
+            // Personel bulunamadıysa veya personel atanmamışsa salon sahibine gönder
+            if (tokens.length === 0) {
+                const ownerTokensSnapshot = await db.collection('push_tokens')
+                    .where('salonId', '==', appointment.salonId)
+                    .where('userType', '==', 'salon')
+                    .get();
+                
+                ownerTokensSnapshot.forEach(doc => {
                     const data = doc.data();
                     if (data.token && !tokenSet.has(data.token)) {
                         tokenSet.add(data.token);
-                        tokens.push({ token: data.token, type: 'staff', staffName: data.staffName });
+                        tokens.push({ token: data.token, type: 'salon' });
                     }
                 });
+                console.log('[Push] Salon sahibine gönderilecek:', tokens.length);
             }
             
             if (tokens.length === 0) {
                 console.log('[Push] Hiç token bulunamadı:', appointment.salonId);
                 return null;
             }
-            
-            console.log('[Push] Gönderilecek token sayısı:', tokens.length, '(Salon:', ownerTokensSnapshot.size, ', Personel:', staffTokensSnapshot?.size || 0, ')');
             
             // Bildirim içeriği
             const notification = {

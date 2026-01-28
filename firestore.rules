@@ -2,11 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Salonlar - Herkes okuyabilir, sadece sahibi yazabilir
+    // Salonlar - Herkes okuyabilir, yazma için kısıtlama
     match /salons/{salonId} {
       allow read: if true;
       allow create: if true; // Kayıt için
-      allow update, delete: if true; // PIN doğrulaması frontend'de yapılıyor
+      allow update: if true; // PIN doğrulaması frontend'de yapılıyor
+      allow delete: if false; // Silme devre dışı - güvenlik için
       
       // Salon altındaki personeller
       match /staff/{staffId} {
@@ -23,6 +24,21 @@ service cloud.firestore {
         allow read, write: if true;
       }
       
+      // Salon altındaki müşteriler
+      match /customers/{customerId} {
+        allow read, write: if true;
+      }
+      
+      // Personel blokları (izin/kapalı günler)
+      match /staffBlocks/{blockId} {
+        allow read, write: if true;
+      }
+      
+      // Müşteri notları
+      match /customerNotes/{noteId} {
+        allow read, write: if true;
+      }
+      
       // Salon altındaki yorumlar
       match /reviews/{reviewId} {
         allow read: if true;
@@ -33,7 +49,10 @@ service cloud.firestore {
     
     // Randevular (global collection)
     match /appointments/{appointmentId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false; // Silme yerine iptal durumu kullan
     }
     
     // Müşteriler
@@ -54,7 +73,9 @@ service cloud.firestore {
     
     // Push Notification Tokens
     match /push_tokens/{tokenId} {
-      allow read, write: if true;
+      allow read: if false; // Sadece cloud functions erişebilir
+      allow create, update: if true; // Token kaydı için
+      allow delete: if false;
     }
     
     // Notifications Queue (Cloud Functions tarafından işlenir)

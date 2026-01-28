@@ -3823,10 +3823,13 @@
             <!-- Customers Tab (Müşteri Geçmişi) -->
             <div id="tab-customers" class="tab-content">
                 <div class="settings-section">
-                    <div class="settings-title">
-                        👥 Müşteri Geçmişi
-                        <div class="customer-search" style="margin-left: auto;">
-                            <input type="text" id="customerSearch" class="form-input" placeholder="Müşteri ara..." style="width: 200px; padding: 0.5rem 0.75rem;" onkeyup="searchCustomers()">
+                    <div class="settings-title" style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        👥 Müşteri Yönetimi
+                        <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+                            <input type="text" id="customerSearch" class="form-input" placeholder="Müşteri ara..." style="width: 180px; padding: 0.5rem 0.75rem;" onkeyup="searchCustomers()">
+                            <button class="btn btn-primary btn-sm" onclick="openAddCustomerModal()">
+                                + Müşteri Ekle
+                            </button>
                         </div>
                     </div>
                     <div id="customerList" class="customer-list">
@@ -4192,19 +4195,51 @@
             </div>
             <div class="modal-body" style="padding: 1.25rem;">
                 <form id="manualAppointmentForm" onsubmit="submitManualAppointment(event)">
-                    <!-- Müşteri Bilgileri -->
-                    <div style="margin-bottom: 1rem;">
-                        <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
-                            👤 Müşteri Adı *
-                        </label>
-                        <input type="text" id="manualCustomerName" class="form-input" placeholder="Ad Soyad" required style="width: 100%;">
+                    <!-- Müşteri Seçim/Ekleme Toggle -->
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <button type="button" id="btnExistingCustomer" class="btn btn-primary btn-sm" onclick="toggleCustomerMode('existing')" style="flex: 1;">
+                            📋 Kayıtlı Müşteri
+                        </button>
+                        <button type="button" id="btnNewCustomer" class="btn btn-outline btn-sm" onclick="toggleCustomerMode('new')" style="flex: 1;">
+                            ➕ Yeni Müşteri
+                        </button>
                     </div>
                     
-                    <div style="margin-bottom: 1rem;">
+                    <!-- Kayıtlı Müşteri Seçimi -->
+                    <div id="existingCustomerSection" style="margin-bottom: 1rem;">
                         <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
-                            📱 Telefon *
+                            🔍 Müşteri Ara/Seç
                         </label>
-                        <input type="tel" id="manualCustomerPhone" class="form-input" placeholder="5XX XXX XX XX" required style="width: 100%;">
+                        <input type="text" id="customerSearchInput" class="form-input" placeholder="İsim veya telefon ile ara..." oninput="searchSavedCustomers()" style="width: 100%; margin-bottom: 0.5rem;">
+                        <div id="customerSearchResults" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--slate-200); border-radius: 8px; display: none;">
+                            <!-- Arama sonuçları buraya gelecek -->
+                        </div>
+                        <div id="selectedCustomerInfo" style="display: none; background: var(--success-light); padding: 0.75rem; border-radius: 8px; margin-top: 0.5rem;">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <div id="selectedCustomerName" style="font-weight: 600; color: var(--slate-800);"></div>
+                                    <div id="selectedCustomerPhone" style="font-size: 0.85rem; color: var(--slate-500);"></div>
+                                </div>
+                                <button type="button" onclick="clearSelectedCustomer()" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2rem;">✕</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Yeni Müşteri Bilgileri -->
+                    <div id="newCustomerSection" style="display: none;">
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                                👤 Müşteri Adı *
+                            </label>
+                            <input type="text" id="manualCustomerName" class="form-input" placeholder="Ad Soyad" style="width: 100%;">
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700); display: block; margin-bottom: 0.35rem;">
+                                📱 Telefon *
+                            </label>
+                            <input type="tel" id="manualCustomerPhone" class="form-input" placeholder="5XX XXX XX XX" style="width: 100%;">
+                        </div>
                     </div>
                     
                     <!-- Tarih ve Saat -->
@@ -4398,14 +4433,26 @@
     
     <!-- Staff Modal -->
     <div id="staffModal" class="modal-overlay">
-        <div class="modal">
+        <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
                 <h3 class="modal-title" id="staffModalTitle">Personel Ekle</h3>
                 <button class="modal-close" onclick="closeStaffModal()">×</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                 <form id="staffForm" onsubmit="saveStaff(event)">
                     <input type="hidden" id="staffIndex">
+                    
+                    <!-- Profil Fotoğrafı -->
+                    <div class="form-group" style="text-align: center; margin-bottom: 1.5rem;">
+                        <div id="staffPhotoPreview" style="width: 80px; height: 80px; border-radius: 50%; background: var(--slate-200); margin: 0 auto 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; border: 3px solid var(--primary);">
+                            👤
+                        </div>
+                        <input type="file" id="staffPhotoInput" accept="image/*" onchange="previewStaffPhoto(event)" style="display: none;">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('staffPhotoInput').click()">
+                            📷 Fotoğraf Ekle
+                        </button>
+                    </div>
+                    
                     <div class="form-group">
                         <label class="form-label">Ad Soyad</label>
                         <input type="text" id="staffName" class="form-input" required placeholder="Ahmet Yılmaz">
@@ -4417,8 +4464,19 @@
                     <div class="form-group">
                         <label class="form-label">Telefon <span style="color: var(--danger);">*</span></label>
                         <input type="tel" id="staffPhone" class="form-input" required placeholder="05XX XXX XX XX">
-                        <p class="form-hint">Giriş için zorunlu</p>
+                        <p class="form-hint">Giriş ve WhatsApp bildirimleri için</p>
                     </div>
+                    
+                    <!-- Rol Seçimi -->
+                    <div class="form-group">
+                        <label class="form-label">Rol</label>
+                        <select id="staffRole" class="form-input" onchange="toggleStaffRoleOptions()">
+                            <option value="staff">👨‍💼 Personel (Tam yetki)</option>
+                            <option value="assistant">📋 Asistan (Sadece randevu takibi)</option>
+                        </select>
+                        <p class="form-hint" id="staffRoleHint">Personel: Kendi randevularını yönetebilir</p>
+                    </div>
+                    
                     <div class="form-group" id="staffPinGroup" style="display: none;">
                         <label class="form-label">Giriş PIN Kodu</label>
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -4428,11 +4486,104 @@
                         </div>
                         <p class="form-hint">6 haneli PIN kodu (giriş için gerekli)</p>
                     </div>
+                    
+                    <!-- Personel Çalışma Saatleri (düzenlenebilir) -->
+                    <div class="form-group" id="staffHoursSection" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--slate-200);">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                            🕐 Kişisel Çalışma Saatleri
+                            <span style="font-size: 0.7rem; background: var(--slate-200); padding: 0.15rem 0.5rem; border-radius: 10px;">Opsiyonel</span>
+                        </label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Boş bırakılırsa salon saatleri kullanılır</p>
+                        
+                        <div id="staffWorkingHours" style="display: grid; gap: 0.5rem; font-size: 0.85rem;">
+                            <!-- JavaScript ile doldurulacak -->
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeStaffModal()">İptal</button>
                 <button class="btn btn-primary" onclick="document.getElementById('staffForm').requestSubmit()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Müşteri Ekleme Modal -->
+    <div id="addCustomerModal" class="modal-overlay">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;">
+                <h3 class="modal-title">➕ Yeni Müşteri Ekle</h3>
+                <button class="modal-close" onclick="closeAddCustomerModal()" style="color: white;">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="addCustomerForm" onsubmit="saveNewCustomer(event)">
+                    <div class="form-group">
+                        <label class="form-label">👤 Ad Soyad *</label>
+                        <input type="text" id="newCustomerName" class="form-input" required placeholder="Müşteri adı">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📱 Telefon *</label>
+                        <input type="tel" id="newCustomerPhone" class="form-input" required placeholder="5XX XXX XX XX">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📧 E-posta (Opsiyonel)</label>
+                        <input type="email" id="newCustomerEmail" class="form-input" placeholder="ornek@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📝 Not (Opsiyonel)</label>
+                        <textarea id="newCustomerNote" class="form-input" rows="2" placeholder="Müşteri hakkında notlar..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeAddCustomerModal()">İptal</button>
+                <button class="btn btn-primary" onclick="document.getElementById('addCustomerForm').requestSubmit()">Müşteri Ekle</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Personel Kapalı Gün/Saat Modal -->
+    <div id="staffBlockModal" class="modal-overlay">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                <h3 class="modal-title">🚫 İzin / Kapalı Gün Ekle</h3>
+                <button class="modal-close" onclick="closeStaffBlockModal()" style="color: white;">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="staffBlockForm" onsubmit="saveStaffBlock(event)">
+                    <input type="hidden" id="blockStaffId">
+                    <div class="form-group">
+                        <label class="form-label">📅 Tarih *</label>
+                        <input type="date" id="blockDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Blok Türü</label>
+                        <select id="blockType" class="form-input" onchange="toggleBlockTimeInputs()">
+                            <option value="full_day">🚫 Tüm Gün Kapalı</option>
+                            <option value="time_range">🕐 Belirli Saatler</option>
+                        </select>
+                    </div>
+                    <div id="blockTimeInputs" style="display: none;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label">Başlangıç</label>
+                                <input type="time" id="blockStartTime" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Bitiş</label>
+                                <input type="time" id="blockEndTime" class="form-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📝 Sebep (Opsiyonel)</label>
+                        <input type="text" id="blockReason" class="form-input" placeholder="Örn: İzin, Hasta, Toplantı">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeStaffBlockModal()">İptal</button>
+                <button class="btn btn-primary" onclick="document.getElementById('staffBlockForm').requestSubmit()">Kaydet</button>
             </div>
         </div>
     </div>
@@ -5914,10 +6065,10 @@ Görüşmek üzere!`;
 
 Merhaba ${apt.customerName},
 
-Maalesef ${formatDateDisplay(apt.date)} tarihli ${apt.time} saatindeki randevunuz iptal edilmiştir.
+${formatDateDisplay(apt.date)} ${apt.time} randevunuz iptal edildi.
 
-Yeni bir randevu almak için:
-${window.location.origin}/berber/${salon.slug}/
+Yeni randevu için:
+${window.location.origin}/berber/salon/?slug=${salon.slug}
 
 ${salon.name}`;
             }
@@ -8820,6 +8971,9 @@ END:VEVENT
         
         // ========== MANUEL RANDEVU EKLEME ==========
         
+        let selectedCustomerForAppointment = null;
+        let customerMode = 'existing'; // 'existing' veya 'new'
+        
         function openManualAppointmentModal() {
             const modal = document.getElementById('manualAppointmentModal');
             
@@ -8842,8 +8996,120 @@ END:VEVENT
             document.getElementById('manualCustomerPhone').value = '';
             document.getElementById('manualAppointmentNote').value = '';
             document.getElementById('manualServicePrice').textContent = '';
+            document.getElementById('customerSearchInput').value = '';
+            document.getElementById('customerSearchResults').style.display = 'none';
+            
+            // Müşteri seçimini sıfırla
+            selectedCustomerForAppointment = null;
+            document.getElementById('selectedCustomerInfo').style.display = 'none';
+            
+            // Varsayılan olarak kayıtlı müşteri modu
+            toggleCustomerMode('existing');
             
             modal.classList.add('active');
+        }
+        
+        function toggleCustomerMode(mode) {
+            customerMode = mode;
+            const existingSection = document.getElementById('existingCustomerSection');
+            const newSection = document.getElementById('newCustomerSection');
+            const btnExisting = document.getElementById('btnExistingCustomer');
+            const btnNew = document.getElementById('btnNewCustomer');
+            
+            if (mode === 'existing') {
+                existingSection.style.display = 'block';
+                newSection.style.display = 'none';
+                btnExisting.className = 'btn btn-primary btn-sm';
+                btnNew.className = 'btn btn-outline btn-sm';
+            } else {
+                existingSection.style.display = 'none';
+                newSection.style.display = 'block';
+                btnExisting.className = 'btn btn-outline btn-sm';
+                btnNew.className = 'btn btn-primary btn-sm';
+                // Seçili müşteriyi temizle
+                selectedCustomerForAppointment = null;
+            }
+        }
+        
+        function searchSavedCustomers() {
+            const query = document.getElementById('customerSearchInput').value.toLowerCase().trim();
+            const resultsContainer = document.getElementById('customerSearchResults');
+            
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+            
+            // Kayıtlı müşterilerden ara (allCustomers veya randevulardan)
+            const customers = getAllSavedCustomers();
+            const filtered = customers.filter(c => 
+                c.name.toLowerCase().includes(query) || 
+                c.phone.includes(query.replace(/\D/g, ''))
+            ).slice(0, 10);
+            
+            if (filtered.length === 0) {
+                resultsContainer.innerHTML = '<div style="padding: 0.75rem; color: var(--slate-500); text-align: center; font-size: 0.85rem;">Sonuç bulunamadı</div>';
+            } else {
+                resultsContainer.innerHTML = filtered.map(c => `
+                    <div onclick="selectCustomerForAppointment('${escapeHtml(c.name)}', '${c.phone}')" 
+                         style="padding: 0.75rem; cursor: pointer; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s;"
+                         onmouseover="this.style.background='var(--slate-50)'" 
+                         onmouseout="this.style.background='white'">
+                        <div style="width: 36px; height: 36px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem;">
+                            ${c.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--slate-800);">${escapeHtml(c.name)}</div>
+                            <div style="font-size: 0.8rem; color: var(--slate-500);">📱 0${c.phone}</div>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--slate-400);">${c.appointmentCount || 0} randevu</div>
+                    </div>
+                `).join('');
+            }
+            
+            resultsContainer.style.display = 'block';
+        }
+        
+        function selectCustomerForAppointment(name, phone) {
+            selectedCustomerForAppointment = { name, phone };
+            
+            document.getElementById('selectedCustomerName').textContent = name;
+            document.getElementById('selectedCustomerPhone').textContent = '📱 0' + phone;
+            document.getElementById('selectedCustomerInfo').style.display = 'block';
+            document.getElementById('customerSearchResults').style.display = 'none';
+            document.getElementById('customerSearchInput').value = '';
+        }
+        
+        function clearSelectedCustomer() {
+            selectedCustomerForAppointment = null;
+            document.getElementById('selectedCustomerInfo').style.display = 'none';
+            document.getElementById('customerSearchInput').value = '';
+        }
+        
+        function getAllSavedCustomers() {
+            // Önce allCustomers'ı kontrol et
+            if (allCustomers && allCustomers.length > 0) {
+                return allCustomers;
+            }
+            
+            // Yoksa randevulardan müşterileri çıkar
+            const customerMap = new Map();
+            appointments.forEach(apt => {
+                if (apt.customerPhone) {
+                    const phone = apt.customerPhone.replace(/\D/g, '');
+                    if (!customerMap.has(phone)) {
+                        customerMap.set(phone, {
+                            name: apt.customerName || 'İsimsiz',
+                            phone: phone,
+                            appointmentCount: 1
+                        });
+                    } else {
+                        customerMap.get(phone).appointmentCount++;
+                    }
+                }
+            });
+            
+            return Array.from(customerMap.values()).sort((a, b) => b.appointmentCount - a.appointmentCount);
         }
         
         function closeManualAppointmentModal() {
@@ -8933,8 +9199,17 @@ END:VEVENT
         async function submitManualAppointment(event) {
             event.preventDefault();
             
-            const customerName = document.getElementById('manualCustomerName').value.trim();
-            const customerPhone = document.getElementById('manualCustomerPhone').value.replace(/\D/g, '');
+            // Müşteri bilgilerini al - seçilen veya yeni girilen
+            let customerName, customerPhone;
+            
+            if (customerMode === 'existing' && selectedCustomerForAppointment) {
+                customerName = selectedCustomerForAppointment.name;
+                customerPhone = selectedCustomerForAppointment.phone;
+            } else {
+                customerName = document.getElementById('manualCustomerName').value.trim();
+                customerPhone = document.getElementById('manualCustomerPhone').value.replace(/\D/g, '');
+            }
+            
             const date = document.getElementById('manualAppointmentDate').value;
             const time = document.getElementById('manualAppointmentTime').value;
             const serviceSelect = document.getElementById('manualServiceSelect');
@@ -9010,6 +9285,211 @@ END:VEVENT
                 console.error('Manuel randevu ekleme hatası:', error);
                 showToast('Randevu eklenirken hata oluştu', 'error');
             }
+        }
+        
+        // ========== MÜŞTERİ YÖNETİMİ ==========
+        
+        function openAddCustomerModal() {
+            document.getElementById('newCustomerName').value = '';
+            document.getElementById('newCustomerPhone').value = '';
+            document.getElementById('newCustomerEmail').value = '';
+            document.getElementById('newCustomerNote').value = '';
+            document.getElementById('addCustomerModal').classList.add('active');
+        }
+        
+        function closeAddCustomerModal() {
+            document.getElementById('addCustomerModal').classList.remove('active');
+        }
+        
+        async function saveNewCustomer(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('newCustomerName').value.trim();
+            const phone = document.getElementById('newCustomerPhone').value.replace(/\D/g, '');
+            const email = document.getElementById('newCustomerEmail').value.trim();
+            const note = document.getElementById('newCustomerNote').value.trim();
+            
+            if (!name || !phone) {
+                showToast('Ad ve telefon zorunludur', 'error');
+                return;
+            }
+            
+            try {
+                // Müşteriyi Firestore'a kaydet
+                const customerData = {
+                    name: name,
+                    phone: phone,
+                    email: email || null,
+                    note: note || null,
+                    salonId: salon.id,
+                    createdAt: new Date().toISOString(),
+                    createdBy: isStaffMode ? currentStaffName : 'salon_owner'
+                };
+                
+                await db.collection('salons').doc(salon.id).collection('customers').doc(phone).set(customerData, { merge: true });
+                
+                // Lokal listeye ekle
+                allCustomers.push({
+                    name: name,
+                    phone: phone,
+                    email: email,
+                    note: note,
+                    appointments: [],
+                    totalSpent: 0
+                });
+                
+                closeAddCustomerModal();
+                renderCustomers();
+                showToast('Müşteri başarıyla eklendi ✅', 'success');
+                
+            } catch (error) {
+                console.error('Müşteri ekleme hatası:', error);
+                showToast('Müşteri eklenirken hata oluştu', 'error');
+            }
+        }
+        
+        // ========== PERSONEL FOTO VE ROL ==========
+        
+        let staffPhotoBase64 = null;
+        
+        function previewStaffPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (file.size > 1 * 1024 * 1024) { // 1MB limit
+                showToast('Fotoğraf maksimum 1MB olmalı', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                staffPhotoBase64 = e.target.result;
+                document.getElementById('staffPhotoPreview').innerHTML = `<img src="${staffPhotoBase64}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function toggleStaffRoleOptions() {
+            const role = document.getElementById('staffRole').value;
+            const hint = document.getElementById('staffRoleHint');
+            
+            if (role === 'assistant') {
+                hint.textContent = 'Asistan: Tüm randevuları görebilir, düzenleyebilir ama silme/iptal yetkisi yoktur';
+            } else {
+                hint.textContent = 'Personel: Kendi randevularını tam yetki ile yönetebilir';
+            }
+        }
+        
+        function populateStaffWorkingHours(staffHours = null) {
+            const container = document.getElementById('staffWorkingHours');
+            const dayLabels = { mon: 'Pzt', tue: 'Sal', wed: 'Çar', thu: 'Per', fri: 'Cum', sat: 'Cmt', sun: 'Paz' };
+            const salonHours = salon?.workingHours || {};
+            
+            container.innerHTML = Object.entries(dayLabels).map(([key, label]) => {
+                const dayHours = staffHours?.[key] || salonHours[key] || { open: '09:00', close: '20:00', active: true };
+                const isActive = staffHours?.[key]?.active ?? dayHours.active;
+                
+                return `
+                    <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0;">
+                        <input type="checkbox" id="staffHours-${key}-active" ${isActive ? 'checked' : ''} style="width: 16px; height: 16px;">
+                        <span style="width: 35px; font-weight: 600;">${label}</span>
+                        <input type="time" id="staffHours-${key}-open" value="${dayHours.open}" style="padding: 0.25rem; border: 1px solid var(--slate-200); border-radius: 4px; font-size: 0.8rem;">
+                        <span>-</span>
+                        <input type="time" id="staffHours-${key}-close" value="${dayHours.close}" style="padding: 0.25rem; border: 1px solid var(--slate-200); border-radius: 4px; font-size: 0.8rem;">
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getStaffWorkingHoursFromForm() {
+            const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            const hours = {};
+            
+            dayKeys.forEach(key => {
+                const activeEl = document.getElementById(`staffHours-${key}-active`);
+                const openEl = document.getElementById(`staffHours-${key}-open`);
+                const closeEl = document.getElementById(`staffHours-${key}-close`);
+                
+                if (activeEl && openEl && closeEl) {
+                    hours[key] = {
+                        active: activeEl.checked,
+                        open: openEl.value,
+                        close: closeEl.value
+                    };
+                }
+            });
+            
+            return hours;
+        }
+        
+        // ========== PERSONEL KAPALI GÜN/SAAT ==========
+        
+        function openStaffBlockModal(staffId) {
+            document.getElementById('blockStaffId').value = staffId;
+            document.getElementById('blockDate').value = '';
+            document.getElementById('blockDate').min = new Date().toISOString().split('T')[0];
+            document.getElementById('blockType').value = 'full_day';
+            document.getElementById('blockReason').value = '';
+            document.getElementById('blockTimeInputs').style.display = 'none';
+            document.getElementById('staffBlockModal').classList.add('active');
+        }
+        
+        function closeStaffBlockModal() {
+            document.getElementById('staffBlockModal').classList.remove('active');
+        }
+        
+        function toggleBlockTimeInputs() {
+            const type = document.getElementById('blockType').value;
+            document.getElementById('blockTimeInputs').style.display = type === 'time_range' ? 'block' : 'none';
+        }
+        
+        async function saveStaffBlock(event) {
+            event.preventDefault();
+            
+            const staffId = document.getElementById('blockStaffId').value;
+            const date = document.getElementById('blockDate').value;
+            const type = document.getElementById('blockType').value;
+            const reason = document.getElementById('blockReason').value.trim();
+            
+            if (!date) {
+                showToast('Tarih seçin', 'error');
+                return;
+            }
+            
+            const blockData = {
+                staffId: staffId,
+                date: date,
+                type: type,
+                reason: reason || null,
+                createdAt: new Date().toISOString()
+            };
+            
+            if (type === 'time_range') {
+                blockData.startTime = document.getElementById('blockStartTime').value;
+                blockData.endTime = document.getElementById('blockEndTime').value;
+                
+                if (!blockData.startTime || !blockData.endTime) {
+                    showToast('Başlangıç ve bitiş saati girin', 'error');
+                    return;
+                }
+            }
+            
+            try {
+                await db.collection('salons').doc(salon.id).collection('staffBlocks').add(blockData);
+                closeStaffBlockModal();
+                showToast('İzin/Kapalı gün eklendi ✅', 'success');
+            } catch (error) {
+                console.error('Block ekleme hatası:', error);
+                showToast('Hata oluştu', 'error');
+            }
+        }
+        
+        // ========== WHATSAPP PERSONEL YÖNLENDIRME ==========
+        
+        function getStaffPhoneForWhatsApp(staffId, staffName) {
+            const staff = salon?.staff || [];
+            const targetStaff = staff.find(s => s.id === staffId || s.name === staffName);
+            return targetStaff?.phone || salon.phone; // Personel telefonu yoksa salon telefonu
         }
         
         // Start

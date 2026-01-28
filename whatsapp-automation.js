@@ -12,65 +12,46 @@ const WhatsAppManager = {
         // ----- MÜŞTERİYE GÖNDERİLECEK MESAJLAR -----
         
         // Randevu onaylandığında müşteriye
-        appointmentConfirmed: (data) => `✅ *Randevunuz Onaylandı!*
+        appointmentConfirmed: (data) => `✅ *Randevu Onaylandı*
 
-Merhaba ${data.customerName},
-*${data.salonName}* randevunuz onaylanmıştır.
+${data.customerName}, ${data.salonName} randevunuz:
 
-📅 *Tarih:* ${data.date}
-⏰ *Saat:* ${data.time}
-✂️ *Hizmet:* ${data.service}
-💰 *Ücret:* ${data.price} ₺
+📅 ${data.date} ⏰ ${data.time}
+✂️ ${data.service} 💰 ${data.price}₺
 
-📍 *Adres:* ${data.address || 'Salon adresine ulaşın'}
+📍 ${data.address || 'Adres için salonu arayın'}
 
-🔗 *Randevu Detayı:*
-${data.appointmentUrl}
-
-_Görüşmek üzere!_ 💈`,
+Görüşmek üzere! 💈`,
 
         // Randevu hatırlatma (24 saat önce)
-        reminder24h: (data) => `⏰ *Randevu Hatırlatması*
+        reminder24h: (data) => `⏰ *Yarın Randevunuz Var*
 
-Merhaba ${data.customerName},
-Yarın *${data.salonName}* salonunda randevunuz var!
+${data.customerName}, ${data.salonName}
 
-📅 *Tarih:* ${data.date}
-⏰ *Saat:* ${data.time}
-✂️ *Hizmet:* ${data.service}
+📅 ${data.date} ⏰ ${data.time}
+✂️ ${data.service}
 
-✅ Geliyorum → ${data.confirmUrl}
-❌ İptal Et → ${data.cancelUrl}
-
-📍 *Konum:* ${data.mapsUrl || 'Salon adresine ulaşın'}
-
-_Sizi bekliyoruz!_ 💈`,
+Sizi bekliyoruz! 💈`,
 
         // Randevu hatırlatma (2 saat önce)
-        reminder2h: (data) => `🔔 *Son Hatırlatma!*
+        reminder2h: (data) => `🔔 *2 Saat Kaldı!*
 
-${data.customerName}, randevunuza *2 saat* kaldı!
+${data.customerName}, ${data.salonName} randevunuz ${data.time}'de.
 
-⏰ *Saat:* ${data.time}
-📍 *Salon:* ${data.salonName}
-
-✅ Yoldayım → ${data.confirmUrl}
-
-_Görüşmek üzere!_`,
+Görüşürüz! 💈`,
 
         // Randevu reddedildi/iptal edildi
         appointmentCancelled: (data) => `❌ *Randevunuz İptal Edildi*
 
 Merhaba ${data.customerName},
-Maalesef *${data.salonName}* salonundaki randevunuz iptal edilmiştir.
 
-📅 *İptal Edilen:* ${data.date} - ${data.time}
-📝 *Sebep:* ${data.reason || 'Belirtilmedi'}
+${data.salonName} ${data.date} ${data.time} randevunuz iptal edildi.
+${data.reason ? `Sebep: ${data.reason}` : ''}
 
-Yeni randevu almak için:
+Yeni randevu için:
 ${data.bookingUrl}
 
-_Anlayışınız için teşekkür ederiz._`,
+Anlayışınız için teşekkürler.`,
 
         // Randevu saati değişti
         appointmentRescheduled: (data) => `📅 *Randevu Saatiniz Değişti*
