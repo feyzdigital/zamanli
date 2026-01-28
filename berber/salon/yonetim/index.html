@@ -1439,6 +1439,19 @@
             box-shadow: var(--shadow);
         }
         
+        /* Settings Tab arka planı - açık yeşil */
+        #tab-settings {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            min-height: 100%;
+        }
+        
+        #tab-settings .settings-section {
+            background: white;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
         .settings-title {
             font-size: 1.1rem;
             font-weight: 700;
@@ -3538,18 +3551,8 @@
             </div>
             <h2 class="login-title">Salon Yönetim Paneli</h2>
             
-            <!-- Giriş Tipi Seçimi -->
-            <div class="login-tabs" style="display:flex;gap:0.5rem;margin-bottom:1.25rem;">
-                <button type="button" id="loginTabOwner" class="login-tab-btn active" onclick="switchLoginTypePanel('owner')">
-                    👔 Salon Sahibi
-                </button>
-                <button type="button" id="loginTabStaff" class="login-tab-btn" onclick="switchLoginTypePanel('staff')">
-                    ✂️ Personel
-                </button>
-            </div>
-            
-            <p id="loginDesc" style="text-align:center;font-size:0.85rem;color:var(--slate-500);margin-bottom:1rem;">
-                Salon yönetim panelinize erişin
+            <p style="text-align:center;font-size:0.85rem;color:var(--slate-500);margin-bottom:1.25rem;">
+                Telefon numaranız ve PIN kodunuz ile giriş yapın
             </p>
             
             <form id="loginForm" onsubmit="handleLogin(event)">
@@ -3559,7 +3562,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">PIN Kodu</label>
-                    <input type="password" id="loginPin" class="form-input" placeholder="4-6 haneli PIN" maxlength="6" required>
+                    <input type="password" id="loginPin" class="form-input" placeholder="PIN kodunuz" maxlength="6" required>
                     <p id="loginError" class="form-error" style="display: none;"></p>
                 </div>
                 <button type="submit" class="btn btn-primary">
@@ -3572,31 +3575,6 @@
             </p>
         </div>
     </div>
-    
-    <style>
-        .login-tabs { display: flex; gap: 0.5rem; }
-        .login-tab-btn {
-            flex: 1;
-            padding: 0.75rem;
-            border: 2px solid var(--slate-200);
-            background: white;
-            color: var(--slate-500);
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .login-tab-btn.active {
-            border-color: var(--primary);
-            background: var(--primary);
-            color: white;
-        }
-        .login-tab-btn:hover:not(.active) {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-    </style>
     
     <!-- Dashboard -->
     <div id="dashboard" class="dashboard">
@@ -5554,27 +5532,7 @@
             window.location.href = '/berber/';
         }
         
-        // Handle Login
-        // Login tipi: 'owner' veya 'staff'
-        let panelLoginType = 'owner';
-        
-        function switchLoginTypePanel(type) {
-            panelLoginType = type;
-            const ownerTab = document.getElementById('loginTabOwner');
-            const staffTab = document.getElementById('loginTabStaff');
-            const desc = document.getElementById('loginDesc');
-            
-            if (type === 'owner') {
-                ownerTab.classList.add('active');
-                staffTab.classList.remove('active');
-                desc.textContent = 'Salon yönetim panelinize erişin';
-            } else {
-                staffTab.classList.add('active');
-                ownerTab.classList.remove('active');
-                desc.textContent = 'Personel panelinize erişin';
-            }
-        }
-        
+        // Handle Login - Otomatik rol tanıma
         async function handleLogin(e) {
             e.preventDefault();
             
@@ -5587,122 +5545,65 @@
                 return;
             }
             
-            let slug = getSlugFromUrl();
-            let salonData = null;
-            let salonId = null;
+            if (!pin || pin.length < 4) {
+                showLoginError('Geçerli bir PIN kodu girin');
+                return;
+            }
             
             try {
-                console.log('[Login] Giriş denemesi:', panelLoginType, 'telefon:', inputPhone);
+                console.log('[Login] Giriş denemesi, telefon:', inputPhone);
                 
-                // URL'de slug varsa önce o salonla dene
-                if (slug) {
-                    const snapshot = await db.collection('salons')
-                        .where('slug', '==', slug)
-                        .limit(1)
-                        .get();
+                // Tüm aktif salonları getir
+                const allSalonsSnapshot = await db.collection('salons')
+                    .where('active', '==', true)
+                    .get();
+                
+                // Her salonda kontrol et
+                for (const doc of allSalonsSnapshot.docs) {
+                    const salonData = doc.data();
+                    const salonId = doc.id;
                     
-                    if (!snapshot.empty) {
-                        salonData = snapshot.docs[0].data();
-                        salonId = snapshot.docs[0].id;
-                    }
-                }
-                
-                // PERSONEL GİRİŞİ
-                if (panelLoginType === 'staff') {
-                    // URL'de slug varsa sadece o salondaki personeli ara
-                    if (salonData) {
-                        const staffArray = salonData.staff || [];
-                        const matchedStaff = staffArray.find(s => {
-                            const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                            return staffPhone === inputPhone && s.pin === pin;
-                        });
+                    // 1. ÖNCE SALON SAHİBİ KONTROLÜ - Salon telefonu ile eşleşiyor mu?
+                    const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
+                    if (salonPhone === inputPhone) {
+                        // Salon PIN kontrolü
+                        let pinValid = salonData.pin === pin;
                         
-                        if (matchedStaff) {
+                        // Owner staff PIN kontrolü
+                        if (!pinValid && salonData.staff) {
+                            const owner = salonData.staff.find(s => s.isOwner === true);
+                            if (owner && owner.pin === pin) pinValid = true;
+                        }
+                        
+                        if (pinValid) {
+                            // SALON SAHİBİ GİRİŞİ
+                            loginAsOwner(salonId, salonData);
+                            return;
+                        }
+                    }
+                    
+                    // 2. PERSONEL KONTROLÜ - Personel telefonu ve PIN ile eşleşiyor mu?
+                    const staffArray = salonData.staff || [];
+                    const matchedStaff = staffArray.find(s => {
+                        const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
+                        return staffPhone === inputPhone && s.pin === pin;
+                    });
+                    
+                    if (matchedStaff) {
+                        // PERSONEL GİRİŞİ (isOwner olsa bile personel olarak gir, ama tam yetki ver)
+                        if (matchedStaff.isOwner) {
+                            // Sahip personel olarak giriş yapıyorsa, salon sahibi yetkisi ver
+                            loginAsOwner(salonId, salonData);
+                        } else {
+                            // Normal personel girişi
                             loginAsStaff(matchedStaff, salonId, salonData);
-                            return;
                         }
-                    }
-                    
-                    // URL'de slug yoksa veya bulunamadıysa, tüm salonlarda personel ara
-                    console.log('[Login] Tüm salonlarda personel aranıyor...');
-                    const allSalonsSnapshot = await db.collection('salons')
-                        .where('active', '==', true)
-                        .get();
-                    
-                    for (const doc of allSalonsSnapshot.docs) {
-                        const data = doc.data();
-                        const staffArray = data.staff || [];
-                        
-                        const matchedStaff = staffArray.find(s => {
-                            const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                            return staffPhone === inputPhone && s.pin === pin;
-                        });
-                        
-                        if (matchedStaff) {
-                            loginAsStaff(matchedStaff, doc.id, data);
-                            return;
-                        }
-                    }
-                    
-                    showLoginError('Telefon veya PIN hatalı');
-                    return;
-                }
-                
-                // SALON SAHİBİ GİRİŞİ
-                // URL'de slug yoksa telefon ile salon ara
-                if (!salonData) {
-                    console.log('[Login] Telefon ile salon aranıyor...');
-                    const phoneSnapshot = await db.collection('salons')
-                        .where('active', '==', true)
-                        .get();
-                    
-                    for (const doc of phoneSnapshot.docs) {
-                        const data = doc.data();
-                        const salonPhone = (data.phone || '').replace(/\D/g, '').slice(-10);
-                        if (salonPhone === inputPhone) {
-                            salonData = data;
-                            salonId = doc.id;
-                            slug = data.slug;
-                            break;
-                        }
+                        return;
                     }
                 }
                 
-                if (!salonData) {
-                    showLoginError('Bu telefon numarası ile kayıtlı salon bulunamadı');
-                    return;
-                }
-                
-                // Telefon kontrolü
-                const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
-                if (salonPhone !== inputPhone) {
-                    showLoginError('Telefon numarası eşleşmiyor');
-                    return;
-                }
-                
-                // PIN kontrolü - salon PIN veya owner staff PIN
-                let pinValid = salonData.pin === pin;
-                if (!pinValid && salonData.staff) {
-                    const owner = salonData.staff.find(s => s.isOwner === true);
-                    if (owner && owner.pin === pin) pinValid = true;
-                }
-                
-                if (!pinValid) {
-                    showLoginError('PIN kodu yanlış');
-                    return;
-                }
-                
-                // Save session
-                const session = {
-                    slug: slug,
-                    salonId: salonId,
-                    expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                };
-                localStorage.setItem('salonSession', JSON.stringify(session));
-                
-                salon = { id: salonId, ...salonData };
-                showDashboard();
-                console.log('[Login] Salon sahibi girişi başarılı');
+                // Hiçbir eşleşme bulunamadı
+                showLoginError('Telefon numarası veya PIN hatalı');
                 
             } catch (error) {
                 console.error('Login error:', error);
@@ -5710,16 +5611,39 @@
             }
         }
         
+        // Salon sahibi olarak giriş yap
+        function loginAsOwner(salonId, salonData) {
+            const session = {
+                type: 'owner',
+                slug: salonData.slug,
+                salonId: salonId,
+                expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün
+            };
+            localStorage.setItem('salonSession', JSON.stringify(session));
+            
+            // Personel modunu kapat
+            isStaffMode = false;
+            currentStaffId = null;
+            currentStaffName = null;
+            
+            salon = { id: salonId, ...salonData };
+            showDashboard();
+            console.log('[Login] Salon sahibi girişi başarılı:', salonData.name);
+        }
+        
         // Personel olarak giriş yap
         function loginAsStaff(matchedStaff, salonId, salonData) {
             const staffSession = {
+                type: 'staff',
                 staffId: matchedStaff.id || matchedStaff.name,
                 staffName: matchedStaff.name,
+                staffRole: matchedStaff.role || 'Personel',
                 salonId: salonId,
                 salonSlug: salonData.slug,
-                expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
+                expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün
             };
             localStorage.setItem('staffSession', JSON.stringify(staffSession));
+            localStorage.removeItem('salonSession'); // Eski owner session'ı temizle
             
             // Personel modunu aktif et
             isStaffMode = true;
@@ -7629,10 +7553,25 @@ Panel: ${window.location.href}`);
             if (!select) return;
             
             const staff = salon?.staff || [];
-            select.innerHTML = '<option value="all">Tüm Personel</option>';
-            staff.forEach(s => {
-                select.innerHTML += `<option value="${s.id || s.name}">${escapeHtml(s.name)}</option>`;
-            });
+            
+            // Personel modunda sadece kendi adı gösterilsin, Tüm Personel seçeneği olmasın
+            if (isStaffMode) {
+                select.innerHTML = '';
+                const currentStaff = staff.find(s => s.id === currentStaffId || s.name === currentStaffName);
+                if (currentStaff) {
+                    select.innerHTML = `<option value="${currentStaff.id || currentStaff.name}" selected>${escapeHtml(currentStaff.name)}</option>`;
+                }
+                select.disabled = true;
+                select.style.opacity = '0.7';
+            } else {
+                // Salon sahibi için Tüm Personel seçeneği
+                select.innerHTML = '<option value="all">Tüm Personel</option>';
+                staff.forEach(s => {
+                    select.innerHTML += `<option value="${s.id || s.name}">${escapeHtml(s.name)}</option>`;
+                });
+                select.disabled = false;
+                select.style.opacity = '1';
+            }
         }
         
         function filterByStaff() {
@@ -8828,10 +8767,24 @@ Panel: ${window.location.href}`);
             
             const filterNew = document.getElementById('calendarStaffFilterNew');
             if (filterNew) {
-                filterNew.innerHTML = '<option value="all">Tüm Personel</option>';
-                staff.forEach(s => {
-                    filterNew.innerHTML += `<option value="${s.id || s.name}">${escapeHtml(s.name)}</option>`;
-                });
+                // Personel modunda sadece kendi adı gösterilsin
+                if (isStaffMode) {
+                    filterNew.innerHTML = '';
+                    const currentStaff = staff.find(s => s.id === currentStaffId || s.name === currentStaffName);
+                    if (currentStaff) {
+                        filterNew.innerHTML = `<option value="${currentStaff.id || currentStaff.name}" selected>${escapeHtml(currentStaff.name)}</option>`;
+                    }
+                    filterNew.disabled = true;
+                    filterNew.style.opacity = '0.7';
+                } else {
+                    // Salon sahibi için Tüm Personel seçeneği
+                    filterNew.innerHTML = '<option value="all">Tüm Personel</option>';
+                    staff.forEach(s => {
+                        filterNew.innerHTML += `<option value="${s.id || s.name}">${escapeHtml(s.name)}</option>`;
+                    });
+                    filterNew.disabled = false;
+                    filterNew.style.opacity = '1';
+                }
             }
         }
         
