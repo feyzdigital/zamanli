@@ -1,4 +1,4 @@
-// Zamanli Service Worker v4.0
+// Zamanli Service Worker v5.0
 // Cache stratejisi: HTML/JS/CSS = Network Only, Diğer = Network First
 // Firebase Cloud Messaging entegrasyonu
 
@@ -82,7 +82,7 @@ messaging.onBackgroundMessage(async (payload) => {
     return;
 });
 
-const CACHE_VERSION = 'v4.1';
+const CACHE_VERSION = 'v5.0';
 const CACHE_NAME = `zamanli-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
