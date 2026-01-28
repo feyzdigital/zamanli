@@ -5035,8 +5035,17 @@
         }
         
         // Load Salon Data
+        // Global salon listener referansı
+        let salonListener = null;
+        
         async function loadSalonData(slug) {
             try {
+                // Önce mevcut listener'ı temizle
+                if (salonListener) {
+                    salonListener();
+                    salonListener = null;
+                }
+                
                 const snapshot = await db.collection('salons')
                     .where('slug', '==', slug)
                     .limit(1)
@@ -5048,6 +5057,9 @@
                         ...snapshot.docs[0].data()
                     };
                     
+                    // Real-time salon dinleme başlat
+                    startSalonListener(snapshot.docs[0].id);
+                    
                     // Push notification banner'ı kontrol et
                     if (typeof checkAndShowPushBanner === 'function') {
                         checkAndShowPushBanner(salon.id);
@@ -5056,6 +5068,73 @@
             } catch (error) {
                 console.error('Error loading salon:', error);
             }
+        }
+        
+        // Salon verilerini real-time dinle (admin güncellemeleri için)
+        function startSalonListener(salonId) {
+            if (salonListener) {
+                salonListener();
+            }
+            
+            console.log('[Salon Listener] Real-time dinleme başlatılıyor:', salonId);
+            
+            salonListener = db.collection('salons').doc(salonId)
+                .onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const oldSalon = { ...salon };
+                        salon = { id: doc.id, ...doc.data() };
+                        
+                        // Değişiklik varsa UI'ı güncelle
+                        const hasChanges = JSON.stringify(oldSalon) !== JSON.stringify(salon);
+                        if (hasChanges) {
+                            console.log('[Salon Listener] Salon güncellendi:', salon.name);
+                            
+                            // Header'ı güncelle
+                            updateSalonHeader();
+                            
+                            // Hizmetleri güncelle
+                            if (typeof renderServices === 'function') renderServices();
+                            
+                            // Personelleri güncelle
+                            if (typeof renderStaff === 'function') renderStaff();
+                            
+                            // Çalışma saatlerini güncelle
+                            if (typeof renderWorkingHours === 'function') renderWorkingHours();
+                            
+                            // Ayarları güncelle
+                            if (typeof loadSettings === 'function') loadSettings();
+                            
+                            // Bildirim göster (ilk yükleme değilse)
+                            if (oldSalon.id) {
+                                showToast('Salon bilgileri güncellendi', 'info');
+                            }
+                        }
+                    }
+                }, (error) => {
+                    console.error('[Salon Listener] Hata:', error);
+                });
+        }
+        
+        // Salon header'ını güncelle
+        function updateSalonHeader() {
+            const headerName = document.getElementById('headerSalonName');
+            const headerAvatar = document.getElementById('headerAvatar');
+            const mobileMenuSalonName = document.getElementById('mobileMenuSalonName');
+            const mobileMenuAvatar = document.getElementById('mobileMenuAvatar');
+            
+            if (isSuperAdminMode) {
+                if (headerName) headerName.textContent = salon.name + ' (Admin)';
+                if (headerAvatar) headerAvatar.textContent = '👑';
+            } else if (isStaffMode) {
+                if (headerName) headerName.textContent = currentStaffName + ' (Personel)';
+                if (headerAvatar) headerAvatar.textContent = currentStaffName.charAt(0).toUpperCase();
+            } else {
+                if (headerName) headerName.textContent = salon.name;
+                if (headerAvatar) headerAvatar.textContent = salon.name.charAt(0).toUpperCase();
+            }
+            
+            if (mobileMenuSalonName) mobileMenuSalonName.textContent = salon.name;
+            if (mobileMenuAvatar) mobileMenuAvatar.textContent = salon.name.charAt(0).toUpperCase();
         }
         
         // Load Appointments
