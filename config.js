@@ -95,23 +95,40 @@ const APP_CONFIG = {
         }
     },
     packages: {
+        free: { 
+            name: 'Ücretsiz', 
+            price: 0, 
+            color: 'slate',
+            limits: { monthlyAppointments: 30, staff: 1, smsNotifications: false, whatsappNotifications: true },
+            features: ['Temel randevu yönetimi', 'WhatsApp bildirimleri', 'Online rezervasyon']
+        },
         starter: { 
             name: 'Starter', 
-            price: 0, 
-            limits: { monthlyAppointments: 50, staff: 1 },
-            features: ['Temel randevu yönetimi', '1 personel']
+            price: 99, 
+            color: 'blue',
+            limits: { monthlyAppointments: 100, staff: 2, smsNotifications: false, whatsappNotifications: true, emailNotifications: true, customerManagement: true },
+            features: ['100 aylık randevu', '2 personel', 'Müşteri yönetimi', 'E-posta bildirimleri']
         },
         pro: { 
             name: 'Pro', 
-            price: 349, 
-            limits: { monthlyAppointments: 500, staff: 5 },
-            features: ['Sınırsız randevu', '5 personel', 'WhatsApp bildirimleri', 'Raporlar']
+            price: 249, 
+            color: 'primary',
+            limits: { monthlyAppointments: 500, staff: 5, smsNotifications: true, whatsappNotifications: true, emailNotifications: true, customerManagement: true, reports: true, customBranding: true },
+            features: ['500 aylık randevu', '5 personel', 'SMS bildirimleri', 'Raporlar', 'Özel marka']
         },
         business: { 
             name: 'Business', 
-            price: 699, 
-            limits: { monthlyAppointments: -1, staff: -1 },
-            features: ['Her şey sınırsız', 'Öncelikli destek', 'Öne çıkan listeleme']
+            price: 499, 
+            color: 'success',
+            limits: { monthlyAppointments: -1, staff: -1, smsNotifications: true, whatsappNotifications: true, emailNotifications: true, customerManagement: true, reports: true, multiLocation: true, customBranding: true, prioritySupport: true },
+            features: ['Sınırsız randevu', 'Sınırsız personel', 'Çoklu şube', 'Öncelikli destek', 'Tüm özellikler']
+        },
+        enterprise: { 
+            name: 'Enterprise', 
+            price: 999, 
+            color: 'purple',
+            limits: { monthlyAppointments: -1, staff: -1, smsNotifications: true, whatsappNotifications: true, emailNotifications: true, customerManagement: true, reports: true, multiLocation: true, customBranding: true, prioritySupport: true, apiAccess: true, whiteLabel: true },
+            features: ['Tüm Business özellikleri', 'API erişimi', 'White-label', 'Özel entegrasyonlar']
         }
     },
     workingHours: {
