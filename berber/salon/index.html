@@ -2192,9 +2192,27 @@
                 
                 // Personel girişi ise staff bilgisini URL'e ekle
                 if (isStaffLogin && staffInfo) {
+                    // Personel session'ı kaydet
+                    sessionStorage.setItem('staffSession', JSON.stringify({
+                        staffId: staffInfo.id || staffInfo.name,
+                        staffName: staffInfo.name,
+                        salonId: foundSalonId,
+                        salonSlug: slug
+                    }));
+                    console.log('[Login] Personel session kaydedildi');
+                    
                     const staffId = staffInfo.id || staffInfo.name;
                     window.location.href = `/berber/salon/yonetim/?slug=${slug}&staff=${encodeURIComponent(staffId)}&staffName=${encodeURIComponent(staffInfo.name)}`;
                 } else {
+                    // Salon sahibi session'ı kaydet
+                    const session = {
+                        slug: slug,
+                        salonId: foundSalonId,
+                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
+                    };
+                    localStorage.setItem('salonSession', JSON.stringify(session));
+                    console.log('[Login] Salon session kaydedildi:', session);
+                    
                     window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
                 }
                 

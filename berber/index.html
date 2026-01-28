@@ -1946,6 +1946,17 @@
                 
                 if (foundSalon) {
                     const slug = foundSalon.slug || foundSalonId;
+                    
+                    // SESSION KAYDET - Yönetim paneli bunu kontrol ediyor
+                    const session = {
+                        slug: slug,
+                        salonId: foundSalonId,
+                        phone: phone10,
+                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
+                    };
+                    localStorage.setItem('salonSession', JSON.stringify(session));
+                    console.log('[Login] Session kaydedildi:', session);
+                    
                     window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
                 } else {
                     errorEl.textContent = 'Bu telefon numarasına kayıtlı salon bulunamadı';

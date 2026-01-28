@@ -4506,28 +4506,53 @@
                 
                 // 3. Normal salon sahibi girişi
                 const savedSession = localStorage.getItem('salonSession');
+                console.log('[Init] Session kontrol:', savedSession ? 'var' : 'yok', 'slug:', slug);
+                
                 if (savedSession) {
                     try {
                         const session = JSON.parse(savedSession);
+                        console.log('[Init] Session:', session);
                         
                         // Session süresi dolmamışsa
                         if (session.expires > Date.now()) {
-                            // URL'de slug varsa eşleşmeli, yoksa session'dan al
+                            // URL'de slug varsa session'daki slug ile eşleşmeli
+                            // URL'de slug yoksa session'daki slug'ı kullan
                             const targetSlug = slug || session.slug;
                             
-                            if (targetSlug && (slug === targetSlug || !slug)) {
+                            // Slug kontrolü: URL'deki slug session'daki ile eşleşmeli VEYA URL'de slug olmamalı
+                            const slugMatch = !slug || slug === session.slug;
+                            
+                            if (targetSlug && slugMatch) {
+                                console.log('[Init] Salon yükleniyor:', targetSlug);
                                 await loadSalonData(targetSlug);
                                 if (salon) {
+                                    console.log('[Init] Dashboard gösteriliyor');
                                     showDashboard();
                                     return;
                                 }
+                            } else if (slug && slug !== session.slug) {
+                                // Farklı bir salon için giriş yapılmak isteniyor, yeni session gerekli
+                                console.log('[Init] Farklı salon, yeni giriş gerekli');
+                                localStorage.removeItem('salonSession');
                             }
                         } else {
                             // Session süresi dolmuş, temizle
+                            console.log('[Init] Session süresi dolmuş');
                             localStorage.removeItem('salonSession');
                         }
                     } catch (e) {
+                        console.error('[Init] Session parse hatası:', e);
                         localStorage.removeItem('salonSession');
+                    }
+                }
+                
+                // 4. URL'de slug varsa direkt o salon için giriş yap (session olmadan)
+                if (slug) {
+                    console.log('[Init] URL slug ile salon yükleniyor:', slug);
+                    await loadSalonData(slug);
+                    if (salon) {
+                        // Salon bulundu ama session yok - login ekranı göster
+                        console.log('[Init] Salon bulundu, login gerekli');
                     }
                 }
                 
