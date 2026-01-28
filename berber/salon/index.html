@@ -2308,7 +2308,12 @@
                 
                 // Hizmetler - önce ana dokümandan
                 if (salon.services && salon.services.length > 0) {
-                    salon.serviceList = salon.services.filter(s => s.active !== false && s.active !== 'false');
+                    salon.serviceList = salon.services
+                        .filter(s => s.active !== false && s.active !== 'false')
+                        .map((s, index) => ({
+                            ...s,
+                            id: s.id || s.name || `service-${index}` // ID yoksa name veya index kullan
+                        }));
                 } else {
                     // Fallback: subcollection'dan
                     const svcSnap = await db.collection('salons').doc(salon.id).collection('services').get();
@@ -2319,7 +2324,10 @@
                 
                 // Personel - önce ana dokümandan
                 if (salon.staff && salon.staff.length > 0) {
-                    salon.staffList = salon.staff;
+                    salon.staffList = salon.staff.map((s, index) => ({
+                        ...s,
+                        id: s.id || s.name || `staff-${index}` // ID yoksa name veya index kullan
+                    }));
                 } else {
                     // Fallback: subcollection'dan
                     const staffSnap = await db.collection('salons').doc(salon.id).collection('staff').get();
@@ -2327,6 +2335,8 @@
                 }
                 
                 console.log('Salon loaded:', salon.name, 'Staff:', salon.staffList.length, 'Services:', salon.serviceList.length);
+                console.log('Staff IDs:', salon.staffList.map(s => s.id));
+                console.log('Service IDs:', salon.serviceList.map(s => s.id));
                 
                 // Randevuları yükle (hata olursa devam et)
                 await loadExistingAppointments();
@@ -2793,21 +2803,59 @@
         
         function updateBooking() {
             const prevService = selectedService;
-            selectedService = salon.serviceList.find(s => s.id === document.getElementById('serviceSelect').value) || null;
-            const staffId = document.getElementById('staffSelect').value;
-            selectedStaff = staffId ? salon.staffList.find(s => s.id === staffId) : null;
+            const prevServiceId = prevService?.id;
             
-            // Hizmet değiştiyse slotları yeniden render et (süre farklı olabilir)
-            if (prevService?.id !== selectedService?.id && selectedDate && selectedStaff) {
-                selectedTime = null;
+            // Service select'ten seçili hizmeti bul
+            const serviceSelectValue = document.getElementById('serviceSelect').value;
+            if (serviceSelectValue) {
+                selectedService = salon.serviceList.find(s => 
+                    s.id === serviceSelectValue || s.name === serviceSelectValue || String(s.id) === String(serviceSelectValue)
+                ) || null;
+            } else {
+                selectedService = null;
+            }
+            
+            // staffId ile çoklu eşleşme yöntemi kullan
+            const staffId = document.getElementById('staffSelect').value;
+            if (staffId) {
+                selectedStaff = salon.staffList.find(s => 
+                    s.id === staffId || s.name === staffId || String(s.id) === String(staffId)
+                );
+            } else {
+                selectedStaff = null;
+            }
+            
+            console.log('[Booking] updateBooking:', {
+                staffId,
+                serviceSelectValue,
+                selectedStaff: selectedStaff?.name,
+                selectedService: selectedService?.name,
+                selectedDate: selectedDate ? selectedDate.toISOString().split('T')[0] : null,
+                selectedTime
+            });
+            
+            // Hizmet değiştiyse VE tarih seçiliyse slotları yeniden render et (süre farklı olabilir)
+            // AMA selectedTime'ı sıfırlama - kullanıcı zaten saat seçmişse kalsın
+            if (prevServiceId !== selectedService?.id && selectedDate && selectedStaff) {
+                // Sadece slotları yeniden render et, selectedTime'a dokunma
                 renderTimeSlots();
             }
             
             // Personel VE hizmet VE tarih VE saat seçili olmalı
-            const isComplete = selectedStaff && selectedService && selectedDate && selectedTime;
+            const isComplete = !!(selectedStaff && selectedService && selectedDate && selectedTime);
             
-            document.getElementById('bookBtn').disabled = !isComplete;
-            document.getElementById('bookingSummary').style.display = isComplete ? 'block' : 'none';
+            console.log('[Booking] isComplete:', isComplete, {
+                hasStaff: !!selectedStaff,
+                hasService: !!selectedService,
+                hasDate: !!selectedDate,
+                hasTime: !!selectedTime
+            });
+            
+            const bookBtn = document.getElementById('bookBtn');
+            const bookingSummary = document.getElementById('bookingSummary');
+            
+            bookBtn.disabled = !isComplete;
+            bookingSummary.style.display = isComplete ? 'block' : 'none';
             
             if (isComplete) {
                 document.getElementById('summaryStaff').textContent = selectedStaff.name;
