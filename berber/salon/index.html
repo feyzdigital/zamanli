@@ -2613,6 +2613,16 @@
             el.classList.add('selected');
             selectedDate = new Date(el.dataset.date);
             selectedTime = null;
+            
+            // selectedStaff'ı güncel tut
+            const staffId = document.getElementById('staffSelect').value;
+            if (staffId && !selectedStaff) {
+                selectedStaff = salon.staffList.find(s => 
+                    s.id === staffId || s.name === staffId || String(s.id) === String(staffId)
+                );
+                console.log('[Booking] selectDate - selectedStaff güncellendi:', selectedStaff?.name);
+            }
+            
             renderTimeSlots();
             updateBooking();
         }

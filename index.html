@@ -311,11 +311,17 @@
     <div id="loginModal" class="login-modal-overlay">
         <div class="login-modal">
             <div class="login-modal-header">
-                <h3>🔑 Salon Girişi</h3>
+                <h3>🔑 Giriş Yap</h3>
                 <button class="login-modal-close" onclick="closeLoginModal()">×</button>
             </div>
             <div class="login-modal-body">
-                <p class="login-modal-desc">Yönetim panelinize erişmek için giriş yapın</p>
+                <!-- Giriş Tipi Seçimi -->
+                <div class="login-tabs" style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                    <button type="button" id="loginTabOwner" class="login-tab active" onclick="switchLoginType('owner')" style="flex:1;padding:0.75rem;border:2px solid #10B981;background:#10B981;color:white;border-radius:8px;font-weight:600;cursor:pointer;">👔 Salon Sahibi</button>
+                    <button type="button" id="loginTabStaff" class="login-tab" onclick="switchLoginType('staff')" style="flex:1;padding:0.75rem;border:2px solid #e2e8f0;background:white;color:#64748b;border-radius:8px;font-weight:600;cursor:pointer;">✂️ Personel</button>
+                </div>
+                
+                <p class="login-modal-desc" id="loginDesc">Salon yönetim panelinize erişmek için giriş yapın</p>
                 <form onsubmit="handleLogin(event)">
                     <div class="login-form-group">
                         <label>Telefon Numarası</label>
@@ -415,6 +421,34 @@
             document.getElementById('loginPin').value = '';
         }
         
+        // Giriş tipi: 'owner' veya 'staff'
+        let loginType = 'owner';
+        
+        function switchLoginType(type) {
+            loginType = type;
+            const ownerTab = document.getElementById('loginTabOwner');
+            const staffTab = document.getElementById('loginTabStaff');
+            const desc = document.getElementById('loginDesc');
+            
+            if (type === 'owner') {
+                ownerTab.style.background = '#10B981';
+                ownerTab.style.color = 'white';
+                ownerTab.style.borderColor = '#10B981';
+                staffTab.style.background = 'white';
+                staffTab.style.color = '#64748b';
+                staffTab.style.borderColor = '#e2e8f0';
+                desc.textContent = 'Salon yönetim panelinize erişmek için giriş yapın';
+            } else {
+                staffTab.style.background = '#10B981';
+                staffTab.style.color = 'white';
+                staffTab.style.borderColor = '#10B981';
+                ownerTab.style.background = 'white';
+                ownerTab.style.color = '#64748b';
+                ownerTab.style.borderColor = '#e2e8f0';
+                desc.textContent = 'Personel panelinize erişmek için giriş yapın';
+            }
+        }
+        
         async function handleLogin(e) {
             e.preventDefault();
             
@@ -434,55 +468,80 @@
             errorEl.classList.remove('show');
             
             try {
-                // Firebase'den salon bul
                 const db = firebase.firestore();
+                const phone10 = phone.slice(-10);
+                const phone11 = '0' + phone10;
                 
-                // Telefon formatları: 5XXXXXXXXX (10 hane) ve 05XXXXXXXXX (11 hane)
-                const phone10 = phone.slice(-10); // Son 10 hane
-                const phone11 = '0' + phone10; // Başına 0 ekle
-                
-                // Önce phone field'ı ile dene
-                let snapshot = await db.collection('salons')
-                    .where('phone', '==', phone11)
-                    .limit(1)
-                    .get();
-                
-                // Bulunamadıysa 10 haneli dene
-                if (snapshot.empty) {
-                    snapshot = await db.collection('salons')
-                        .where('phone', '==', phone10)
-                        .limit(1)
-                        .get();
+                if (loginType === 'staff') {
+                    // PERSONEL GİRİŞİ
+                    const salonsSnap = await db.collection('salons').get();
+                    
+                    let foundStaff = null;
+                    let foundSalon = null;
+                    
+                    for (const salonDoc of salonsSnap.docs) {
+                        const salonData = salonDoc.data();
+                        const staffArray = salonData.staff || [];
+                        
+                        const matchedStaff = staffArray.find(s => {
+                            const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
+                            return staffPhone === phone10 && s.pin === pin;
+                        });
+                        
+                        if (matchedStaff) {
+                            foundStaff = { id: matchedStaff.id || matchedStaff.name, ...matchedStaff };
+                            foundSalon = { id: salonDoc.id, ...salonData };
+                            break;
+                        }
+                    }
+                    
+                    if (foundStaff && foundSalon) {
+                        sessionStorage.setItem('staffSession', JSON.stringify({
+                            staffId: foundStaff.id,
+                            staffName: foundStaff.name,
+                            salonId: foundSalon.id,
+                            salonSlug: foundSalon.slug
+                        }));
+                        window.location.href = `/berber/salon/yonetim/?slug=${foundSalon.slug}&staff=${encodeURIComponent(foundStaff.id)}&staffName=${encodeURIComponent(foundStaff.name)}`;
+                    } else {
+                        throw new Error('Telefon veya PIN hatalı');
+                    }
+                    
+                } else {
+                    // SALON SAHİBİ GİRİŞİ
+                    let snapshot = await db.collection('salons').where('phone', '==', phone11).limit(1).get();
+                    if (snapshot.empty) snapshot = await db.collection('salons').where('phone', '==', phone10).limit(1).get();
+                    if (snapshot.empty) snapshot = await db.collection('salons').where('mobilePhone', '==', phone11).limit(1).get();
+                    if (snapshot.empty) snapshot = await db.collection('salons').where('mobilePhone', '==', phone10).limit(1).get();
+                    
+                    if (snapshot.empty) {
+                        throw new Error('Bu telefon numarası ile kayıtlı salon bulunamadı');
+                    }
+                    
+                    const salon = snapshot.docs[0].data();
+                    
+                    // PIN kontrolü - salon PIN veya owner staff PIN
+                    let pinValid = salon.pin === pin;
+                    if (!pinValid && salon.staff) {
+                        const owner = salon.staff.find(s => s.isOwner === true);
+                        if (owner && owner.pin === pin) pinValid = true;
+                    }
+                    
+                    if (!pinValid) {
+                        throw new Error('PIN kodu hatalı');
+                    }
+                    
+                    // Session kaydet
+                    const slug = salon.slug || snapshot.docs[0].id;
+                    localStorage.setItem('salonSession', JSON.stringify({
+                        slug: slug,
+                        salonId: snapshot.docs[0].id,
+                        phone: phone10,
+                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
+                    }));
+                    
+                    window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
                 }
-                
-                // Hala bulunamadıysa mobilePhone ile dene
-                if (snapshot.empty) {
-                    snapshot = await db.collection('salons')
-                        .where('mobilePhone', '==', phone11)
-                        .limit(1)
-                        .get();
-                }
-                
-                if (snapshot.empty) {
-                    snapshot = await db.collection('salons')
-                        .where('mobilePhone', '==', phone10)
-                        .limit(1)
-                        .get();
-                }
-                
-                if (snapshot.empty) {
-                    throw new Error('Bu telefon numarası ile kayıtlı salon bulunamadı');
-                }
-                
-                const salon = snapshot.docs[0].data();
-                
-                if (salon.pin !== pin) {
-                    throw new Error('PIN kodu hatalı');
-                }
-                
-                // Başarılı - yönetim paneline yönlendir
-                const slug = salon.slug || snapshot.docs[0].id;
-                window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
                 
             } catch (error) {
                 errorEl.textContent = error.message || 'Giriş başarısız';
