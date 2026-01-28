@@ -440,12 +440,41 @@ function showEditStaffModal(staffId) {
 async function updateStaff(staffId) {
     const sid = AdminState.selectedSalon.id;
     try { 
-        // Ana dokümandaki staff array'ini güncelle
-        const currentStaff = AdminState.selectedSalon.staff || [];
-        const staffIndex = currentStaff.findIndex(s => s.id === staffId);
+        // Güncel salon verisini Firestore'dan çek
+        const salonDoc = await db.collection('salons').doc(sid).get();
+        if (!salonDoc.exists) {
+            showToast('Salon bulunamadi', 'error');
+            return;
+        }
+        
+        const salonData = salonDoc.data();
+        let currentStaff = salonData.staff || [];
+        
+        // staffId ile veya index ile bul
+        let staffIndex = currentStaff.findIndex(s => s.id === staffId);
+        
+        // ID ile bulunamadıysa, isim ile bul (eski veriler için)
+        if (staffIndex < 0) {
+            const oldStaff = AdminState.salonStaff.find(s => s.id === staffId);
+            if (oldStaff) {
+                staffIndex = currentStaff.findIndex(s => s.name === oldStaff.name);
+            }
+        }
+        
+        // Hala bulunamadıysa index olarak dene
+        if (staffIndex < 0) {
+            const numIndex = parseInt(staffId.replace('staff-', ''));
+            if (!isNaN(numIndex) && numIndex < currentStaff.length) {
+                staffIndex = numIndex;
+            }
+        }
+        
+        console.log('[Admin] updateStaff - staffId:', staffId, 'staffIndex:', staffIndex, 'currentStaff:', currentStaff);
+        
         if (staffIndex >= 0) {
             currentStaff[staffIndex] = { 
                 ...currentStaff[staffIndex],
+                id: currentStaff[staffIndex].id || staffId,
                 name: document.getElementById('staffName').value.trim(), 
                 role: document.getElementById('staffRole').value.trim(), 
                 title: document.getElementById('staffRole').value.trim(), 
@@ -453,24 +482,54 @@ async function updateStaff(staffId) {
                 active: document.getElementById('staffActive').checked, 
                 updatedAt: new Date().toISOString() 
             };
+            
             await db.collection('salons').doc(sid).update({ staff: currentStaff });
-            AdminState.selectedSalon.staff = currentStaff;
+            console.log('[Admin] Personel güncellendi:', currentStaff[staffIndex].name);
+            showToast('Kaydedildi!', 'success'); 
+        } else {
+            console.error('[Admin] Personel bulunamadi - staffId:', staffId);
+            showToast('Personel bulunamadi', 'error');
         }
-        showToast('Kaydedildi!', 'success'); closeModal(); await loadSalonDetails(sid); 
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+        
+        closeModal(); 
+        await loadSalonDetails(sid); 
+    } catch (e) { 
+        console.error('[Admin] updateStaff hata:', e);
+        showToast('Hata: ' + e.message, 'error'); 
+    }
 }
 
 async function deleteStaff(staffId) {
     if (!confirm('Silmek istediginize emin misiniz?')) return;
     const sid = AdminState.selectedSalon.id;
     try { 
-        // Ana dokümandaki staff array'inden sil
-        const currentStaff = AdminState.selectedSalon.staff || [];
-        const newStaff = currentStaff.filter(s => s.id !== staffId);
+        // Güncel salon verisini Firestore'dan çek
+        const salonDoc = await db.collection('salons').doc(sid).get();
+        if (!salonDoc.exists) {
+            showToast('Salon bulunamadi', 'error');
+            return;
+        }
+        
+        const salonData = salonDoc.data();
+        let currentStaff = salonData.staff || [];
+        
+        // staffId ile veya isim ile bul ve sil
+        const oldStaff = AdminState.salonStaff.find(s => s.id === staffId);
+        let newStaff = currentStaff.filter(s => s.id !== staffId);
+        
+        // ID ile silinemezse isim ile dene
+        if (newStaff.length === currentStaff.length && oldStaff) {
+            newStaff = currentStaff.filter(s => s.name !== oldStaff.name);
+        }
+        
         await db.collection('salons').doc(sid).update({ staff: newStaff });
-        AdminState.selectedSalon.staff = newStaff;
-        showToast('Silindi', 'success'); await loadSalonDetails(sid); 
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+        console.log('[Admin] Personel silindi');
+        showToast('Silindi', 'success'); 
+        await loadSalonDetails(sid); 
+    } catch (e) { 
+        console.error('[Admin] deleteStaff hata:', e);
+        showToast('Hata: ' + e.message, 'error'); 
+    }
 }
 
 function showAddServiceModal() {
@@ -502,12 +561,33 @@ function showEditServiceModal(svcId) {
 async function updateService(svcId) {
     const sid = AdminState.selectedSalon.id;
     try { 
-        // Ana dokümandaki services array'ini güncelle
-        const currentServices = AdminState.selectedSalon.services || [];
-        const svcIndex = currentServices.findIndex(s => s.id === svcId);
+        // Güncel salon verisini Firestore'dan çek
+        const salonDoc = await db.collection('salons').doc(sid).get();
+        if (!salonDoc.exists) {
+            showToast('Salon bulunamadi', 'error');
+            return;
+        }
+        
+        const salonData = salonDoc.data();
+        let currentServices = salonData.services || [];
+        
+        // svcId ile veya isim ile bul
+        let svcIndex = currentServices.findIndex(s => s.id === svcId);
+        
+        // ID ile bulunamadıysa, isim ile bul (eski veriler için)
+        if (svcIndex < 0) {
+            const oldSvc = AdminState.salonServices.find(s => s.id === svcId);
+            if (oldSvc) {
+                svcIndex = currentServices.findIndex(s => s.name === oldSvc.name);
+            }
+        }
+        
+        console.log('[Admin] updateService - svcId:', svcId, 'svcIndex:', svcIndex);
+        
         if (svcIndex >= 0) {
             currentServices[svcIndex] = { 
                 ...currentServices[svcIndex],
+                id: currentServices[svcIndex].id || svcId,
                 name: document.getElementById('svcName').value.trim(), 
                 price: parseInt(document.getElementById('svcPrice').value) || 0, 
                 duration: parseInt(document.getElementById('svcDuration').value) || 30, 
@@ -515,23 +595,51 @@ async function updateService(svcId) {
                 updatedAt: new Date().toISOString() 
             };
             await db.collection('salons').doc(sid).update({ services: currentServices });
-            AdminState.selectedSalon.services = currentServices;
+            console.log('[Admin] Hizmet güncellendi:', currentServices[svcIndex].name);
+            showToast('Kaydedildi!', 'success');
+        } else {
+            showToast('Hizmet bulunamadi', 'error');
         }
-        showToast('Kaydedildi!', 'success'); closeModal(); await loadSalonDetails(sid); 
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+        
+        closeModal(); 
+        await loadSalonDetails(sid); 
+    } catch (e) { 
+        console.error('[Admin] updateService hata:', e);
+        showToast('Hata: ' + e.message, 'error'); 
+    }
 }
 
 async function deleteService(svcId) {
     if (!confirm('Silmek istediginize emin misiniz?')) return;
     const sid = AdminState.selectedSalon.id;
     try { 
-        // Ana dokümandaki services array'inden sil
-        const currentServices = AdminState.selectedSalon.services || [];
-        const newServices = currentServices.filter(s => s.id !== svcId);
+        // Güncel salon verisini Firestore'dan çek
+        const salonDoc = await db.collection('salons').doc(sid).get();
+        if (!salonDoc.exists) {
+            showToast('Salon bulunamadi', 'error');
+            return;
+        }
+        
+        const salonData = salonDoc.data();
+        let currentServices = salonData.services || [];
+        
+        // svcId ile veya isim ile bul ve sil
+        const oldSvc = AdminState.salonServices.find(s => s.id === svcId);
+        let newServices = currentServices.filter(s => s.id !== svcId);
+        
+        // ID ile silinemezse isim ile dene
+        if (newServices.length === currentServices.length && oldSvc) {
+            newServices = currentServices.filter(s => s.name !== oldSvc.name);
+        }
+        
         await db.collection('salons').doc(sid).update({ services: newServices });
-        AdminState.selectedSalon.services = newServices;
-        showToast('Silindi', 'success'); await loadSalonDetails(sid); 
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+        console.log('[Admin] Hizmet silindi');
+        showToast('Silindi', 'success'); 
+        await loadSalonDetails(sid); 
+    } catch (e) { 
+        console.error('[Admin] deleteService hata:', e);
+        showToast('Hata: ' + e.message, 'error'); 
+    }
 }
 
 // PIN Degistirme
