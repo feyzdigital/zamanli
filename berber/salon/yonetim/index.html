@@ -3553,13 +3553,6 @@
             </p>
             
             <form id="loginForm" onsubmit="handleLogin(event)">
-                <!-- Salon ID alanı - URL'de slug yoksa göster -->
-                <div class="form-group" id="salonIdGroup" style="display:none;">
-                    <label class="form-label">Salon Kodu veya Telefon</label>
-                    <input type="text" id="loginSalonId" class="form-input" placeholder="Salon slug veya telefon numarası">
-                    <p style="font-size:0.75rem;color:var(--slate-400);margin-top:0.25rem;">Salon linkinizden alabilirsiniz (örn: benim-salonum)</p>
-                </div>
-                
                 <div class="form-group">
                     <label class="form-label">Telefon Numarası</label>
                     <input type="tel" id="loginPhone" class="form-input" placeholder="05XX XXX XX XX" required>
@@ -4874,13 +4867,6 @@
             document.getElementById('loadingOverlay').style.display = 'none';
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('dashboard').classList.remove('active');
-            
-            // URL'de slug yoksa salon ID alanını göster
-            const slug = getSlugFromUrl();
-            const salonIdGroup = document.getElementById('salonIdGroup');
-            if (salonIdGroup) {
-                salonIdGroup.style.display = slug ? 'none' : 'block';
-            }
         }
         
         // Show Dashboard
@@ -4888,6 +4874,12 @@
             document.getElementById('loadingOverlay').style.display = 'none';
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('dashboard').classList.add('active');
+            
+            // Profilim butonunu varsayılan olarak gizle
+            const staffSettingsBtn = document.getElementById('staffSettingsBtn');
+            if (staffSettingsBtn) {
+                staffSettingsBtn.style.display = 'none';
+            }
             
             // Süper admin modu ise özel banner göster
             if (isSuperAdminMode) {
@@ -4905,9 +4897,15 @@
                 
                 // Personel banner'ı göster
                 showStaffBanner();
+                
+                // Personel için Profilim butonunu göster
+                if (staffSettingsBtn) {
+                    staffSettingsBtn.style.display = '';
+                }
             } else {
                 document.getElementById('headerSalonName').textContent = salon.name;
                 document.getElementById('headerAvatar').textContent = salon.name.charAt(0).toUpperCase();
+                // Salon sahibi için Profilim butonu gizli kalacak
             }
             
             // Mobil menü bilgilerini güncelle
@@ -5225,12 +5223,6 @@
                 indicator.title = 'Personel Modu';
                 indicator.style.cssText = 'margin-left: 0.5rem; font-size: 0.9rem; opacity: 0.7;';
                 header.appendChild(indicator);
-            }
-            
-            // Personel ayarları butonunu göster
-            const staffSettingsBtn = document.getElementById('staffSettingsBtn');
-            if (staffSettingsBtn) {
-                staffSettingsBtn.style.display = '';
             }
         }
         
@@ -5588,22 +5580,22 @@
             
             const phone = document.getElementById('loginPhone').value.trim();
             const pin = document.getElementById('loginPin').value.trim();
-            const salonIdInput = document.getElementById('loginSalonId')?.value.trim() || '';
-            let slug = getSlugFromUrl();
+            const inputPhone = phone.replace(/\D/g, '').slice(-10);
             
-            // URL'de slug yoksa, kullanıcının girdiği salon ID'yi veya telefon ile ara
-            if (!slug && salonIdInput) {
-                // Önce slug olarak dene
-                slug = salonIdInput.toLowerCase().replace(/\s+/g, '-');
+            if (inputPhone.length < 10) {
+                showLoginError('Geçerli bir telefon numarası girin');
+                return;
             }
             
-            // Hala slug yoksa telefon ile salonu bul
+            let slug = getSlugFromUrl();
             let salonData = null;
             let salonId = null;
             
             try {
+                console.log('[Login] Giriş denemesi:', panelLoginType, 'telefon:', inputPhone);
+                
+                // URL'de slug varsa önce o salonla dene
                 if (slug) {
-                    // Slug ile ara
                     const snapshot = await db.collection('salons')
                         .where('slug', '==', slug)
                         .limit(1)
@@ -5612,113 +5604,132 @@
                     if (!snapshot.empty) {
                         salonData = snapshot.docs[0].data();
                         salonId = snapshot.docs[0].id;
-                        slug = salonData.slug;
                     }
                 }
                 
-                // Slug ile bulunamadıysa, telefon numarası ile ara
-                if (!salonData) {
-                    const inputPhone = phone.replace(/\D/g, '').slice(-10);
-                    if (inputPhone.length >= 10) {
-                        // Telefon numarası ile salon ara
-                        const phoneSnapshot = await db.collection('salons')
-                            .where('phone', '>=', inputPhone.slice(0, 7))
-                            .where('phone', '<=', inputPhone.slice(0, 7) + '\uf8ff')
-                            .limit(10)
-                            .get();
+                // PERSONEL GİRİŞİ
+                if (panelLoginType === 'staff') {
+                    // URL'de slug varsa sadece o salondaki personeli ara
+                    if (salonData) {
+                        const staffArray = salonData.staff || [];
+                        const matchedStaff = staffArray.find(s => {
+                            const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
+                            return staffPhone === inputPhone && s.pin === pin;
+                        });
                         
-                        // Tam eşleşme kontrolü
-                        for (const doc of phoneSnapshot.docs) {
-                            const data = doc.data();
-                            const salonPhone = (data.phone || '').replace(/\D/g, '').slice(-10);
-                            if (salonPhone === inputPhone) {
-                                salonData = data;
-                                salonId = doc.id;
-                                slug = data.slug;
-                                break;
-                            }
+                        if (matchedStaff) {
+                            loginAsStaff(matchedStaff, salonId, salonData);
+                            return;
+                        }
+                    }
+                    
+                    // URL'de slug yoksa veya bulunamadıysa, tüm salonlarda personel ara
+                    console.log('[Login] Tüm salonlarda personel aranıyor...');
+                    const allSalonsSnapshot = await db.collection('salons')
+                        .where('active', '==', true)
+                        .get();
+                    
+                    for (const doc of allSalonsSnapshot.docs) {
+                        const data = doc.data();
+                        const staffArray = data.staff || [];
+                        
+                        const matchedStaff = staffArray.find(s => {
+                            const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
+                            return staffPhone === inputPhone && s.pin === pin;
+                        });
+                        
+                        if (matchedStaff) {
+                            loginAsStaff(matchedStaff, doc.id, data);
+                            return;
+                        }
+                    }
+                    
+                    showLoginError('Telefon veya PIN hatalı');
+                    return;
+                }
+                
+                // SALON SAHİBİ GİRİŞİ
+                // URL'de slug yoksa telefon ile salon ara
+                if (!salonData) {
+                    console.log('[Login] Telefon ile salon aranıyor...');
+                    const phoneSnapshot = await db.collection('salons')
+                        .where('active', '==', true)
+                        .get();
+                    
+                    for (const doc of phoneSnapshot.docs) {
+                        const data = doc.data();
+                        const salonPhone = (data.phone || '').replace(/\D/g, '').slice(-10);
+                        if (salonPhone === inputPhone) {
+                            salonData = data;
+                            salonId = doc.id;
+                            slug = data.slug;
+                            break;
                         }
                     }
                 }
                 
                 if (!salonData) {
-                    showLoginError('Salon bulunamadı. Lütfen telefon numaranızı veya salon kodunuzu kontrol edin.');
+                    showLoginError('Bu telefon numarası ile kayıtlı salon bulunamadı');
                     return;
                 }
                 
-                const inputPhone = phone.replace(/\D/g, '').slice(-10);
-                
-                if (panelLoginType === 'staff') {
-                    // PERSONEL GİRİŞİ
-                    const staffArray = salonData.staff || [];
-                    const matchedStaff = staffArray.find(s => {
-                        const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                        return staffPhone === inputPhone && s.pin === pin;
-                    });
-                    
-                    if (matchedStaff) {
-                        // Personel session kaydet - localStorage'a (sayfa yenilemede kaybolmasın)
-                        const staffSession = {
-                            staffId: matchedStaff.id || matchedStaff.name,
-                            staffName: matchedStaff.name,
-                            salonId: salonId,
-                            salonSlug: slug,
-                            expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                        };
-                        localStorage.setItem('staffSession', JSON.stringify(staffSession));
-                        
-                        // Personel modunu aktif et
-                        isStaffMode = true;
-                        currentStaffId = staffSession.staffId;
-                        currentStaffName = staffSession.staffName;
-                        
-                        salon = { id: salonId, ...salonData };
-                        showDashboard();
-                        applyStaffModeRestrictions();
-                        console.log('[Login] Personel girişi başarılı:', matchedStaff.name);
-                    } else {
-                        showLoginError('Telefon veya PIN hatalı');
-                    }
-                    
-                } else {
-                    // SALON SAHİBİ GİRİŞİ
-                    const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
-                    
-                    // Telefon kontrolü
-                    if (salonPhone !== inputPhone) {
-                        showLoginError('Telefon numarası eşleşmiyor');
-                        return;
-                    }
-                    
-                    // PIN kontrolü - salon PIN veya owner staff PIN
-                    let pinValid = salonData.pin === pin;
-                    if (!pinValid && salonData.staff) {
-                        const owner = salonData.staff.find(s => s.isOwner === true);
-                        if (owner && owner.pin === pin) pinValid = true;
-                    }
-                    
-                    if (!pinValid) {
-                        showLoginError('PIN kodu yanlış');
-                        return;
-                    }
-                    
-                    // Save session
-                    const session = {
-                        slug: slug,
-                        salonId: salonId,
-                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                    };
-                    localStorage.setItem('salonSession', JSON.stringify(session));
-                    
-                    salon = { id: salonId, ...salonData };
-                    showDashboard();
-                    console.log('[Login] Salon sahibi girişi başarılı');
+                // Telefon kontrolü
+                const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
+                if (salonPhone !== inputPhone) {
+                    showLoginError('Telefon numarası eşleşmiyor');
+                    return;
                 }
+                
+                // PIN kontrolü - salon PIN veya owner staff PIN
+                let pinValid = salonData.pin === pin;
+                if (!pinValid && salonData.staff) {
+                    const owner = salonData.staff.find(s => s.isOwner === true);
+                    if (owner && owner.pin === pin) pinValid = true;
+                }
+                
+                if (!pinValid) {
+                    showLoginError('PIN kodu yanlış');
+                    return;
+                }
+                
+                // Save session
+                const session = {
+                    slug: slug,
+                    salonId: salonId,
+                    expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
+                };
+                localStorage.setItem('salonSession', JSON.stringify(session));
+                
+                salon = { id: salonId, ...salonData };
+                showDashboard();
+                console.log('[Login] Salon sahibi girişi başarılı');
                 
             } catch (error) {
                 console.error('Login error:', error);
                 showLoginError('Bir hata oluştu. Lütfen tekrar deneyin.');
             }
+        }
+        
+        // Personel olarak giriş yap
+        function loginAsStaff(matchedStaff, salonId, salonData) {
+            const staffSession = {
+                staffId: matchedStaff.id || matchedStaff.name,
+                staffName: matchedStaff.name,
+                salonId: salonId,
+                salonSlug: salonData.slug,
+                expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
+            };
+            localStorage.setItem('staffSession', JSON.stringify(staffSession));
+            
+            // Personel modunu aktif et
+            isStaffMode = true;
+            currentStaffId = staffSession.staffId;
+            currentStaffName = staffSession.staffName;
+            
+            salon = { id: salonId, ...salonData };
+            showDashboard();
+            applyStaffModeRestrictions();
+            console.log('[Login] Personel girişi başarılı:', matchedStaff.name, 'Salon:', salonData.name);
         }
         
         // Show Login Error
