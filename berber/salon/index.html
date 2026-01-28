@@ -2448,7 +2448,15 @@
             
             // Booking selects - Önce personel seçilmeli
             const staffSelect = document.getElementById('staffSelect');
-            staffSelect.innerHTML = '<option value="">Personel seçin...</option>' + salon.staffList.filter(s => s.active !== false).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            const activeStaff = salon.staffList.filter(s => s.active !== false);
+            console.log('[Booking] Aktif personel listesi:', activeStaff);
+            
+            staffSelect.innerHTML = '<option value="">Personel seçin...</option>' + 
+                activeStaff.map(s => {
+                    // id yoksa name'i id olarak kullan
+                    const staffId = s.id || s.name;
+                    return `<option value="${staffId}">${s.name}</option>`;
+                }).join('');
             
             const serviceSelect = document.getElementById('serviceSelect');
             serviceSelect.innerHTML = '<option value="">Önce personel seçin...</option>';
@@ -2715,30 +2723,46 @@
         // Personel seçildiğinde çağrılır
         function onStaffChange() {
             const staffId = document.getElementById('staffSelect').value;
-            selectedStaff = staffId ? salon.staffList.find(s => s.id === staffId) : null;
+            console.log('[Booking] Personel seçildi, staffId:', staffId);
+            
+            // ID veya name ile personeli bul
+            selectedStaff = staffId ? salon.staffList.find(s => 
+                s.id === staffId || s.name === staffId || String(s.id) === String(staffId)
+            ) : null;
+            
+            console.log('[Booking] Bulunan personel:', selectedStaff);
             
             const serviceSelect = document.getElementById('serviceSelect');
             
             if (selectedStaff) {
                 // Personel seçildi - hizmetleri göster
+                console.log('[Booking] Hizmetler yükleniyor, salon.serviceList:', salon.serviceList);
+                
                 // Personelin kendi hizmetleri varsa onları, yoksa salon hizmetlerini göster
-                let staffServices = salon.serviceList;
+                let staffServices = salon.serviceList || [];
                 
                 // Personele özel hizmetler varsa filtrele
                 if (selectedStaff.services && selectedStaff.services.length > 0) {
                     staffServices = salon.serviceList.filter(s => 
                         selectedStaff.services.includes(s.id) || selectedStaff.services.includes(s.name)
                     );
+                    // Eğer filtreleme sonucu boşsa tüm hizmetleri göster
+                    if (staffServices.length === 0) {
+                        staffServices = salon.serviceList;
+                    }
                 }
+                
+                console.log('[Booking] Gösterilecek hizmetler:', staffServices);
                 
                 serviceSelect.innerHTML = '<option value="">Hizmet seçin...</option>' + 
                     staffServices.map(s => `<option value="${s.id}">${s.name} - ${s.price || 100} ₺</option>`).join('');
                 serviceSelect.disabled = false;
                 
+                console.log('[Booking] serviceSelect.disabled:', serviceSelect.disabled);
+                
                 // Seçili hizmeti ve saati sıfırla
                 selectedService = null;
                 selectedTime = null;
-                document.getElementById('serviceSelect').value = '';
                 
                 // Tarih seçiliyse saatleri yeniden yükle
                 if (selectedDate) {
@@ -2746,6 +2770,7 @@
                 }
             } else {
                 // Personel seçilmedi
+                console.log('[Booking] Personel bulunamadı');
                 serviceSelect.innerHTML = '<option value="">Önce personel seçin...</option>';
                 serviceSelect.disabled = true;
                 selectedService = null;

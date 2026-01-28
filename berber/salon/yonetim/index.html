@@ -5258,8 +5258,9 @@
             
             console.log('[Sync] Real-time listener başlatılıyor...');
             
-            // İlk yükleme flag'i - ilk snapshot'ta bildirim gösterme
-            let isInitialLoad = true;
+            // Listener başlangıç zamanı - bu zamandan SONRA oluşturulan randevular için bildirim göster
+            const listenerStartTime = Date.now();
+            
             // Görülen randevu ID'lerini localStorage'da tut
             const seenAppointmentsKey = `seenAppointments_${salon.id}`;
             let seenAppointments = JSON.parse(localStorage.getItem(seenAppointmentsKey) || '[]');
@@ -5282,13 +5283,39 @@
                                         hasChanges = true;
                                         console.log('[Sync] Yeni randevu eklendi:', apt.customerName);
                                         
-                                        // Yeni randevu bildirimi:
-                                        // 1. İlk yükleme DEĞİLSE
-                                        // 2. Daha önce görülmemişse
-                                        // 3. Sadece bekleyen randevular için
+                                        // BİLDİRİM KONTROLÜ:
+                                        // 1. Daha önce görülmemişse
+                                        // 2. Son 2 dakika içinde oluşturulmuşsa (yeni randevu)
+                                        // 3. Bekleyen randevu ise
                                         const alreadySeen = seenAppointments.includes(apt.id);
                                         
-                                        if (!isInitialLoad && !alreadySeen && apt.status === 'pending') {
+                                        // Randevu oluşturulma zamanını kontrol et
+                                        let createdAt = null;
+                                        if (apt.createdAt) {
+                                            if (apt.createdAt.toDate) {
+                                                createdAt = apt.createdAt.toDate().getTime();
+                                            } else if (apt.createdAt.seconds) {
+                                                createdAt = apt.createdAt.seconds * 1000;
+                                            } else {
+                                                createdAt = new Date(apt.createdAt).getTime();
+                                            }
+                                        }
+                                        
+                                        // Son 2 dakika içinde oluşturulmuş mu?
+                                        const isRecent = createdAt && (Date.now() - createdAt < 2 * 60 * 1000);
+                                        // Listener başladıktan sonra mı oluşturulmuş?
+                                        const isAfterListenerStart = createdAt && (createdAt > listenerStartTime - 5000);
+                                        
+                                        console.log('[Sync] Bildirim kontrolü:', {
+                                            alreadySeen,
+                                            isRecent,
+                                            isAfterListenerStart,
+                                            status: apt.status,
+                                            createdAt: createdAt ? new Date(createdAt).toISOString() : null
+                                        });
+                                        
+                                        if (!alreadySeen && isRecent && isAfterListenerStart && apt.status === 'pending') {
+                                            console.log('[Sync] 🔔 Bildirim gösteriliyor:', apt.customerName);
                                             if (NotificationManager?.notifyNewAppointment) {
                                                 NotificationManager.notifyNewAppointment(apt);
                                             }
@@ -5314,8 +5341,8 @@
                                         hasChanges = true;
                                         console.log('[Sync] Randevu güncellendi:', apt.customerName, oldStatus, '→', apt.status);
                                         
-                                        // Durum değişikliği bildirimi (ilk yüklemede değilse)
-                                        if (!isInitialLoad && oldStatus !== apt.status) {
+                                        // Durum değişikliği bildirimi
+                                        if (oldStatus !== apt.status) {
                                             showStatusChangeToast(apt, oldStatus);
                                         }
                                     }
@@ -5329,12 +5356,6 @@
                                     }
                                 }
                             });
-                            
-                            // İlk yükleme tamamlandı
-                            if (isInitialLoad) {
-                                isInitialLoad = false;
-                                console.log('[Sync] İlk yükleme tamamlandı, bildirimler aktif');
-                            }
                             
                             // Değişiklik varsa görünümleri güncelle
                             if (hasChanges) {
