@@ -23,8 +23,22 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const messaging = firebase.messaging();
 
 // Background message handler (uygulama arka plandayken)
-messaging.onBackgroundMessage((payload) => {
+messaging.onBackgroundMessage(async (payload) => {
     console.log('[SW] Background message received:', payload);
+    
+    // Randevu ID'si varsa tekrar kontrolü yap
+    const appointmentId = payload.data?.appointmentId;
+    if (appointmentId) {
+        // Tag kullanarak aynı bildirimi tekrar göstermeyi engelle
+        const tag = 'appointment-' + appointmentId;
+        
+        // Mevcut bildirimleri kontrol et
+        const existingNotifications = await self.registration.getNotifications({ tag: tag });
+        if (existingNotifications.length > 0) {
+            console.log('[SW] Bu bildirim zaten gösteriliyor, atlanıyor:', appointmentId);
+            return;
+        }
+    }
     
     const notificationTitle = payload.notification?.title || payload.data?.title || 'Zamanli';
     const notificationOptions = {
@@ -32,12 +46,13 @@ messaging.onBackgroundMessage((payload) => {
         icon: payload.notification?.icon || '/icons/icon-192x192.png',
         badge: '/icons/icon-72x72.png',
         vibrate: [300, 100, 300, 100, 300], // Güçlü titreşim
-        tag: payload.data?.tag || 'zamanli-notification',
-        renotify: true,
+        tag: appointmentId ? ('appointment-' + appointmentId) : ('zamanli-' + Date.now()), // Unique tag
+        renotify: false, // Aynı tag için tekrar bildirim gösterme
         requireInteraction: true, // Kullanıcı kapatana kadar kalır
         silent: false, // SES AÇIK
         data: {
             url: payload.data?.link || payload.fcmOptions?.link || '/berber/salon/yonetim/',
+            appointmentId: appointmentId,
             ...payload.data
         },
         actions: [

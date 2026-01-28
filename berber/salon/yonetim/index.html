@@ -9441,7 +9441,23 @@ END:VEVENT
             
             // Yeni randevu bildirimi
             notifyNewAppointment: function(apt) {
-                console.log('[Notify] Bildirim gönderiliyor...');
+                console.log('[Notify] Bildirim gönderiliyor...', apt.id);
+                
+                // Daha önce gösterilmiş mi kontrol et
+                if (apt.id) {
+                    const seenKey = `seenNotify_${salon?.id || 'default'}`;
+                    let seenNotify = JSON.parse(localStorage.getItem(seenKey) || '[]');
+                    
+                    if (seenNotify.includes(apt.id)) {
+                        console.log('[Notify] Bu bildirim zaten gösterildi, atlanıyor:', apt.id);
+                        return;
+                    }
+                    
+                    // Seen listesine ekle
+                    seenNotify.push(apt.id);
+                    if (seenNotify.length > 100) seenNotify = seenNotify.slice(-100);
+                    localStorage.setItem(seenKey, JSON.stringify(seenNotify));
+                }
                 
                 // 1. Ses çal
                 this.playSound();
@@ -9467,7 +9483,7 @@ END:VEVENT
                     }
                 }
                 
-                // 3. Sayfa içi popup (HER ZAMAN göster)
+                // 3. Sayfa içi popup
                 this.showPopup(apt);
                 
                 // 4. Listeyi güncelle
@@ -9596,6 +9612,23 @@ END:VEVENT
                             // Foreground mesaj dinleyicisi
                             messaging.onMessage((payload) => {
                                 console.log('[Notify] Foreground mesaj:', payload);
+                                
+                                // Randevu ID kontrolü - daha önce gösterilmişse atla
+                                const appointmentId = payload.data?.appointmentId;
+                                if (appointmentId) {
+                                    const seenKey = `seenFCM_${salon?.id || 'default'}`;
+                                    let seenFCM = JSON.parse(localStorage.getItem(seenKey) || '[]');
+                                    
+                                    if (seenFCM.includes(appointmentId)) {
+                                        console.log('[Notify] Bu bildirim zaten gösterildi, atlanıyor:', appointmentId);
+                                        return;
+                                    }
+                                    
+                                    // Seen listesine ekle
+                                    seenFCM.push(appointmentId);
+                                    if (seenFCM.length > 100) seenFCM = seenFCM.slice(-100);
+                                    localStorage.setItem(seenKey, JSON.stringify(seenFCM));
+                                }
                                 
                                 // Uygulama açıkken gelen bildirimi göster
                                 if (payload.notification) {
