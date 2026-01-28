@@ -4948,6 +4948,11 @@
         
         // Personel modu banner'ı
         function showStaffBanner() {
+            // Zaten banner varsa ekleme
+            if (document.querySelector('.staff-mode-banner')) {
+                return;
+            }
+            
             const banner = document.createElement('div');
             banner.className = 'staff-mode-banner';
             banner.innerHTML = `
@@ -8842,8 +8847,8 @@ END:VEVENT
         <div class="pwa-banner-header">
             <div class="pwa-banner-icon">📲</div>
             <div class="pwa-banner-text">
-                <h4>Uygulamayı Yükle</h4>
-                <p>Ana ekrana ekle, hızlı erişim sağla</p>
+                <h4 id="pwaBannerTitle">Uygulamayı Yükle</h4>
+                <p id="pwaBannerDesc">Ana ekrana ekle, hızlı erişim sağla</p>
             </div>
         </div>
         <div class="pwa-banner-actions">
@@ -8852,11 +8857,24 @@ END:VEVENT
         </div>
     </div>
     <script>
-        // iOS'ta buton metnini değiştir
-        if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+        // Platform bazlı PWA banner içeriği
+        (function() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isAndroid = /Android/.test(navigator.userAgent);
             const btn = document.getElementById('pwaBannerInstallBtn');
-            if (btn) btn.textContent = '📲 Nasıl Yapılır?';
-        }
+            const title = document.getElementById('pwaBannerTitle');
+            const desc = document.getElementById('pwaBannerDesc');
+            
+            if (isIOS) {
+                if (btn) btn.textContent = '📲 Nasıl Yapılır?';
+                if (title) title.textContent = "iPhone'a Yükle";
+                if (desc) desc.textContent = 'Ana ekrana ekleyerek hızlı erişim sağla';
+            } else if (isAndroid) {
+                if (btn) btn.textContent = '📲 Uygulamayı İndir';
+                if (title) title.textContent = 'Android Uygulaması';
+                if (desc) desc.textContent = 'Ana ekrana ekle, bildirim al, hızlı eriş';
+            }
+        })();
     </script>
     
     <!-- Push Notification Banner -->
