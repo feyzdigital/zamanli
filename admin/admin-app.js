@@ -16,12 +16,37 @@ function generateSalonQRCardUrl(salon) {
     return generateQRCodeUrl(salonUrl, 200);
 }
 function initAdmin() {
+    console.log('[Admin] initAdmin çağrıldı');
+    
     if (typeof firebase !== 'undefined' && firebase.firestore && typeof emailjs !== 'undefined') {
-        firebase.initializeApp(ADMIN_CONFIG.firebase);
-        db = firebase.firestore();
-        emailjs.init(ADMIN_CONFIG.emailjs.publicKey);
-        checkAuth();
-    } else setTimeout(initAdmin, 100);
+        try {
+            // Firebase zaten başlatılmış mı kontrol et
+            if (!firebase.apps.length) {
+                firebase.initializeApp(ADMIN_CONFIG.firebase);
+                console.log('[Admin] Firebase başlatıldı');
+            } else {
+                console.log('[Admin] Firebase zaten başlatılmış');
+            }
+            
+            db = firebase.firestore();
+            console.log('[Admin] Firestore bağlantısı kuruldu');
+            
+            emailjs.init(ADMIN_CONFIG.emailjs.publicKey);
+            console.log('[Admin] EmailJS başlatıldı');
+            
+            checkAuth();
+        } catch (e) {
+            console.error('[Admin] Başlatma hatası:', e);
+            // Yine de devam etmeyi dene
+            if (firebase.apps.length) {
+                db = firebase.firestore();
+                checkAuth();
+            }
+        }
+    } else {
+        console.log('[Admin] Firebase/EmailJS henüz yüklenmedi, bekleniyor...');
+        setTimeout(initAdmin, 100);
+    }
 }
 
 function checkAuth() {
@@ -45,15 +70,38 @@ function login() {
 function logout() { localStorage.removeItem('zamanli_admin'); AdminState.isLoggedIn = false; renderLogin(); }
 
 async function loadAllData() {
-    AdminState.loading = true; renderApp();
+    console.log('[Admin] loadAllData başladı');
+    AdminState.loading = true; 
+    
+    try {
+        renderApp();
+    } catch(e) {
+        console.error('[Admin] İlk renderApp hatası:', e);
+    }
+    
     try {
         const snap = await db.collection('salons').get();
+        console.log('[Admin] Firestore sorgusu tamamlandı, salon sayısı:', snap.size);
+        
         AdminState.salons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         AdminState.stats.totalSalons = AdminState.salons.length;
         AdminState.stats.activeSalons = AdminState.salons.filter(s => s.active && s.status !== 'pending').length;
         AdminState.stats.pendingSalons = AdminState.salons.filter(s => s.status === 'pending').length;
-    } catch (e) { console.error(e); showToast('Veri yuklenirken hata', 'error'); }
-    AdminState.loading = false; renderApp();
+        
+        console.log('[Admin] Stats güncellendi:', AdminState.stats);
+    } catch (e) { 
+        console.error('[Admin] Veri yükleme hatası:', e); 
+        showToast('Veri yuklenirken hata: ' + e.message, 'error'); 
+    }
+    
+    AdminState.loading = false;
+    
+    try {
+        renderApp();
+        console.log('[Admin] renderApp tamamlandı');
+    } catch(e) {
+        console.error('[Admin] Son renderApp hatası:', e);
+    }
 }
 
 async function loadSalonDetails(id) {
