@@ -3865,38 +3865,6 @@
                 </div>
             </div>
             
-            <!-- Müşteri Ekleme Modal -->
-            <div id="addCustomerModal" class="modal-overlay" style="display: none;">
-                <div class="modal-content" style="max-width: 450px;">
-                    <div class="modal-header">
-                        <h3>👤 Yeni Müşteri Ekle</h3>
-                        <button class="modal-close" onclick="closeAddCustomerModal()">✕</button>
-                    </div>
-                    <form onsubmit="saveNewCustomer(event)">
-                        <div class="form-group">
-                            <label class="form-label">Müşteri Adı *</label>
-                            <input type="text" id="newCustomerName" class="form-input" placeholder="Ad Soyad" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Telefon *</label>
-                            <input type="tel" id="newCustomerPhone" class="form-input" placeholder="5XX XXX XX XX" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">E-posta (Opsiyonel)</label>
-                            <input type="email" id="newCustomerEmail" class="form-input" placeholder="ornek@email.com">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Not (Opsiyonel)</label>
-                            <textarea id="newCustomerNote" class="form-input" rows="2" placeholder="Müşteri hakkında not..."></textarea>
-                        </div>
-                        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
-                            <button type="button" class="btn btn-outline" onclick="closeAddCustomerModal()" style="flex: 1;">İptal</button>
-                            <button type="submit" class="btn btn-primary" style="flex: 2;">Müşteri Ekle</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
             <!-- Services Tab -->
             <div id="tab-services" class="tab-content">
                 <div class="settings-section">
@@ -4277,6 +4245,40 @@
         </main>
     </div>
     
+    <!-- Müşteri Ekleme Modal -->
+    <div id="addCustomerModal" class="modal-overlay">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                <h3 class="modal-title">👤 Yeni Müşteri Ekle</h3>
+                <button class="modal-close" onclick="closeAddCustomerModal()" style="color: white;">×</button>
+            </div>
+            <div class="modal-body" style="padding: 1.25rem;">
+                <form onsubmit="saveNewCustomer(event)">
+                    <div class="form-group">
+                        <label class="form-label">Müşteri Adı *</label>
+                        <input type="text" id="newCustomerName" class="form-input" placeholder="Ad Soyad" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefon *</label>
+                        <input type="tel" id="newCustomerPhone" class="form-input" placeholder="5XX XXX XX XX" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">E-posta (Opsiyonel)</label>
+                        <input type="email" id="newCustomerEmail" class="form-input" placeholder="ornek@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Not (Opsiyonel)</label>
+                        <textarea id="newCustomerNote" class="form-input" rows="2" placeholder="Müşteri hakkında not..."></textarea>
+                    </div>
+                    <div class="modal-footer" style="border-top: none; padding-top: 1rem;">
+                        <button type="button" class="btn btn-outline" onclick="closeAddCustomerModal()">İptal</button>
+                        <button type="submit" class="btn btn-primary">Müşteri Ekle</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
     <!-- Manuel Randevu Ekleme Modal -->
     <div id="manualAppointmentModal" class="modal-overlay">
         <div class="modal" style="max-width: 450px;">
@@ -4595,40 +4597,6 @@
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeStaffModal()">İptal</button>
                 <button class="btn btn-primary" onclick="document.getElementById('staffForm').requestSubmit()">Kaydet</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Müşteri Ekleme Modal -->
-    <div id="addCustomerModal" class="modal-overlay">
-        <div class="modal" style="max-width: 400px;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;">
-                <h3 class="modal-title">➕ Yeni Müşteri Ekle</h3>
-                <button class="modal-close" onclick="closeAddCustomerModal()" style="color: white;">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="addCustomerForm" onsubmit="saveNewCustomer(event)">
-                    <div class="form-group">
-                        <label class="form-label">👤 Ad Soyad *</label>
-                        <input type="text" id="newCustomerName" class="form-input" required placeholder="Müşteri adı">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">📱 Telefon *</label>
-                        <input type="tel" id="newCustomerPhone" class="form-input" required placeholder="5XX XXX XX XX">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">📧 E-posta (Opsiyonel)</label>
-                        <input type="email" id="newCustomerEmail" class="form-input" placeholder="ornek@email.com">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">📝 Not (Opsiyonel)</label>
-                        <textarea id="newCustomerNote" class="form-input" rows="2" placeholder="Müşteri hakkında notlar..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeAddCustomerModal()">İptal</button>
-                <button class="btn btn-primary" onclick="document.getElementById('addCustomerForm').requestSubmit()">Müşteri Ekle</button>
             </div>
         </div>
     </div>
@@ -5056,6 +5024,7 @@
                 updateStats();
                 loadReports();
                 loadAdvancedSettings(); // Gelişmiş ayarları yükle
+                loadCustomers(); // Müşterileri yükle
             }, 500);
         }
         
@@ -7255,15 +7224,11 @@ Panel: ${window.location.href}`);
                 
                 // Canvas boyutları
                 canvas.width = 400;
-                canvas.height = 500;
+                canvas.height = 480;
                 
                 // Arka plan
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Üst border (Emerald)
-                ctx.fillStyle = '#10B981';
-                ctx.fillRect(0, 0, canvas.width, 8);
                 
                 // QR kodu yükle
                 const qrImage = new Image();
@@ -7277,42 +7242,32 @@ Panel: ${window.location.href}`);
                 
                 // QR kodu çiz (ortala)
                 const qrX = (canvas.width - 300) / 2;
-                const qrY = 40;
+                const qrY = 30;
                 ctx.drawImage(qrImage, qrX, qrY, 300, 300);
                 
-                // QR etrafına border
+                // QR etrafına çerçeve (Emerald)
                 ctx.strokeStyle = '#10B981';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(qrX - 10, qrY - 10, 320, 320);
+                ctx.lineWidth = 4;
+                ctx.strokeRect(qrX - 12, qrY - 12, 324, 324);
                 
-                // Logo placeholder (daire)
-                const logoY = qrY + 300 + 30;
+                // Alt yazılar
+                const textY = qrY + 300 + 35;
+                
+                // zamanli.com
                 ctx.fillStyle = '#0B2B26';
-                ctx.beginPath();
-                ctx.arc(canvas.width / 2, logoY + 15, 20, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Z harfi logo içinde
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 20px Satoshi, Inter, sans-serif';
+                ctx.font = 'bold 24px Satoshi, Inter, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('Z', canvas.width / 2, logoY + 22);
+                ctx.fillText('zamanli.com', canvas.width / 2, textY);
                 
-                // Marka adı
-                ctx.fillStyle = '#0B2B26';
-                ctx.font = 'bold 28px Satoshi, Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Zamanli', canvas.width / 2, logoY + 60);
-                
-                // Tagline
+                // Online Randevu Sistemi
                 ctx.fillStyle = '#64748b';
                 ctx.font = '14px Inter, sans-serif';
-                ctx.fillText('Online Randevu Sistemi', canvas.width / 2, logoY + 82);
+                ctx.fillText('Online Randevu Sistemi', canvas.width / 2, textY + 25);
                 
-                // Salon adı (küçük)
-                ctx.fillStyle = '#94a3b8';
-                ctx.font = '12px Inter, sans-serif';
-                ctx.fillText(salon.name, canvas.width / 2, logoY + 105);
+                // Salon adı
+                ctx.fillStyle = '#10B981';
+                ctx.font = 'bold 16px Inter, sans-serif';
+                ctx.fillText(salon.name, canvas.width / 2, textY + 52);
                 
                 // İndir
                 const link = document.createElement('a');
@@ -7662,7 +7617,8 @@ Panel: ${window.location.href}`);
         
         // Manuel müşteri ekleme modal fonksiyonları
         function openAddCustomerModal() {
-            document.getElementById('addCustomerModal').style.display = 'flex';
+            const modal = document.getElementById('addCustomerModal');
+            modal.classList.add('active');
             document.getElementById('newCustomerName').value = '';
             document.getElementById('newCustomerPhone').value = '';
             document.getElementById('newCustomerEmail').value = '';
@@ -7670,7 +7626,8 @@ Panel: ${window.location.href}`);
         }
         
         function closeAddCustomerModal() {
-            document.getElementById('addCustomerModal').style.display = 'none';
+            const modal = document.getElementById('addCustomerModal');
+            modal.classList.remove('active');
         }
         
         async function saveNewCustomer(e) {

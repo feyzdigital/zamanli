@@ -554,11 +554,18 @@
             gap: 1rem;
             overflow-x: auto;
             padding-bottom: 0.5rem;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .staff-grid::-webkit-scrollbar {
+            display: none;
         }
         
         .staff-card {
             text-align: center;
             min-width: 80px;
+            flex-shrink: 0;
         }
         
         .staff-avatar {
@@ -576,6 +583,7 @@
         .staff-name {
             font-size: 0.85rem;
             font-weight: 600;
+            word-break: break-word;
         }
         
         .staff-role {
@@ -583,22 +591,34 @@
             color: var(--slate-500);
         }
         
-        /* Hours */
+        /* Hours - Mobil için tek sütun */
         .hours-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
+            grid-template-columns: 1fr;
+            gap: 0.25rem;
         }
         
         .hour-item {
             display: flex;
             justify-content: space-between;
-            padding: 0.5rem 0;
+            align-items: center;
+            padding: 0.6rem 0;
             font-size: 0.875rem;
+            border-bottom: 1px solid var(--slate-100);
         }
         
-        .hour-day { color: var(--slate-600); }
-        .hour-time { font-weight: 500; }
+        .hour-item:last-child {
+            border-bottom: none;
+        }
+        
+        .hour-day { 
+            color: var(--slate-600);
+            min-width: 90px;
+        }
+        .hour-time { 
+            font-weight: 500;
+            text-align: right;
+        }
         .hour-time.closed { color: var(--danger); }
         
         /* Aksiyon Butonları */
@@ -2597,7 +2617,10 @@
             let html = '';
             const today = new Date();
             
-            for (let i = 0; i < 14; i++) {
+            // Salon'un gelişmiş ayarlarından maksimum ileri tarih al
+            const maxAdvanceDays = parseInt(salon?.advancedSettings?.maxAdvanceDays) || 30;
+            
+            for (let i = 0; i < maxAdvanceDays; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() + i);
                 
@@ -2671,7 +2694,9 @@
             
             // Temizlik molası (config'den al veya varsayılan 5dk)
             const cleaningBreak = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.appointment?.cleaningBreakMinutes) || 5;
-            const slotInterval = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.appointment?.slotInterval) || 30;
+            // Salon'un gelişmiş ayarlarından slot interval al
+            const slotInterval = parseInt(salon?.advancedSettings?.slotInterval) || 
+                                 (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.appointment?.slotInterval) || 30;
             
             // Seçili hizmetin süresi
             const serviceDuration = selectedService?.duration || 30;
@@ -2912,6 +2937,9 @@
             btn.textContent = 'Kaydediliyor...';
             
             try {
+                // Salon'un autoApprove ayarını kontrol et
+                const autoApprove = salon?.advancedSettings?.autoApprove === true;
+                
                 const appointment = {
                     salonId: salon.id,
                     salonSlug: salon.slug,
@@ -2928,7 +2956,8 @@
                     staffPhone: selectedStaff?.phone || null, // Personel telefonu - WhatsApp için
                     date: selectedDate.toISOString().split('T')[0],
                     time: selectedTime,
-                    status: 'pending',
+                    status: autoApprove ? 'confirmed' : 'pending',
+                    autoApproved: autoApprove,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 
