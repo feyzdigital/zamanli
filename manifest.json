@@ -1,7 +1,7 @@
 {
-  "name": "Zamanli - Berber Randevu Sistemi",
+  "name": "Zamanli - Online Randevu Sistemi",
   "short_name": "Zamanli",
-  "description": "Online berber ve kuaför randevu sistemi. Kolayca randevu al, sıra bekleme!",
+  "description": "Berber, kuaför ve güzellik salonları için ücretsiz online randevu sistemi. Kolayca randevu al, sıra bekleme! Türkiye'nin en kolay randevu platformu.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",

@@ -1,0 +1,24 @@
+# Zamanli - Online Randevu Sistemi
+# https://zamanli.com
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://zamanli.com/sitemap.xml
+
+# Disallow admin and private pages
+Disallow: /admin/
+Disallow: /berber/salon/yonetim/
+Disallow: /*?staff=*
+Disallow: /*?admin=*
+
+# Allow important pages
+Allow: /berber/
+Allow: /berber/kayit/
+Allow: /berber/salon/
+Allow: /fiyatlandirma/
+Allow: /randevu/
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1

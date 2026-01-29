@@ -4918,14 +4918,15 @@
                         
                         // Session süresi dolmamışsa
                         if (session.expires > Date.now()) {
-                            // URL'de slug varsa session'daki slug ile eşleşmeli
-                            // URL'de slug yoksa session'daki slug'ı kullan
-                            const targetSlug = slug || session.slug;
+                            // Session'daki slug'ı öncelikli kullan (PWA'da URL kayboluyor)
+                            const targetSlug = session.slug || slug;
                             
-                            // Slug kontrolü: URL'deki slug session'daki ile eşleşmeli VEYA URL'de slug olmamalı
-                            const slugMatch = !slug || slug === session.slug;
-                            
-                            if (targetSlug && slugMatch) {
+                            // URL'de farklı bir slug varsa ve session'daki ile uyuşmuyorsa
+                            // sadece o zaman yeni giriş iste
+                            if (slug && slug !== session.slug) {
+                                console.log('[Init] Farklı salon için giriş yapılıyor:', slug);
+                                // Mevcut session'ı koruyoruz, sadece yeni salon için login gösteriyoruz
+                            } else if (targetSlug) {
                                 console.log('[Init] Salon yükleniyor:', targetSlug);
                                 await loadSalonData(targetSlug);
                                 if (salon) {
@@ -4933,10 +4934,6 @@
                                     showDashboard();
                                     return;
                                 }
-                            } else if (slug && slug !== session.slug) {
-                                // Farklı bir salon için giriş yapılmak isteniyor, yeni session gerekli
-                                console.log('[Init] Farklı salon, yeni giriş gerekli');
-                                localStorage.removeItem('salonSession');
                             }
                         } else {
                             // Session süresi dolmuş, temizle
