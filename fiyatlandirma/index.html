@@ -4,837 +4,335 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fiyatlandırma - Zamanli</title>
-    
-    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#0B2B26">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="/manifest.json">
-    
-    <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
-    
-    <!-- Favicons -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png">
-    <link rel="shortcut icon" href="/icons/favicon.ico">
-    <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
-    
-    <!-- Fonts: Satoshi + Inter -->
+    <link rel="icon" href="/icons/favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css">
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            /* Brand Core */
-            --brand-deep-forest: #0B2B26;
-            --brand-emerald: #10B981;
-            --brand-emerald-hover: #0EA371;
-            --brand-gold: #C5A065;
-            
-            --primary: #10B981;
-            --primary-dark: #0EA371;
-            --primary-light: #ECFDF5;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --pro: #10B981;
-            --premium: #C5A065;
-            --slate-50: #f8fafc;
-            --slate-100: #f1f5f9;
-            --slate-200: #e2e8f0;
-            --slate-300: #cbd5e1;
-            --slate-400: #94a3b8;
-            --slate-500: #64748b;
-            --slate-600: #475569;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
-            --radius: 12px;
-            --radius-lg: 16px;
-            --shadow: 0 1px 3px rgba(11,43,38,0.08);
-            --shadow-lg: 0 10px 40px rgba(11,43,38,0.1);
-            
-            /* Typography */
-            --font-heading: 'Satoshi', 'Inter', system-ui, sans-serif;
-            --font-body: 'Inter', system-ui, sans-serif;
-        }
-        
-        body {
-            font-family: var(--font-body);
-            background: var(--slate-50);
-            color: var(--slate-800);
-            line-height: 1.6;
-        }
-        
-        h1, h2, h3, h4, h5, h6 {
-            font-family: var(--font-heading);
-        }
-        
-        /* Header */
-        .header {
-            background: white;
-            border-bottom: 1px solid var(--slate-200);
-            padding: 0 1.5rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .header-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-            font-family: var(--font-heading);
-            font-weight: 700;
-            font-size: 1.5rem;
-            color: var(--brand-deep-forest);
-        }
-        
-        .logo:hover { color: var(--brand-deep-forest); }
-        
-        .logo-image {
-            height: 32px;
-            width: auto;
-            object-fit: contain;
-        }
-        
-        .logo-text {
-            font-family: var(--font-heading);
-            font-weight: 700;
-            font-size: 1.35rem;
-            color: var(--brand-deep-forest);
-            letter-spacing: -0.02em;
-        }
-        
-        .nav {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-        
-        .nav a {
-            text-decoration: none;
-            color: var(--slate-600);
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        
-        .nav a:hover { color: var(--primary); }
-        
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius);
-            font-weight: 600;
-            font-size: 0.95rem;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-        
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .btn-primary:hover { background: var(--primary-dark); }
-        
-        .btn-outline {
-            background: white;
-            color: var(--slate-700);
-            border: 2px solid var(--slate-200);
-        }
-        
-        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
-        
-        /* Hero */
-        .hero {
-            text-align: center;
-            padding: 4rem 1.5rem 3rem;
-            background: linear-gradient(180deg, white 0%, var(--slate-50) 100%);
-        }
-        
-        .hero h1 {
-            font-size: 2.75rem;
-            font-weight: 800;
-            color: var(--slate-900);
-            margin-bottom: 1rem;
-        }
-        
-        .hero p {
-            font-size: 1.2rem;
-            color: var(--slate-600);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        /* Pricing Section */
-        .pricing-section {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem 4rem;
-        }
-        
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            align-items: start;
-        }
-        
-        /* Pricing Card */
-        .pricing-card {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            box-shadow: var(--shadow);
-            border: 2px solid var(--slate-200);
-            position: relative;
-            transition: all 0.3s;
-        }
-        
-        .pricing-card:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-4px);
-        }
-        
-        .pricing-card.popular {
-            border-color: var(--pro);
-            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.15);
-        }
-        
-        .pricing-card.premium-card {
-            border-color: var(--premium);
-        }
-        
-        .popular-badge {
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--pro);
-            color: white;
-            padding: 0.35rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        
-        .card-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--slate-100);
-        }
-        
-        .card-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.75rem;
-            margin: 0 auto 1rem;
-        }
-        
-        .starter .card-icon { background: #dcfce7; }
-        .pro .card-icon { background: #dbeafe; }
-        .premium-card .card-icon { background: #ede9fe; }
-        
-        .card-title {
-            font-size: 1.35rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-        
-        .starter .card-title { color: var(--success); }
-        .pro .card-title { color: var(--pro); }
-        .premium-card .card-title { color: var(--premium); }
-        
-        .card-desc {
-            font-size: 0.9rem;
-            color: var(--slate-500);
-        }
-        
-        .card-price {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        
-        .price {
-            font-size: 3rem;
-            font-weight: 800;
-            color: var(--slate-900);
-        }
-        
-        .price-currency {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-        
-        .price-period {
-            color: var(--slate-500);
-            font-size: 1rem;
-        }
-        
-        .setup-fee {
-            display: inline-block;
-            margin-top: 0.5rem;
-            padding: 0.35rem 0.75rem;
-            background: var(--slate-100);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: var(--slate-600);
-        }
-        
-        .setup-fee.free {
-            background: #dcfce7;
-            color: #166534;
-        }
-        
-        /* Features */
-        .features-list {
-            list-style: none;
-            margin-bottom: 2rem;
-        }
-        
-        .features-list li {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            padding: 0.6rem 0;
-            font-size: 0.95rem;
-            color: var(--slate-700);
-        }
-        
-        .features-list .check {
-            color: var(--success);
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-        
-        .features-list .x {
-            color: var(--slate-300);
-            flex-shrink: 0;
-        }
-        
-        .feature-category {
-            font-weight: 700;
-            color: var(--slate-800);
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--slate-100);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .feature-category:first-child {
-            margin-top: 0;
-            padding-top: 0;
-            border-top: none;
-        }
-        
-        /* Card CTA */
-        .card-cta {
-            margin-top: auto;
-        }
-        
-        .card-cta .btn {
-            width: 100%;
-            padding: 1rem;
-        }
-        
-        .starter .card-cta .btn {
-            background: var(--success);
-        }
-        
-        .starter .card-cta .btn:hover {
-            background: #059669;
-        }
-        
-        .pro .card-cta .btn {
-            background: var(--pro);
-        }
-        
-        .pro .card-cta .btn:hover {
-            background: #2563eb;
-        }
-        
-        .premium-card .card-cta .btn {
-            background: var(--premium);
-        }
-        
-        .premium-card .card-cta .btn:hover {
-            background: #7c3aed;
-        }
-        
-        .free-card {
-            border: 2px dashed var(--slate-300);
-            background: var(--slate-50);
-        }
-        
-        .free-card .card-icon {
-            background: var(--slate-100);
-        }
-        
-        .enterprise-card {
-            border: 2px solid #C5A065;
-            background: linear-gradient(135deg, #fffbf5 0%, #fff9f0 100%);
-        }
-        
-        .enterprise-card .card-icon {
-            background: linear-gradient(135deg, #C5A065, #a88a50);
-        }
-        
-        /* FAQ Section */
-        .faq-section {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 3rem 1.5rem 4rem;
-        }
-        
-        .faq-title {
-            text-align: center;
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 2rem;
-        }
-        
-        .faq-item {
-            background: white;
-            border-radius: var(--radius);
-            padding: 1.25rem 1.5rem;
-            margin-bottom: 0.75rem;
-            box-shadow: var(--shadow);
-        }
-        
-        .faq-question {
-            font-weight: 600;
-            color: var(--slate-800);
-            margin-bottom: 0.5rem;
-        }
-        
-        .faq-answer {
-            color: var(--slate-600);
-            font-size: 0.95rem;
-        }
-        
-        /* CTA Banner */
-        .cta-banner {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            padding: 3rem 1.5rem;
-            text-align: center;
-            color: white;
-        }
-        
-        .cta-banner h2 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        
-        .cta-banner p {
-            opacity: 0.9;
-            margin-bottom: 1.5rem;
-        }
-        
-        .cta-banner .btn {
-            background: white;
-            color: var(--primary);
-        }
-        
-        .cta-banner .btn:hover {
-            background: var(--slate-100);
-        }
-        
-        /* Footer */
-        .footer {
-            background: var(--brand-deep-forest, #0B2B26);
-            color: rgba(255, 255, 255, 0.9);
-            padding: 3rem 1.5rem 1.5rem;
-        }
-        
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .footer-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .footer-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .footer-brand p {
-            color: rgba(255, 255, 255, 0.6);
-            margin-left: 0.5rem;
-        }
-        
-        .footer-links {
-            display: flex;
-            gap: 2rem;
-        }
-        
-        .footer-links a {
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        
-        .footer-links a:hover {
-            color: var(--primary);
-        }
-        
-        .footer-bottom {
-            padding-top: 1.5rem;
-            text-align: center;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.5);
-        }
-        
-        /* Mobile */
-        @media (max-width: 1024px) {
-            .pricing-grid {
-                grid-template-columns: 1fr;
-                max-width: 450px;
-                margin: 0 auto;
-            }
-            
-            .pricing-card.popular {
-                order: -1;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .nav { display: none; }
-            .nav-cta { display: none; }
-            .mobile-menu-btn { display: block; }
-            
-            .hero h1 { font-size: 2rem; }
-            .hero p { font-size: 1rem; }
-            .hero { padding: 2.5rem 1rem 2rem; }
-            
-            .pricing-section { padding: 0 1rem 3rem; }
-            
-            .pricing-card { padding: 1.5rem; }
-            
-            .price { font-size: 2.5rem; }
-            
-            .faq-section { padding: 2rem 1rem 3rem; }
-            .faq-title { font-size: 1.5rem; }
-            
-            .footer-content { flex-direction: column; gap: 1.5rem; text-align: center; }
-            .footer-links { flex-wrap: wrap; justify-content: center; gap: 1rem; }
-        }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        :root{--brand-deep-forest:#0B2B26;--brand-emerald:#10B981;--brand-gold:#C5A065;--primary:#10B981;--primary-dark:#0EA371;--slate-50:#f8fafc;--slate-100:#f1f5f9;--slate-200:#e2e8f0;--slate-400:#94a3b8;--slate-500:#64748b;--slate-600:#475569;--slate-700:#334155;--slate-800:#1e293b;--slate-900:#0f172a;--radius:12px;--shadow:0 1px 3px rgba(11,43,38,0.08);--shadow-lg:0 10px 40px rgba(11,43,38,0.12);--font-heading:'Satoshi','Inter',system-ui,sans-serif;--font-body:'Inter',system-ui,sans-serif}
+        body{font-family:var(--font-body);background:var(--slate-50);color:var(--slate-800);line-height:1.6}
+        h1,h2,h3{font-family:var(--font-heading)}
+        .header{background:white;border-bottom:1px solid var(--slate-200);padding:0 1.5rem;position:sticky;top:0;z-index:100}
+        .header-container{max-width:1200px;margin:0 auto;height:70px;display:flex;align-items:center;justify-content:space-between}
+        .logo{display:flex;align-items:center;gap:0.5rem;text-decoration:none;font-family:var(--font-heading);font-weight:700;font-size:1.5rem;color:var(--brand-deep-forest)}
+        .logo img{height:32px}
+        .nav{display:flex;align-items:center;gap:2rem}
+        .nav a{text-decoration:none;color:var(--slate-600);font-weight:500;transition:color 0.2s}
+        .nav a:hover{color:var(--primary)}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.75rem 1.5rem;border-radius:var(--radius);font-weight:600;font-size:0.95rem;text-decoration:none;cursor:pointer;border:none;font-family:inherit;transition:all 0.2s}
+        .btn-primary{background:var(--primary);color:white}
+        .btn-primary:hover{background:var(--primary-dark)}
+        .btn-outline{background:white;color:var(--slate-700);border:2px solid var(--slate-200)}
+        .btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+        .mobile-menu-btn{display:none;background:none;border:none;font-size:1.5rem;cursor:pointer}
+        @media(max-width:768px){.nav{display:none}.mobile-menu-btn{display:block}}
+        
+        .hero{text-align:center;padding:4rem 1.5rem 2rem;background:linear-gradient(180deg,white 0%,var(--slate-50) 100%)}
+        .hero h1{font-size:2.5rem;font-weight:800;color:var(--slate-900);margin-bottom:1rem}
+        .hero p{font-size:1.15rem;color:var(--slate-600);max-width:600px;margin:0 auto 2rem}
+        @media(max-width:768px){.hero h1{font-size:1.75rem}.hero p{font-size:1rem}}
+        
+        .billing-toggle{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+        .billing-toggle span{font-weight:500;color:var(--slate-500);cursor:pointer;transition:color 0.2s}
+        .billing-toggle span.active{color:var(--slate-900);font-weight:600}
+        .toggle-switch{width:56px;height:28px;background:var(--slate-200);border-radius:14px;position:relative;cursor:pointer;transition:background 0.3s}
+        .toggle-switch.active{background:var(--primary)}
+        .toggle-switch::after{content:'';position:absolute;width:24px;height:24px;background:white;border-radius:50%;top:2px;left:2px;transition:transform 0.3s;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+        .toggle-switch.active::after{transform:translateX(28px)}
+        .savings-badge{background:linear-gradient(135deg,#10B981,#059669);color:white;padding:0.35rem 0.75rem;border-radius:20px;font-size:0.8rem;font-weight:600}
+        
+        .pricing-section{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem}
+        .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;align-items:stretch}
+        @media(max-width:900px){.pricing-grid{grid-template-columns:1fr;max-width:420px;margin:0 auto}}
+        
+        .pricing-card{background:white;border-radius:16px;padding:2rem;box-shadow:var(--shadow);border:2px solid var(--slate-200);position:relative;transition:all 0.3s;display:flex;flex-direction:column}
+        .pricing-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px)}
+        .pricing-card.popular{border-color:var(--primary);box-shadow:0 10px 40px rgba(16,185,129,0.2);transform:scale(1.02)}
+        .pricing-card.popular:hover{transform:scale(1.02) translateY(-4px)}
+        .pricing-card.enterprise{border-color:var(--brand-gold)}
+        
+        .popular-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--primary),#059669);color:white;padding:0.4rem 1.25rem;border-radius:20px;font-size:0.8rem;font-weight:700;white-space:nowrap}
+        
+        .card-header{text-align:center;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--slate-100)}
+        .card-icon{width:60px;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin:0 auto 1rem}
+        .pricing-card.free .card-icon{background:#f0fdf4}
+        .pricing-card.popular .card-icon{background:#ecfdf5}
+        .pricing-card.enterprise .card-icon{background:#fef9ed}
+        .card-title{font-size:1.35rem;font-weight:700;margin-bottom:0.35rem}
+        .pricing-card.free .card-title{color:var(--slate-700)}
+        .pricing-card.popular .card-title{color:var(--primary)}
+        .pricing-card.enterprise .card-title{color:var(--brand-gold)}
+        .card-desc{font-size:0.9rem;color:var(--slate-500)}
+        
+        .card-price{text-align:center;margin-bottom:1.5rem;min-height:100px}
+        .price{font-size:2.75rem;font-weight:800;color:var(--slate-900);line-height:1.1}
+        .price-currency{font-size:1.25rem;font-weight:600}
+        .price-period{color:var(--slate-500);font-size:0.95rem;margin-top:0.25rem}
+        .original-price{color:var(--slate-400);text-decoration:line-through;font-size:1rem;margin-bottom:0.25rem}
+        .value-prop{display:inline-block;margin-top:0.75rem;padding:0.4rem 0.85rem;background:#ecfdf5;border-radius:20px;font-size:0.8rem;color:#059669;font-weight:600}
+        
+        .features-list{list-style:none;margin-bottom:1.5rem;flex:1}
+        .features-list li{display:flex;align-items:flex-start;gap:0.65rem;padding:0.55rem 0;font-size:0.9rem;color:var(--slate-700)}
+        .features-list .check{color:#10B981;font-weight:bold;flex-shrink:0}
+        .features-list .x{color:var(--slate-300);flex-shrink:0}
+        .feature-highlight{background:#fef3c7;padding:0.1rem 0.4rem;border-radius:4px;font-weight:500}
+        .feature-category{font-weight:700;color:var(--slate-800);margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--slate-100);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.03em}
+        
+        .card-cta{margin-top:auto}
+        .card-cta .btn{width:100%;padding:1rem;font-size:1rem}
+        
+        .info-banner{background:var(--slate-100);padding:2rem 1.5rem}
+        .info-banner-inner{max-width:800px;margin:0 auto;text-align:center}
+        .info-banner h3{font-size:1.25rem;color:var(--slate-800);margin-bottom:1rem}
+        .info-banner p{color:var(--slate-600);font-size:1rem;line-height:1.7}
+        
+        .faq-section{max-width:700px;margin:0 auto;padding:4rem 1.5rem}
+        .faq-title{text-align:center;font-size:1.75rem;font-weight:700;margin-bottom:2rem;color:var(--slate-900)}
+        .faq-item{background:white;border-radius:var(--radius);margin-bottom:1rem;border:1px solid var(--slate-200);overflow:hidden}
+        .faq-question{padding:1.25rem;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+        .faq-question::after{content:'+';font-size:1.25rem;color:var(--slate-400)}
+        .faq-item.open .faq-question::after{content:'−'}
+        .faq-answer{display:none;padding:0 1.25rem 1.25rem;color:var(--slate-600);font-size:0.95rem}
+        .faq-item.open .faq-answer{display:block}
+        
+        .cta-banner{background:linear-gradient(135deg,var(--brand-deep-forest),#164e40);color:white;text-align:center;padding:4rem 1.5rem}
+        .cta-banner h2{font-size:1.75rem;font-weight:700;margin-bottom:1rem}
+        .cta-banner p{opacity:0.9;margin-bottom:1.5rem;font-size:1.05rem}
+        .cta-banner .btn{background:white;color:var(--brand-deep-forest);font-weight:700}
+        
+        .footer{background:var(--brand-deep-forest);color:white;padding:3rem 1.5rem 2rem}
+        .footer-container{max-width:1200px;margin:0 auto}
+        .footer-content{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:2rem;padding-bottom:2rem;border-bottom:1px solid rgba(255,255,255,0.1)}
+        .footer-brand{display:flex;align-items:center;gap:0.5rem}
+        .footer-brand p{margin-left:0.5rem;opacity:0.7;font-size:0.9rem}
+        .footer-links{display:flex;gap:2rem;flex-wrap:wrap}
+        .footer-links a{color:rgba(255,255,255,0.8);text-decoration:none;font-size:0.9rem}
+        .footer-links a:hover{color:white}
+        .footer-bottom{padding-top:2rem;text-align:center;font-size:0.85rem;opacity:0.6}
+        @media(max-width:768px){.footer-content{flex-direction:column;text-align:center}.footer-links{justify-content:center}}
     </style>
 </head>
 <body>
     <header class="header">
         <div class="header-container">
             <a href="/" class="logo">
-                <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
-                <span class="logo-text">Zamanli</span>
+                <img src="/icons/logo.png" alt="Zamanli">
+                <span>Zamanli</span>
             </a>
             <nav class="nav">
-                <a href="/">Ana Sayfa</a>
-                <a href="/berber/">Berberler</a>
+                <a href="/berber/">Salon Bul</a>
+                <a href="/fiyatlandirma/" style="color:var(--primary);font-weight:600">Fiyatlandırma</a>
+                <a href="/berber/kayit/" class="btn btn-primary">Ücretsiz Başla</a>
             </nav>
-            <a href="/berber/kayit/" class="btn btn-primary nav-cta">Salonunu Ekle</a>
-            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            <button class="mobile-menu-btn" onclick="alert('Menü')">☰</button>
         </div>
     </header>
     
-    <!-- Mobile Menu -->
-    <div id="mobileMenu" class="mobile-menu">
-        <div class="mobile-menu-header">
-            <a href="/" class="logo">
-                <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
-                <span class="logo-text">Zamanli</span>
-            </a>
-            <button class="mobile-menu-close" onclick="toggleMobileMenu()" aria-label="Menüyü kapat">✕</button>
-        </div>
-        <nav class="mobile-menu-nav">
-            <a href="/">🏠 Ana Sayfa</a>
-            <a href="/berber/">💈 Berber Bul</a>
-            <a href="/fiyatlandirma/" class="active">💰 Fiyatlandırma</a>
-            <div class="mobile-menu-divider"></div>
-            <a href="/berber/kayit/" class="highlight">✨ Salonunu Ekle</a>
-        </nav>
-        <div class="mobile-menu-footer">
-            <p>© 2026 Zamanli</p>
-        </div>
-    </div>
-    
-    <!-- Mobile Menu Overlay -->
-    <div id="mobileMenuOverlay" class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
-    
     <section class="hero">
-        <h1>İşletmenize Uygun Paketi Seçin</h1>
-        <p>Her büyüklükteki berber ve kuaför için esnek fiyatlandırma. Kurulum desteği dahil.</p>
+        <h1>Salonunuz İçin Doğru Planı Seçin</h1>
+        <p>Her işletme boyutuna uygun, şeffaf fiyatlandırma. Gizli maliyet yok, sözleşme yok.</p>
+        <div class="billing-toggle">
+            <span id="monthlyLabel" class="active" onclick="setBilling('monthly')">Aylık</span>
+            <div class="toggle-switch" id="billingToggle" onclick="toggleBilling()"></div>
+            <span id="yearlyLabel" onclick="setBilling('yearly')">Yıllık</span>
+            <span class="savings-badge">%20 Tasarruf</span>
+        </div>
     </section>
     
     <section class="pricing-section">
-        <div class="pricing-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); max-width: 1400px;">
-            <!-- Ücretsiz -->
-            <div class="pricing-card free-card">
+        <div class="pricing-grid">
+            <!-- Paket 1: Esnaf -->
+            <div class="pricing-card free">
                 <div class="card-header">
-                    <div class="card-icon">⚪</div>
-                    <h3 class="card-title">Ücretsiz</h3>
-                    <p class="card-desc">Başlangıç için ideal • 1 personel</p>
+                    <div class="card-icon">🏪</div>
+                    <h3 class="card-title">Esnaf / Başlangıç</h3>
+                    <p class="card-desc">Tek kişilik işletmeler için</p>
                 </div>
-                
                 <div class="card-price">
                     <div class="price"><span class="price-currency">₺</span>0</div>
-                    <div class="price-period">/ ay</div>
-                    <div class="setup-fee free">Sonsuza kadar ücretsiz</div>
+                    <div class="price-period">Sonsuza kadar ücretsiz</div>
+                    <div class="value-prop">Hemen Başla</div>
                 </div>
-                
                 <ul class="features-list">
-                    <li class="feature-category">Temel Özellikler</li>
-                    <li><span class="check">✓</span> 30 aylık randevu</li>
-                    <li><span class="check">✓</span> 1 personel</li>
-                    <li><span class="check">✓</span> Online rezervasyon sayfası</li>
-                    <li><span class="check">✓</span> WhatsApp bildirimleri</li>
+                    <li><span class="check">✓</span> Sınırsız randevu ekleme (manuel)</li>
+                    <li><span class="check">✓</span> Web profil sayfası</li>
                     <li><span class="check">✓</span> QR kod ile randevu</li>
-                    <li><span class="check">✓</span> PWA (mobil uygulama)</li>
-                    
+                    <li><span class="check">✓</span> 1 personel</li>
+                    <li><span class="check">✓</span> Temel takvim görünümü</li>
                     <li class="feature-category">Dahil Değil</li>
-                    <li><span class="x">✗</span> SMS bildirimleri</li>
-                    <li><span class="x">✗</span> Müşteri yönetimi</li>
-                    <li><span class="x">✗</span> Raporlar</li>
+                    <li><span class="x">✗</span> SMS/WhatsApp hatırlatma</li>
+                    <li><span class="x">✗</span> Online ödeme (kaparo)</li>
+                    <li><span class="x">✗</span> Raporlar & Analiz</li>
+                    <li><span class="x">✗</span> Stok takibi</li>
                 </ul>
-                
                 <div class="card-cta">
-                    <a href="/berber/kayit/" class="btn btn-primary" style="background: var(--slate-600);">Ücretsiz Başla</a>
+                    <a href="/berber/kayit/" class="btn btn-outline">Ücretsiz Başla</a>
                 </div>
             </div>
             
-            <!-- Starter -->
-            <div class="pricing-card starter">
+            <!-- Paket 2: Profesyonel -->
+            <div class="pricing-card popular">
+                <div class="popular-badge">🔥 En Popüler</div>
                 <div class="card-header">
-                    <div class="card-icon">🟢</div>
-                    <h3 class="card-title">Starter</h3>
-                    <p class="card-desc">Küçük işletmeler • 2 personel</p>
+                    <div class="card-icon">💈</div>
+                    <h3 class="card-title">Profesyonel Salon</h3>
+                    <p class="card-desc">2-5 personelli işletmeler için</p>
                 </div>
-                
                 <div class="card-price">
-                    <div class="price"><span class="price-currency">₺</span>99</div>
+                    <div class="original-price yearly-price" style="display:none">₺499/ay</div>
+                    <div class="price"><span class="price-currency">₺</span><span id="proPrice">499</span></div>
                     <div class="price-period">/ ay</div>
-                    <div class="setup-fee free">Kurulum Ücretsiz</div>
+                    <div class="value-prop">💡 Günde sadece <span id="proDailyPrice">17</span> TL</div>
                 </div>
-                
                 <ul class="features-list">
-                    <li class="feature-category">Ücretsiz'deki Her Şey +</li>
-                    <li><span class="check">✓</span> 100 aylık randevu</li>
-                    <li><span class="check">✓</span> 2 personele kadar</li>
-                    <li><span class="check">✓</span> E-posta bildirimleri</li>
-                    <li><span class="check">✓</span> Müşteri yönetimi</li>
-                    <li><span class="check">✓</span> Hizmet & fiyat yönetimi</li>
-                    <li><span class="check">✓</span> Çalışma saatleri ayarı</li>
-                    <li><span class="check">✓</span> Manuel randevu ekleme</li>
-                    
-                    <li class="feature-category">Dahil Değil</li>
-                    <li><span class="x">✗</span> SMS bildirimleri</li>
-                    <li><span class="x">✗</span> Detaylı raporlar</li>
-                </ul>
-                
-                <div class="card-cta">
-                    <a href="/berber/kayit/" class="btn btn-primary">Hemen Başla</a>
-                </div>
-            </div>
-            
-            <!-- Pro -->
-            <div class="pricing-card pro popular">
-                <div class="popular-badge">En Popüler</div>
-                <div class="card-header">
-                    <div class="card-icon">🔵</div>
-                    <h3 class="card-title">Pro</h3>
-                    <p class="card-desc">Büyüyen işletmeler • 5 personel</p>
-                </div>
-                
-                <div class="card-price">
-                    <div class="price"><span class="price-currency">₺</span>249</div>
-                    <div class="price-period">/ ay</div>
-                    <div class="setup-fee free">Kurulum Ücretsiz</div>
-                </div>
-                
-                <ul class="features-list">
-                    <li class="feature-category">Starter'daki Her Şey +</li>
-                    <li><span class="check">✓</span> 500 aylık randevu</li>
+                    <li><span class="check">✓</span> <strong>Tüm Ücretsiz özellikler +</strong></li>
+                    <li><span class="check">✓</span> <span class="feature-highlight">SMS/WhatsApp Hatırlatma</span></li>
                     <li><span class="check">✓</span> 5 personele kadar</li>
-                    <li><span class="check">✓</span> SMS bildirimleri</li>
-                    <li><span class="check">✓</span> Personel bazlı saatler</li>
-                    <li><span class="check">✓</span> Detaylı raporlar</li>
+                    <li><span class="check">✓</span> Personel prim takibi</li>
+                    <li><span class="check">✓</span> Stok takibi (boya, şampuan vb.)</li>
+                    <li><span class="check">✓</span> <span class="feature-highlight">Online ödeme / Kaparo</span></li>
+                    <li><span class="check">✓</span> Detaylı raporlar & analiz</li>
                     <li><span class="check">✓</span> No-show takibi</li>
-                    <li><span class="check">✓</span> Özel marka (logo)</li>
-                    <li><span class="check">✓</span> Personel rolleri</li>
+                    <li><span class="check">✓</span> Özel logo kullanımı</li>
+                    <li><span class="check">✓</span> Müşteri yönetimi</li>
+                    <li><span class="check">✓</span> E-posta desteği</li>
                 </ul>
-                
                 <div class="card-cta">
-                    <a href="/berber/kayit/" class="btn btn-primary">Hemen Başla</a>
+                    <a href="/berber/kayit/?plan=professional" class="btn btn-primary">Hemen Başla</a>
                 </div>
             </div>
             
-            <!-- Business -->
-            <div class="pricing-card premium-card">
+            <!-- Paket 3: Kurumsal -->
+            <div class="pricing-card enterprise">
                 <div class="card-header">
-                    <div class="card-icon">🟣</div>
-                    <h3 class="card-title">Business</h3>
-                    <p class="card-desc">Sınırsız • Çoklu şube</p>
+                    <div class="card-icon">👑</div>
+                    <h3 class="card-title">Zincir & Elit</h3>
+                    <p class="card-desc">Çoklu şube & kurumsal</p>
                 </div>
-                
                 <div class="card-price">
-                    <div class="price"><span class="price-currency">₺</span>499</div>
-                    <div class="price-period">/ ay</div>
-                    <div class="setup-fee free">Kurulum Ücretsiz</div>
+                    <div class="original-price yearly-price" style="display:none">₺1.499/ay</div>
+                    <div class="price"><span class="price-currency">₺</span><span id="enterprisePrice">1.499</span></div>
+                    <div class="price-period">/ ay + şube başı ücret</div>
+                    <div class="value-prop" style="background:#fef9ed;color:#b45309">Kurumsal Çözüm</div>
                 </div>
-                
                 <ul class="features-list">
-                    <li class="feature-category">Pro'daki Her Şey +</li>
-                    <li><span class="check">✓</span> Sınırsız randevu</li>
+                    <li><span class="check">✓</span> <strong>Tüm Profesyonel özellikler +</strong></li>
                     <li><span class="check">✓</span> Sınırsız personel</li>
-                    <li><span class="check">✓</span> Çoklu şube desteği</li>
-                    <li><span class="check">✓</span> Şube bazlı takvim</li>
-                    <li><span class="check">✓</span> Gelişmiş raporlar</li>
-                    <li><span class="check">✓</span> Excel/CSV export</li>
-                    <li><span class="check">✓</span> Öncelikli destek</li>
-                    <li><span class="check">✓</span> Kurulum desteği</li>
-                </ul>
-                
-                <div class="card-cta">
-                    <a href="/berber/kayit/" class="btn btn-primary">Hemen Başla</a>
-                </div>
-            </div>
-            
-            <!-- Enterprise -->
-            <div class="pricing-card enterprise-card">
-                <div class="card-header">
-                    <div class="card-icon">🟡</div>
-                    <h3 class="card-title">Enterprise</h3>
-                    <p class="card-desc">Kurumsal • Özel çözümler</p>
-                </div>
-                
-                <div class="card-price">
-                    <div class="price"><span class="price-currency">₺</span>999</div>
-                    <div class="price-period">/ ay</div>
-                    <div class="setup-fee free">Özel kurulum dahil</div>
-                </div>
-                
-                <ul class="features-list">
-                    <li class="feature-category">Business'taki Her Şey +</li>
+                    <li><span class="check">✓</span> <span class="feature-highlight">Çoklu şube yönetimi</span></li>
+                    <li><span class="check">✓</span> Gelişmiş BI & Raporlama</li>
+                    <li><span class="check">✓</span> <span class="feature-highlight">AI Doluluk Analizi</span></li>
+                    <li><span class="check">✓</span> Kendi alan adı (White-label)</li>
                     <li><span class="check">✓</span> API erişimi</li>
-                    <li><span class="check">✓</span> White-label çözüm</li>
-                    <li><span class="check">✓</span> Özel entegrasyonlar</li>
-                    <li><span class="check">✓</span> Özel alan adı</li>
+                    <li><span class="check">✓</span> <span class="feature-highlight">7/24 Özel Müşteri Temsilcisi</span></li>
                     <li><span class="check">✓</span> SLA garantisi</li>
-                    <li><span class="check">✓</span> Dedicated destek</li>
-                    <li><span class="check">✓</span> Eğitim ve danışmanlık</li>
-                    <li><span class="check">✓</span> Özel geliştirmeler</li>
+                    <li><span class="check">✓</span> Kurulum & eğitim desteği</li>
                 </ul>
-                
                 <div class="card-cta">
-                    <a href="https://wa.me/905433838587?text=Enterprise%20paket%20hakkında%20bilgi%20almak%20istiyorum" target="_blank" class="btn btn-primary" style="background: linear-gradient(135deg, #C5A065, #a88a50);">İletişime Geç</a>
+                    <a href="https://wa.me/905433838587?text=Zincir%20paket%20hakkında%20bilgi%20almak%20istiyorum" target="_blank" class="btn btn-primary" style="background:linear-gradient(135deg,var(--brand-gold),#a88a50)">İletişime Geç</a>
                 </div>
             </div>
+        </div>
+    </section>
+    
+    <section class="info-banner">
+        <div class="info-banner-inner">
+            <h3>💡 Neden SMS Hatırlatma Önemli?</h3>
+            <p>Araştırmalar gösteriyor ki <strong>SMS/WhatsApp hatırlatma</strong> ile no-show (gelmeme) oranı <strong>%40'a kadar düşüyor</strong>. Günde sadece 1 kayıp randevu = ayda <strong>~1.500₺ kayıp gelir</strong>. Profesyonel paket kendini 1 haftada amorti ediyor!</p>
         </div>
     </section>
     
     <section class="faq-section">
         <h2 class="faq-title">Sıkça Sorulan Sorular</h2>
-        
-        <div class="faq-item">
-            <div class="faq-question">Paketimi sonradan değiştirebilir miyim?</div>
-            <div class="faq-answer">Evet, dilediğiniz zaman üst pakete geçebilirsiniz. Alt pakete geçiş dönem sonunda yapılabilir.</div>
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">Ücretsiz paketten ücretli pakete geçersem verilerim kaybolur mu?</div>
+            <div class="faq-answer">Hayır, tüm verileriniz korunur. Paket yükseltme işlemi anında gerçekleşir ve ek özellikler hemen aktif olur.</div>
         </div>
-        
-        <div class="faq-item">
-            <div class="faq-question">Kurulum ücreti ne içeriyor?</div>
-            <div class="faq-answer">Hesap oluşturma, hizmet ve personel tanımlama, çalışma saatleri ayarlama ve kullanım eğitimi dahildir.</div>
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">Yıllık ödeme yaparsam iade alabilir miyim?</div>
+            <div class="faq-answer">Evet, ilk 14 gün içinde memnun kalmazsanız tam iade yapıyoruz. 14 gün sonrası için kalan süreniz krediye dönüştürülür.</div>
         </div>
-        
-        <div class="faq-item">
-            <div class="faq-question">Ödeme nasıl yapılıyor?</div>
-            <div class="faq-answer">Aylık ödemeler havale/EFT ile yapılmaktadır. Fatura her ay başında gönderilir.</div>
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">SMS hatırlatma için ek ücret var mı?</div>
+            <div class="faq-answer">Profesyonel ve üstü paketlerde aylık belirli bir SMS kotası dahildir. Kota aşımında uygun fiyatlarla ek SMS satın alabilirsiniz.</div>
         </div>
-        
-        <div class="faq-item">
-            <div class="faq-question">İptal etmek istersem ne olur?</div>
-            <div class="faq-answer">İstediğiniz zaman iptal edebilirsiniz. Mevcut dönem sonuna kadar kullanmaya devam edersiniz.</div>
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">Çoklu şube için nasıl fiyatlandırma yapılıyor?</div>
+            <div class="faq-answer">Zincir & Elit paketinde ana fiyata ek olarak her şube için 499₺/ay ücret uygulanır. 5+ şube için özel fiyatlandırma sunuyoruz.</div>
         </div>
-        
-        <div class="faq-item">
-            <div class="faq-question">PWA nedir?</div>
-            <div class="faq-answer">Progressive Web App - telefonunuza uygulama olarak ekleyebileceğiniz web uygulaması. App Store'dan indirmeye gerek yok.</div>
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">Paketimi istediğim zaman değiştirebilir miyim?</div>
+            <div class="faq-answer">Evet, üst pakete anında geçebilirsiniz. Alt pakete geçiş mevcut dönem sonunda yapılır.</div>
         </div>
     </section>
     
     <section class="cta-banner">
         <h2>Hangi paketi seçeceğinize karar veremediniz mi?</h2>
-        <p>Bize ulaşın, işletmenize en uygun paketi birlikte belirleyelim.</p>
-        <a href="https://wa.me/905433838587" target="_blank" class="btn">WhatsApp ile İletişime Geç</a>
+        <p>Size özel demo ve danışmanlık için bize ulaşın.</p>
+        <a href="https://wa.me/905433838587?text=Merhaba,%20Zamanli%20hakkında%20bilgi%20almak%20istiyorum" target="_blank" class="btn">💬 WhatsApp ile İletişime Geç</a>
     </section>
     
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <img src="/icons/logo.png" alt="Zamanli" class="logo-image" style="height: 36px;">
-                    <span class="logo-text" style="color: white;">Zamanli</span>
-                    <p>Online randevu sistemi</p>
+                    <img src="/icons/logo.png" alt="Zamanli" style="height:32px;filter:brightness(0) invert(1)">
+                    <span style="font-family:var(--font-heading);font-weight:700;font-size:1.25rem">Zamanli</span>
+                    <p>Online Randevu Sistemi</p>
                 </div>
                 <div class="footer-links">
-                    <a href="/berber/">Berber Bul</a>
+                    <a href="/berber/">Salon Bul</a>
                     <a href="/berber/kayit/">Salonunu Ekle</a>
+                    <a href="/fiyatlandirma/">Fiyatlandırma</a>
                     <a href="https://wa.me/905433838587" target="_blank">İletişim</a>
                 </div>
             </div>
             <div class="footer-bottom">
                 <p>© 2026 Zamanli. Tüm hakları saklıdır.</p>
-                <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">
-                    <a href="https://feyzdigital.com" target="_blank" style="color: inherit; text-decoration: none;">Feyz Digital</a> tarafından geliştirildi.
-                </p>
+                <p style="margin-top:0.5rem"><a href="https://feyzdigital.com" target="_blank" style="color:inherit;text-decoration:none;opacity:0.7">Feyz Digital</a> tarafından geliştirildi.</p>
             </div>
         </div>
     </footer>
     
     <script>
-        function toggleMobileMenu() {
-            document.getElementById('mobileMenu').classList.toggle('active');
-            document.getElementById('mobileMenuOverlay').classList.toggle('active');
-            document.body.style.overflow = document.getElementById('mobileMenu').classList.contains('active') ? 'hidden' : '';
+        let isYearly = false;
+        const prices = { professional: { monthly: 499, yearly: 399 }, enterprise: { monthly: 1499, yearly: 1199 } };
+        
+        function toggleBilling() { isYearly = !isYearly; updatePrices(); }
+        function setBilling(type) { isYearly = type === 'yearly'; updatePrices(); }
+        
+        function updatePrices() {
+            const toggle = document.getElementById('billingToggle');
+            const monthlyLabel = document.getElementById('monthlyLabel');
+            const yearlyLabel = document.getElementById('yearlyLabel');
+            
+            if (isYearly) {
+                toggle.classList.add('active');
+                monthlyLabel.classList.remove('active');
+                yearlyLabel.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+                monthlyLabel.classList.add('active');
+                yearlyLabel.classList.remove('active');
+            }
+            
+            const proPrice = isYearly ? prices.professional.yearly : prices.professional.monthly;
+            const enterprisePrice = isYearly ? prices.enterprise.yearly : prices.enterprise.monthly;
+            
+            document.getElementById('proPrice').textContent = proPrice;
+            document.getElementById('enterprisePrice').textContent = enterprisePrice.toLocaleString('tr-TR');
+            document.getElementById('proDailyPrice').textContent = Math.round(proPrice / 30);
+            
+            document.querySelectorAll('.yearly-price').forEach(el => {
+                el.style.display = isYearly ? 'block' : 'none';
+            });
         }
+        
+        updatePrices();
     </script>
 </body>
 </html>
