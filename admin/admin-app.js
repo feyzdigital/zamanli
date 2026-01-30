@@ -425,9 +425,47 @@ async function changePackage(id) {
 
 async function permanentDeleteSalon(id) {
     const s = AdminState.salons.find(x => x.id === id);
-    if (!confirm('"' + (s?.name || 'Bu salon') + '" kalıcı olarak silinecek! Devam?')) return;
+    if (!confirm('"' + (s?.name || 'Bu salon') + '" kalıcı olarak silinecek!\n\nTüm randevular, müşteriler ve yorumlar da silinecek.\n\nDevam?')) return;
     if (!confirm('EMİN MİSİNİZ? Bu işlem geri alınamaz!')) return;
-    try { showToast('Siliniyor...', 'info'); await db.collection('salons').doc(id).delete(); showToast('Salon silindi', 'success'); nav('salons'); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    
+    try {
+        showToast('Siliniyor...', 'info');
+        
+        // 1. Salon'un alt koleksiyonlarını sil
+        const subCollections = ['customers', 'reviews', 'customerNotes'];
+        for (const subCol of subCollections) {
+            try {
+                const snapshot = await db.collection('salons').doc(id).collection(subCol).get();
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                if (snapshot.size > 0) await batch.commit();
+                console.log(`[Delete] ${subCol}: ${snapshot.size} doküman silindi`);
+            } catch (e) {
+                console.log(`[Delete] ${subCol} silinemedi:`, e.message);
+            }
+        }
+        
+        // 2. Bu salona ait randevuları sil
+        try {
+            const appointmentsSnap = await db.collection('appointments').where('salonId', '==', id).get();
+            const batch = db.batch();
+            appointmentsSnap.docs.forEach(doc => batch.delete(doc.ref));
+            if (appointmentsSnap.size > 0) await batch.commit();
+            console.log(`[Delete] appointments: ${appointmentsSnap.size} randevu silindi`);
+        } catch (e) {
+            console.log('[Delete] Randevular silinemedi:', e.message);
+        }
+        
+        // 3. Ana salon dokümanını sil
+        await db.collection('salons').doc(id).delete();
+        
+        showToast('Salon ve tüm verileri silindi', 'success');
+        nav('salons');
+        
+    } catch (e) {
+        console.error('[Delete] Hata:', e);
+        showToast('Hata: ' + e.message, 'error');
+    }
 }
 
 async function regenerateQRCode(id) {

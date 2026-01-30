@@ -7757,13 +7757,15 @@ Panel: ${window.location.href}`);
                 
                 allCustomers = Object.values(customerMap);
                 
-                // Son randevuya göre sırala (randevusu olmayanlar sona)
+                // Eklenme zamanına göre sırala (en yeni en üstte)
                 allCustomers.sort((a, b) => {
-                    const lastA = a.appointments[a.appointments.length - 1]?.date || a.createdAt || '0000';
-                    const lastB = b.appointments[b.appointments.length - 1]?.date || b.createdAt || '0000';
-                    return lastB.localeCompare(lastA);
+                    // createdAt varsa onu kullan, yoksa son randevu tarihini kullan
+                    const dateA = a.createdAt || a.appointments?.[a.appointments.length - 1]?.date || '0000-00-00';
+                    const dateB = b.createdAt || b.appointments?.[b.appointments.length - 1]?.date || '0000-00-00';
+                    return dateB.localeCompare(dateA); // Descending (yeni önce)
                 });
                 
+                console.log('[Customers] Toplam müşteri:', allCustomers.length);
                 renderCustomers();
                 
             } catch (error) {
@@ -10126,24 +10128,30 @@ END:VEVENT
             
             // Kayıtlı müşterilerden ara (allCustomers veya randevulardan)
             const customers = getAllSavedCustomers();
-            const filtered = customers.filter(c => 
-                c.name.toLowerCase().includes(query) || 
-                c.phone.includes(query.replace(/\D/g, ''))
-            ).slice(0, 10);
+            console.log('[Search] Toplam müşteri:', customers.length, 'Aranan:', query);
+            
+            const filtered = customers.filter(c => {
+                const name = (c.name || '').toLowerCase();
+                const phone = (c.phone || '').replace(/\D/g, '');
+                const searchPhone = query.replace(/\D/g, '');
+                return name.includes(query) || phone.includes(searchPhone);
+            }).slice(0, 10);
+            
+            console.log('[Search] Bulunan:', filtered.length);
             
             if (filtered.length === 0) {
                 resultsContainer.innerHTML = '<div style="padding: 0.75rem; color: var(--slate-500); text-align: center; font-size: 0.85rem;">Sonuç bulunamadı</div>';
             } else {
                 resultsContainer.innerHTML = filtered.map(c => `
-                    <div onclick="selectCustomerForAppointment('${escapeHtml(c.name)}', '${c.phone}')" 
+                    <div onclick="selectCustomerForAppointment('${escapeHtml(c.name || 'İsimsiz')}', '${c.phone}')" 
                          style="padding: 0.75rem; cursor: pointer; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s;"
                          onmouseover="this.style.background='var(--slate-50)'" 
                          onmouseout="this.style.background='white'">
                         <div style="width: 36px; height: 36px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem;">
-                            ${c.name.charAt(0).toUpperCase()}
+                            ${(c.name || 'İ').charAt(0).toUpperCase()}
                         </div>
                         <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--slate-800);">${escapeHtml(c.name)}</div>
+                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--slate-800);">${escapeHtml(c.name || 'İsimsiz')}</div>
                             <div style="font-size: 0.8rem; color: var(--slate-500);">📱 0${c.phone}</div>
                         </div>
                         <div style="font-size: 0.75rem; color: var(--slate-400);">${c.appointmentCount || 0} randevu</div>
