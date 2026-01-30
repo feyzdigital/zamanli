@@ -297,21 +297,28 @@
         
         /* ===== MOBİL HAMBURGER MENÜ ===== */
         .mobile-menu-toggle {
-            display: none;
-            background: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--slate-100);
             border: none;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             cursor: pointer;
-            padding: 0.5rem;
+            padding: 0.5rem 0.75rem;
             color: var(--slate-700);
             z-index: 101;
+            border-radius: var(--radius);
+            transition: all 0.2s;
+        }
+        
+        .mobile-menu-toggle:hover {
+            background: var(--slate-200);
         }
         
         @media (max-width: 768px) {
             .mobile-menu-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                padding: 0.4rem 0.6rem;
+                font-size: 1.2rem;
             }
             
             .header-salon {
@@ -3750,7 +3757,7 @@
                         </div>
                     </div>
                     <div class="staff-filter-inline">
-                        <select id="calendarStaffFilterNew" onchange="renderWeeklyCalendar()">
+                        <select id="calendarStaffFilterNew" onchange="renderWeeklyCalendarNew()">
                             <option value="all">Tüm Personel</option>
                         </select>
                     </div>
@@ -10049,6 +10056,11 @@ END:VEVENT
         function openManualAppointmentModal() {
             const modal = document.getElementById('manualAppointmentModal');
             
+            // Müşterileri yükle (eğer henüz yüklenmediyse)
+            if (!allCustomers || allCustomers.length === 0) {
+                loadCustomers();
+            }
+            
             // Tarihi bugün olarak ayarla
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('manualAppointmentDate').value = today;
@@ -10159,29 +10171,45 @@ END:VEVENT
         }
         
         function getAllSavedCustomers() {
-            // Önce allCustomers'ı kontrol et
+            // Her iki kaynaktan müşterileri birleştir
+            const customerMap = new Map();
+            
+            // 1. allCustomers'dan ekle (manuel eklenen + randevulardan toplanan)
             if (allCustomers && allCustomers.length > 0) {
-                return allCustomers;
+                allCustomers.forEach(c => {
+                    const phone = (c.phone || '').replace(/\D/g, '').slice(-10);
+                    if (phone && phone.length === 10) {
+                        customerMap.set(phone, {
+                            name: c.name || 'İsimsiz',
+                            phone: phone,
+                            appointmentCount: c.appointments?.length || c.appointmentCount || 0
+                        });
+                    }
+                });
             }
             
-            // Yoksa randevulardan müşterileri çıkar
-            const customerMap = new Map();
+            // 2. Randevulardan da ekle (allCustomers boş olsa bile)
             appointments.forEach(apt => {
-                if (apt.customerPhone) {
-                    const phone = apt.customerPhone.replace(/\D/g, '');
-                    if (!customerMap.has(phone)) {
-                        customerMap.set(phone, {
-                            name: apt.customerName || 'İsimsiz',
-                            phone: phone,
-                            appointmentCount: 1
-                        });
-                    } else {
-                        customerMap.get(phone).appointmentCount++;
+                if (apt.customerPhone && apt.customerName) {
+                    const phone = apt.customerPhone.replace(/\D/g, '').slice(-10);
+                    if (phone && phone.length === 10) {
+                        if (!customerMap.has(phone)) {
+                            customerMap.set(phone, {
+                                name: apt.customerName,
+                                phone: phone,
+                                appointmentCount: 1
+                            });
+                        } else {
+                            // Randevu sayısını artır
+                            const existing = customerMap.get(phone);
+                            existing.appointmentCount = (existing.appointmentCount || 0) + 1;
+                        }
                     }
                 }
             });
             
-            return Array.from(customerMap.values()).sort((a, b) => b.appointmentCount - a.appointmentCount);
+            // En çok randevusu olanları öne al
+            return Array.from(customerMap.values()).sort((a, b) => (b.appointmentCount || 0) - (a.appointmentCount || 0));
         }
         
         function closeManualAppointmentModal() {
