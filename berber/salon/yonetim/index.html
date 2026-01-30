@@ -7690,13 +7690,21 @@ Panel: ${window.location.href}`);
             try {
                 const customerMap = {};
                 
+                // 0. Önce silinen müşterileri al (blacklist)
+                const deletedSet = new Set();
+                try {
+                    const deletedSnap = await db.collection('salons').doc(salon.id).collection('deletedCustomers').get();
+                    deletedSnap.docs.forEach(doc => deletedSet.add(doc.id));
+                    console.log('[Customers] Blacklist:', deletedSet.size, 'müşteri');
+                } catch (e) {}
+                
                 // 1. Önce manuel eklenen müşterileri yükle (customers collection'dan)
                 try {
                     const customersSnap = await db.collection('salons').doc(salon.id).collection('customers').get();
                     customersSnap.docs.forEach(doc => {
                         const cust = doc.data();
                         const phone = cust.phone?.replace(/\D/g, '').slice(-10);
-                        if (phone) {
+                        if (phone && !deletedSet.has(phone)) {
                             customerMap[phone] = {
                                 id: doc.id,
                                 name: cust.name || 'İsimsiz',
@@ -7714,7 +7722,7 @@ Panel: ${window.location.href}`);
                     console.log('No manual customers collection yet');
                 }
                 
-                // 2. Randevulardan müşterileri topla
+                // 2. Randevulardan müşterileri topla (silinmemiş olanları)
                 const snap = await db.collection('appointments')
                     .where('salonId', '==', salon.id)
                     .get();
@@ -7722,7 +7730,7 @@ Panel: ${window.location.href}`);
                 snap.docs.forEach(doc => {
                     const apt = doc.data();
                     const phone = apt.customerPhone?.replace(/\D/g, '').slice(-10);
-                    if (!phone) return;
+                    if (!phone || deletedSet.has(phone)) return;
                     
                     // PERSONEL MODU: Sadece kendi müşterilerini göster
                     if (isStaffMode && currentStaffId) {
@@ -7965,7 +7973,23 @@ Panel: ${window.location.href}`);
             if (!confirm('Bu müşteriyi silmek istediğinize emin misiniz?')) return;
             
             try {
+                // Müşteriyi bul ve telefonunu al
+                const customer = allCustomers.find(c => c.id === customerId || c.phone === customerId);
+                const phone = customer?.phone || customerId;
+                const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+                
+                // 1. Müşteriyi sil
                 await db.collection('salons').doc(salon.id).collection('customers').doc(customerId).delete();
+                
+                // 2. Blacklist'e ekle (tekrar gelmemesi için)
+                if (cleanPhone && cleanPhone.length === 10) {
+                    await db.collection('salons').doc(salon.id).collection('deletedCustomers').doc(cleanPhone).set({
+                        phone: cleanPhone,
+                        deletedAt: new Date().toISOString(),
+                        deletedBy: isStaffMode ? currentStaffName : 'salon_owner'
+                    });
+                }
+                
                 showToast('Müşteri silindi', 'success');
                 await loadCustomers();
             } catch (error) {
