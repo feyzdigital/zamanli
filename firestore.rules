@@ -2,12 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Salonlar - Herkes okuyabilir, yazma için kısıtlama
+    // ==================== SALONLAR ====================
     match /salons/{salonId} {
       allow read: if true;
-      allow create: if true; // Kayıt için
-      allow update: if true; // PIN doğrulaması frontend'de yapılıyor
-      allow delete: if false; // Silme devre dışı - güvenlik için
+      allow create: if true;
+      allow update: if true;
+      allow delete: if true; // Süper admin silme yetkisi
       
       // Salon altındaki personeller
       match /staff/{staffId} {
@@ -22,11 +22,13 @@ service cloud.firestore {
       // Salon altındaki randevular
       match /appointments/{appointmentId} {
         allow read, write: if true;
+        allow delete: if true;
       }
       
       // Salon altındaki müşteriler
       match /customers/{customerId} {
         allow read, write: if true;
+        allow delete: if true;
       }
       
       // Personel blokları (izin/kapalı günler)
@@ -39,54 +41,65 @@ service cloud.firestore {
         allow read, write: if true;
       }
       
+      // Silinen müşteriler (blacklist)
+      match /deletedCustomers/{customerId} {
+        allow read, write: if true;
+      }
+      
       // Salon altındaki yorumlar
       match /reviews/{reviewId} {
         allow read: if true;
         allow create: if true;
-        allow update, delete: if false;
+        allow update, delete: if true; // Admin düzenleme yetkisi
       }
     }
     
-    // Randevular (global collection)
+    // ==================== RANDEVULAR (global) ====================
     match /appointments/{appointmentId} {
       allow read: if true;
       allow create: if true;
       allow update: if true;
-      allow delete: if false; // Silme yerine iptal durumu kullan
+      allow delete: if true; // Süper admin silme yetkisi
     }
     
-    // Müşteriler
+    // ==================== MÜŞTERİLER ====================
     match /customers/{customerId} {
+      allow read, write: if true;
+      allow delete: if true;
+    }
+    
+    // ==================== ADMIN ====================
+    match /admin/{docId} {
       allow read, write: if true;
     }
     
-    // Admin collection - sadece admin erişebilir
-    match /admin/{docId} {
-      allow read, write: if true; // Production'da kısıtlanmalı
-    }
-    
-    // Sistem ayarları
+    // ==================== SİSTEM AYARLARI ====================
     match /settings/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
     
-    // Push Notification Tokens
+    // ==================== PUSH TOKENS ====================
     match /push_tokens/{tokenId} {
-      allow read: if false; // Sadece cloud functions erişebilir
-      allow create, update: if true; // Token kaydı için
-      allow delete: if false;
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if true;
     }
     
-    // Notifications Queue (Cloud Functions tarafından işlenir)
+    // ==================== BİLDİRİMLER ====================
     match /notifications/{notificationId} {
       allow read, write: if true;
     }
     
-    // Notification Logs (Cloud Functions tarafından yazılır)
     match /notification_logs/{logId} {
+      allow read, write: if true;
+    }
+    
+    // ==================== ADMIN LOGLARI ====================
+    match /admin_logs/{logId} {
       allow read: if true;
-      allow write: if true; // Cloud Functions yazacak
+      allow create: if true;
+      allow update, delete: if false;
     }
   }
 }

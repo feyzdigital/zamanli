@@ -180,16 +180,42 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// ==================== MESSAGE (Cache temizleme komutu) ====================
+// ==================== MESSAGE (Cache temizleme ve kontrol komutları) ====================
 self.addEventListener('message', (event) => {
-    if (event.data === 'SKIP_WAITING') {
+    const data = event.data;
+    
+    // String format (eski uyumluluk)
+    if (data === 'SKIP_WAITING') {
         self.skipWaiting();
+        return;
     }
-    if (event.data === 'CLEAR_CACHE') {
+    if (data === 'CLEAR_CACHE') {
         caches.keys().then(names => {
             names.forEach(name => caches.delete(name));
         });
         console.log('[SW] All caches cleared by request');
+        return;
+    }
+    
+    // Object format (yeni)
+    if (data && typeof data === 'object') {
+        console.log('[SW] Message received:', data);
+        
+        if (data.type === 'SKIP_WAITING') {
+            self.skipWaiting();
+        }
+        
+        if (data.type === 'GET_VERSION' && event.ports && event.ports[0]) {
+            event.ports[0].postMessage({ version: CACHE_VERSION });
+        }
+        
+        if (data.type === 'CLEAR_CACHE') {
+            caches.delete(CACHE_NAME).then(() => {
+                if (event.ports && event.ports[0]) {
+                    event.ports[0].postMessage({ success: true });
+                }
+            });
+        }
     }
 });
 
@@ -430,24 +456,5 @@ async function checkUpcomingAppointments() {
     // Yaklaşan randevuları kontrol et
     console.log('[SW] Checking upcoming appointments...');
 }
-
-// ==================== MESSAGE HANDLING ====================
-self.addEventListener('message', (event) => {
-    console.log('[SW] Message received:', event.data);
-    
-    if (event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
-    
-    if (event.data.type === 'GET_VERSION') {
-        event.ports[0].postMessage({ version: CACHE_VERSION });
-    }
-    
-    if (event.data.type === 'CLEAR_CACHE') {
-        caches.delete(CACHE_NAME).then(() => {
-            event.ports[0].postMessage({ success: true });
-        });
-    }
-});
 
 console.log('[SW] Service Worker loaded - v' + CACHE_VERSION);

@@ -26,6 +26,34 @@
       ]
     },
     {
+      "collectionGroup": "appointments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date", "order": "ASCENDING" },
+        { "fieldPath": "time", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "appointments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date", "order": "ASCENDING" },
+        { "fieldPath": "time", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "reminderSent", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "appointments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "salonId", "order": "ASCENDING" },
+        { "fieldPath": "staffId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "push_tokens",
       "queryScope": "COLLECTION",
       "fields": [
@@ -37,17 +65,31 @@
       "collectionGroup": "push_tokens",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "salonId", "order": "ASCENDING" },
+        { "fieldPath": "userType", "order": "ASCENDING" },
+        { "fieldPath": "staffId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "push_tokens",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "userType", "order": "ASCENDING" },
         { "fieldPath": "phone", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionGroup": "appointments",
+      "collectionGroup": "push_tokens",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "date", "order": "ASCENDING" },
-        { "fieldPath": "time", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        { "fieldPath": "lastActive", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "customers",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
   ],
