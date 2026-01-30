@@ -10055,13 +10055,12 @@ END:VEVENT
         let selectedCustomerForAppointment = null;
         let customerMode = 'existing'; // 'existing' veya 'new'
         
-        function openManualAppointmentModal() {
+        async function openManualAppointmentModal() {
             const modal = document.getElementById('manualAppointmentModal');
             
-            // Müşterileri yükle (eğer henüz yüklenmediyse)
-            if (!allCustomers || allCustomers.length === 0) {
-                loadCustomers();
-            }
+            // Müşterileri yükle (her zaman taze veri çek)
+            showToast('Müşteriler yükleniyor...', 'info');
+            await loadCustomers();
             
             // Tarihi bugün olarak ayarla
             const today = new Date().toISOString().split('T')[0];
@@ -10093,6 +10092,7 @@ END:VEVENT
             toggleCustomerMode('existing');
             
             modal.classList.add('active');
+            console.log('[Manual] Modal açıldı, müşteri sayısı:', allCustomers.length);
         }
         
         function toggleCustomerMode(mode) {

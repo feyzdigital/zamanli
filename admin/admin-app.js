@@ -7,7 +7,7 @@ const AdminState = {
     isLoggedIn: false, currentView: 'dashboard', currentTab: 'active', currentCategory: 'all',
     salons: [], allAppointments: [], allCustomers: [], pushTokens: [],
     stats: { totalSalons: 0, activeSalons: 0, pendingSalons: 0, totalAppointments: 0, todayAppointments: 0, totalCustomers: 0 },
-    loading: false, searchQuery: '', selectedSalon: null, salonStaff: [], salonServices: [], salonAppointments: [], detailTab: 'info', listeners: []
+    loading: false, searchQuery: '', selectedSalon: null, salonStaff: [], salonServices: [], salonAppointments: [], salonCustomers: [], detailTab: 'info', listeners: []
 };
 let db = null;
 
@@ -70,12 +70,77 @@ async function loadAllData() {
         AdminState.allAppointments = aptSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         console.log('[Admin] Randevular:', AdminState.allAppointments.length);
         
-        const custSnap = await db.collection('customers').limit(500).get();
-        AdminState.allCustomers = custSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Müşterileri randevulardan ve salon customer koleksiyonlarından topla
+        await loadAllCustomers();
         
         calculateStats(); setupRealtimeListeners();
     } catch (e) { console.error('[Admin] Veri yükleme hatası:', e); showToast('Hata: ' + e.message, 'error'); }
     AdminState.loading = false; renderApp();
+}
+
+async function loadAllCustomers() {
+    const customerMap = new Map();
+    
+    // 1. Tüm randevulardan müşterileri topla
+    AdminState.allAppointments.forEach(apt => {
+        if (apt.customerPhone && apt.customerName) {
+            const phone = apt.customerPhone.replace(/\D/g, '').slice(-10);
+            if (phone && phone.length === 10) {
+                const existing = customerMap.get(phone);
+                if (!existing) {
+                    customerMap.set(phone, {
+                        name: apt.customerName,
+                        phone: phone,
+                        salonId: apt.salonId,
+                        salonName: apt.salonName || AdminState.salons.find(s => s.id === apt.salonId)?.name || '-',
+                        appointmentCount: 1,
+                        lastAppointment: apt.date,
+                        createdAt: apt.createdAt || apt.date
+                    });
+                } else {
+                    existing.appointmentCount++;
+                    if (apt.date > (existing.lastAppointment || '')) {
+                        existing.lastAppointment = apt.date;
+                    }
+                }
+            }
+        }
+    });
+    
+    // 2. Salon customer koleksiyonlarından da ekle
+    for (const salon of AdminState.salons.slice(0, 50)) { // İlk 50 salon için
+        try {
+            const custSnap = await db.collection('salons').doc(salon.id).collection('customers').get();
+            custSnap.docs.forEach(doc => {
+                const cust = doc.data();
+                const phone = (cust.phone || '').replace(/\D/g, '').slice(-10);
+                if (phone && phone.length === 10 && !customerMap.has(phone)) {
+                    customerMap.set(phone, {
+                        id: doc.id,
+                        name: cust.name || 'İsimsiz',
+                        phone: phone,
+                        email: cust.email || '',
+                        salonId: salon.id,
+                        salonName: salon.name,
+                        appointmentCount: 0,
+                        isManual: true,
+                        createdAt: cust.createdAt || ''
+                    });
+                }
+            });
+        } catch (e) {
+            // Koleksiyon olmayabilir
+        }
+    }
+    
+    // Eklenme tarihine göre sırala (en yeni en üstte)
+    AdminState.allCustomers = Array.from(customerMap.values()).sort((a, b) => {
+        const dateA = a.createdAt || a.lastAppointment || '0000';
+        const dateB = b.createdAt || b.lastAppointment || '0000';
+        return dateB.localeCompare(dateA);
+    });
+    
+    console.log('[Admin] Müşteriler:', AdminState.allCustomers.length);
 }
 
 function calculateStats() {
@@ -110,11 +175,83 @@ async function loadSalonDetails(id) {
         AdminState.selectedSalon = { id: salonDoc.id, ...salonDoc.data() };
         AdminState.salonStaff = (AdminState.selectedSalon.staff || []).map((s, i) => ({ id: s.id || 'staff-' + i, ...s }));
         AdminState.salonServices = (AdminState.selectedSalon.services || []).map((s, i) => ({ id: s.id || 'svc-' + i, ...s }));
+        
+        // Randevuları yükle
         const aptSnap = await db.collection('appointments').where('salonId', '==', id).orderBy('date', 'desc').limit(100).get();
         AdminState.salonAppointments = aptSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Müşterileri yükle
+        await loadSalonCustomers(id);
+        
         AdminState.currentView = 'salon-detail'; AdminState.detailTab = 'info';
     } catch (e) { console.error('[Admin] Salon detay hatası:', e); showToast('Hata: ' + e.message, 'error'); }
     AdminState.loading = false; renderApp();
+}
+
+async function loadSalonCustomers(salonId) {
+    const customerMap = new Map();
+    
+    // 1. Randevulardan müşterileri topla
+    AdminState.salonAppointments.forEach(apt => {
+        if (apt.customerPhone && apt.customerName) {
+            const phone = apt.customerPhone.replace(/\D/g, '').slice(-10);
+            if (phone && phone.length === 10) {
+                const existing = customerMap.get(phone);
+                if (!existing) {
+                    customerMap.set(phone, {
+                        name: apt.customerName,
+                        phone: phone,
+                        appointmentCount: 1,
+                        lastAppointment: apt.date,
+                        totalSpent: apt.status === 'completed' ? (apt.servicePrice || 0) : 0,
+                        createdAt: apt.createdAt || apt.date
+                    });
+                } else {
+                    existing.appointmentCount++;
+                    if (apt.date > (existing.lastAppointment || '')) {
+                        existing.lastAppointment = apt.date;
+                    }
+                    if (apt.status === 'completed') {
+                        existing.totalSpent = (existing.totalSpent || 0) + (apt.servicePrice || 0);
+                    }
+                }
+            }
+        }
+    });
+    
+    // 2. Manuel eklenen müşterileri de ekle
+    try {
+        const custSnap = await db.collection('salons').doc(salonId).collection('customers').get();
+        custSnap.docs.forEach(doc => {
+            const cust = doc.data();
+            const phone = (cust.phone || '').replace(/\D/g, '').slice(-10);
+            if (phone && phone.length === 10) {
+                if (!customerMap.has(phone)) {
+                    customerMap.set(phone, {
+                        id: doc.id,
+                        name: cust.name || 'İsimsiz',
+                        phone: phone,
+                        email: cust.email || '',
+                        appointmentCount: 0,
+                        totalSpent: 0,
+                        isManual: true,
+                        createdAt: cust.createdAt || ''
+                    });
+                }
+            }
+        });
+    } catch (e) {
+        console.log('No customers collection');
+    }
+    
+    // Eklenme tarihine göre sırala
+    AdminState.salonCustomers = Array.from(customerMap.values()).sort((a, b) => {
+        const dateA = a.createdAt || a.lastAppointment || '0000';
+        const dateB = b.createdAt || b.lastAppointment || '0000';
+        return dateB.localeCompare(dateA);
+    });
+    
+    console.log('[Admin] Salon müşterileri:', AdminState.salonCustomers.length);
 }
 
 function renderApp() {
@@ -234,9 +371,10 @@ function renderSalonDetail() {
     const s = AdminState.selectedSalon; if (!s) return '<p>Salon bulunamadı</p>';
     const c = ADMIN_CONFIG.categories[s.category] || ADMIN_CONFIG.categories.berber;
     const pkg = ADMIN_CONFIG.packages[s.package] || ADMIN_CONFIG.packages.free;
+    const salonCustomerCount = AdminState.salonCustomers ? AdminState.salonCustomers.length : 0;
     
     let h = '<div class="view-header"><div><button onclick="nav(\'salons\')" class="btn btn-outline btn-sm">← Geri</button><h1>' + c.icon + ' ' + esc(s.name) + '</h1><p>/' + s.slug + ' · <span class="status-badge ' + (s.active ? 'active' : 'inactive') + '">' + (s.active ? 'Aktif' : 'Pasif') + '</span> · <span class="badge badge-' + pkg.color + '">' + pkg.name + '</span></p></div><div class="header-actions"><a href="https://zamanli.com/berber/salon/?slug=' + s.slug + '" target="_blank" class="btn btn-outline">🌐 Sayfa</a><a href="https://zamanli.com/berber/salon/yonetim/?slug=' + s.slug + '&admin=true" target="_blank" class="btn btn-outline">⚙️ Panel</a><button onclick="showEditSalonModal(\'' + s.id + '\')" class="btn btn-primary">✏️ Düzenle</button></div></div>';
-    h += '<div class="detail-tabs"><button onclick="switchDetailTab(\'info\')" class="tab-btn ' + (AdminState.detailTab === 'info' ? 'active' : '') + '">ℹ️ Bilgiler</button><button onclick="switchDetailTab(\'staff\')" class="tab-btn ' + (AdminState.detailTab === 'staff' ? 'active' : '') + '">👥 Personel (' + AdminState.salonStaff.length + ')</button><button onclick="switchDetailTab(\'services\')" class="tab-btn ' + (AdminState.detailTab === 'services' ? 'active' : '') + '">✂️ Hizmetler (' + AdminState.salonServices.length + ')</button><button onclick="switchDetailTab(\'appointments\')" class="tab-btn ' + (AdminState.detailTab === 'appointments' ? 'active' : '') + '">📅 Randevular (' + AdminState.salonAppointments.length + ')</button><button onclick="switchDetailTab(\'hours\')" class="tab-btn ' + (AdminState.detailTab === 'hours' ? 'active' : '') + '">🕐 Saatler</button><button onclick="switchDetailTab(\'admin\')" class="tab-btn ' + (AdminState.detailTab === 'admin' ? 'active' : '') + '">🔐 Admin</button></div>';
+    h += '<div class="detail-tabs"><button onclick="switchDetailTab(\'info\')" class="tab-btn ' + (AdminState.detailTab === 'info' ? 'active' : '') + '">ℹ️ Bilgiler</button><button onclick="switchDetailTab(\'staff\')" class="tab-btn ' + (AdminState.detailTab === 'staff' ? 'active' : '') + '">👥 Personel (' + AdminState.salonStaff.length + ')</button><button onclick="switchDetailTab(\'services\')" class="tab-btn ' + (AdminState.detailTab === 'services' ? 'active' : '') + '">✂️ Hizmetler (' + AdminState.salonServices.length + ')</button><button onclick="switchDetailTab(\'customers\')" class="tab-btn ' + (AdminState.detailTab === 'customers' ? 'active' : '') + '">👤 Müşteriler (' + salonCustomerCount + ')</button><button onclick="switchDetailTab(\'appointments\')" class="tab-btn ' + (AdminState.detailTab === 'appointments' ? 'active' : '') + '">📅 Randevular (' + AdminState.salonAppointments.length + ')</button><button onclick="switchDetailTab(\'hours\')" class="tab-btn ' + (AdminState.detailTab === 'hours' ? 'active' : '') + '">🕐 Saatler</button><button onclick="switchDetailTab(\'admin\')" class="tab-btn ' + (AdminState.detailTab === 'admin' ? 'active' : '') + '">🔐 Admin</button></div>';
     h += renderDetailContent();
     return h;
 }
@@ -247,6 +385,7 @@ function renderDetailContent() {
         case 'info': return renderSalonInfo(s);
         case 'staff': return renderSalonStaff();
         case 'services': return renderSalonServices();
+        case 'customers': return renderSalonCustomers();
         case 'appointments': return renderSalonAppointments();
         case 'hours': return renderWorkingHours(s);
         case 'admin': return renderAdminControls(s);
@@ -287,6 +426,39 @@ function renderSalonServices() {
         h += '</tbody></table>';
     }
     return h + '</div>';
+}
+
+function renderSalonCustomers() {
+    const customers = AdminState.salonCustomers || [];
+    let h = '<div class="card"><div class="card-header"><h3>Müşteriler</h3><span class="badge badge-info">' + customers.length + ' müşteri</span></div>';
+    if (customers.length === 0) h += '<div class="empty-state small"><p>Henüz müşteri yok</p></div>';
+    else {
+        h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Randevu</th><th>Toplam</th><th>Son Randevu</th><th>İşlem</th></tr></thead><tbody>';
+        customers.slice(0, 50).forEach(c => {
+            h += '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + (c.totalSpent || 0) + ' ₺</td><td>' + (c.lastAppointment || '-') + '</td><td><button onclick="deleteCustomerFromSalon(\'' + c.phone + '\')" class="btn btn-icon danger" title="Sil">🗑️</button></td></tr>';
+        });
+        h += '</tbody></table>';
+        if (customers.length > 50) {
+            h += '<p style="text-align:center;padding:0.5rem;color:var(--slate-500);font-size:0.85rem">İlk 50 müşteri gösteriliyor</p>';
+        }
+    }
+    return h + '</div>';
+}
+
+async function deleteCustomerFromSalon(phone) {
+    if (!confirm('Bu müşteriyi silmek istediğinize emin misiniz?')) return;
+    try {
+        // Manuel eklenen müşteriyi sil
+        const custSnap = await db.collection('salons').doc(AdminState.selectedSalon.id).collection('customers').where('phone', '==', phone).get();
+        for (const doc of custSnap.docs) {
+            await doc.ref.delete();
+        }
+        showToast('Müşteri silindi', 'success');
+        await loadSalonCustomers(AdminState.selectedSalon.id);
+        renderApp();
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
 }
 
 function renderSalonAppointments() {
@@ -338,14 +510,40 @@ function renderAllAppointments() {
 }
 
 function renderCustomers() {
-    let h = '<div class="view-header"><h1>Müşteriler</h1><span class="badge badge-info">' + AdminState.allCustomers.length + ' müşteri</span></div><div class="card">';
-    if (AdminState.allCustomers.length === 0) h += '<div class="empty-state"><p>Müşteri yok</p></div>';
+    let h = '<div class="view-header"><h1>Müşteriler</h1><span class="badge badge-info">' + AdminState.allCustomers.length + ' müşteri</span><button onclick="loadAllCustomers().then(()=>renderApp())" class="btn btn-outline btn-sm" style="margin-left:1rem">🔄 Yenile</button></div>';
+    h += '<div class="filters-bar"><input type="text" id="customerSearchInput" class="search-input" placeholder="İsim veya telefon ara..." oninput="filterCustomers(this.value)"></div>';
+    h += '<div class="card">';
+    if (AdminState.allCustomers.length === 0) h += '<div class="empty-state"><p>Müşteri bulunamadı. Randevulardan ve salon kayıtlarından otomatik toplanır.</p></div>';
     else {
-        h += '<table class="data-table"><thead><tr><th>Ad</th><th>Telefon</th><th>E-posta</th><th>Kayıt</th></tr></thead><tbody>';
-        AdminState.allCustomers.forEach(c => { h += '<tr><td><strong>' + esc(c.name || '-') + '</strong></td><td>' + (c.phone || c.id || '-') + '</td><td>' + esc(c.email || '-') + '</td><td>' + (c.createdAt ? new Date(c.createdAt).toLocaleDateString('tr-TR') : '-') + '</td></tr>'; });
+        h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Salon</th><th>Randevu</th><th>Son Tarih</th><th>Kayıt</th></tr></thead><tbody id="customerTableBody">';
+        AdminState.allCustomers.slice(0, 100).forEach(c => { 
+            const createdDate = c.createdAt ? (typeof c.createdAt === 'string' ? c.createdAt.split('T')[0] : new Date(c.createdAt).toLocaleDateString('tr-TR')) : '-';
+            const lastDate = c.lastAppointment || '-';
+            h += '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + esc(c.salonName || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + lastDate + '</td><td>' + createdDate + '</td></tr>'; 
+        });
         h += '</tbody></table>';
+        if (AdminState.allCustomers.length > 100) {
+            h += '<p style="text-align:center;padding:1rem;color:var(--slate-500)">İlk 100 müşteri gösteriliyor (toplam: ' + AdminState.allCustomers.length + ')</p>';
+        }
     }
     return h + '</div>';
+}
+
+function filterCustomers(query) {
+    const tbody = document.getElementById('customerTableBody');
+    if (!tbody) return;
+    
+    query = query.toLowerCase().trim();
+    const filtered = query.length < 2 ? AdminState.allCustomers.slice(0, 100) : AdminState.allCustomers.filter(c => 
+        (c.name || '').toLowerCase().includes(query) || 
+        (c.phone || '').includes(query.replace(/\D/g, ''))
+    ).slice(0, 100);
+    
+    tbody.innerHTML = filtered.map(c => {
+        const createdDate = c.createdAt ? (typeof c.createdAt === 'string' ? c.createdAt.split('T')[0] : new Date(c.createdAt).toLocaleDateString('tr-TR')) : '-';
+        const lastDate = c.lastAppointment || '-';
+        return '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + esc(c.salonName || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + lastDate + '</td><td>' + createdDate + '</td></tr>';
+    }).join('');
 }
 
 function renderSettings() {
