@@ -214,11 +214,18 @@ async function loadSalonDetails(id) {
 async function loadSalonCustomers(salonId) {
     const customerMap = new Map();
     
-    // 1. Randevulardan müşterileri topla
+    // 0. Önce silinen müşterileri al (blacklist)
+    const deletedSet = new Set();
+    try {
+        const deletedSnap = await db.collection('salons').doc(salonId).collection('deletedCustomers').get();
+        deletedSnap.docs.forEach(doc => deletedSet.add(doc.id));
+    } catch (e) {}
+    
+    // 1. Randevulardan müşterileri topla (silinmemişleri)
     AdminState.salonAppointments.forEach(apt => {
         if (apt.customerPhone && apt.customerName) {
             const phone = apt.customerPhone.replace(/\D/g, '').slice(-10);
-            if (phone && phone.length === 10) {
+            if (phone && phone.length === 10 && !deletedSet.has(phone)) {
                 const existing = customerMap.get(phone);
                 if (!existing) {
                     customerMap.set(phone, {
@@ -242,13 +249,13 @@ async function loadSalonCustomers(salonId) {
         }
     });
     
-    // 2. Manuel eklenen müşterileri de ekle
+    // 2. Manuel eklenen müşterileri de ekle (silinmemişleri)
     try {
         const custSnap = await db.collection('salons').doc(salonId).collection('customers').get();
         custSnap.docs.forEach(doc => {
             const cust = doc.data();
             const phone = (cust.phone || '').replace(/\D/g, '').slice(-10);
-            if (phone && phone.length === 10) {
+            if (phone && phone.length === 10 && !deletedSet.has(phone)) {
                 if (!customerMap.has(phone)) {
                     customerMap.set(phone, {
                         id: doc.id,
@@ -491,43 +498,29 @@ async function deleteCustomerFromSalon(phone) {
     
     try {
         const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-        let deleted = false;
+        const salonId = AdminState.selectedSalon.id;
         
-        // 1. Önce doc ID ile dene (yeni sistem - phone doc ID olarak kullanılıyor)
+        // 1. Müşteriyi sil
         try {
-            const docRef = db.collection('salons').doc(AdminState.selectedSalon.id).collection('customers').doc(cleanPhone);
-            const docSnap = await docRef.get();
-            if (docSnap.exists) {
-                await docRef.delete();
-                deleted = true;
-                console.log('[Delete] Müşteri doc ID ile silindi:', cleanPhone);
-            }
+            await db.collection('salons').doc(salonId).collection('customers').doc(cleanPhone).delete();
+            console.log('[Delete] Müşteri silindi:', cleanPhone);
         } catch (e) {
-            console.log('[Delete] Doc ID silme hatası:', e.message);
+            console.log('[Delete] Doc silme hatası:', e.message);
         }
         
-        // 2. Eğer doc ID ile bulunamadıysa, where sorgusuyla dene
-        if (!deleted) {
-            const phoneVariants = [phone, cleanPhone, '0' + cleanPhone];
-            for (const phoneVar of phoneVariants) {
-                try {
-                    const custSnap = await db.collection('salons').doc(AdminState.selectedSalon.id).collection('customers').where('phone', '==', phoneVar).get();
-                    for (const doc of custSnap.docs) {
-                        await doc.ref.delete();
-                        deleted = true;
-                        console.log('[Delete] Müşteri where ile silindi:', phoneVar);
-                    }
-                } catch (e) {}
-            }
+        // 2. Silinen müşterileri blacklist'e ekle (tekrar senkronize edilmemesi için)
+        try {
+            await db.collection('salons').doc(salonId).collection('deletedCustomers').doc(cleanPhone).set({
+                phone: cleanPhone,
+                deletedAt: new Date().toISOString(),
+                deletedBy: 'admin'
+            });
+            console.log('[Delete] Blacklist\'e eklendi:', cleanPhone);
+        } catch (e) {
+            console.log('[Delete] Blacklist hatası:', e.message);
         }
         
-        if (deleted) {
-            showToast('Müşteri silindi ✅', 'success');
-        } else {
-            // Müşteri customers koleksiyonunda yok - randevudan geliyor olabilir
-            // Kullanıcıya bilgi ver
-            showToast('Müşteri veritabanından kaldırıldı', 'success');
-        }
+        showToast('Müşteri silindi ✅', 'success');
         
         // Lokal listeden kaldır
         AdminState.salonCustomers = AdminState.salonCustomers.filter(c => c.phone !== phone && c.phone !== cleanPhone);
@@ -549,11 +542,19 @@ async function syncCustomersFromAppointments() {
         const salonId = AdminState.selectedSalon.id;
         const customerMap = new Map();
         
+        // Önce silinen müşterileri al (blacklist)
+        const deletedSet = new Set();
+        try {
+            const deletedSnap = await db.collection('salons').doc(salonId).collection('deletedCustomers').get();
+            deletedSnap.docs.forEach(doc => deletedSet.add(doc.id));
+            console.log('[Sync] Blacklist:', deletedSet.size, 'müşteri');
+        } catch (e) {}
+        
         // Randevulardan müşterileri topla
         AdminState.salonAppointments.forEach(apt => {
             if (apt.customerPhone && apt.customerName) {
                 const phone = apt.customerPhone.replace(/\D/g, '').slice(-10);
-                if (phone && phone.length === 10) {
+                if (phone && phone.length === 10 && !deletedSet.has(phone)) {
                     const existing = customerMap.get(phone);
                     if (!existing) {
                         customerMap.set(phone, {
