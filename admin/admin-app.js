@@ -487,17 +487,60 @@ function renderSalonCustomers() {
 }
 
 async function deleteCustomerFromSalon(phone) {
-    if (!confirm('Bu müşteriyi silmek istediğinize emin misiniz?')) return;
+    const isManual = AdminState.salonCustomers.find(c => c.phone === phone)?.isManual;
+    
+    let message = 'Bu müşteriyi silmek istediğinize emin misiniz?';
+    if (!isManual) {
+        message += '\n\nBu müşterinin randevuları var. Müşteri kaydı silinecek ama randevular korunacak.';
+    }
+    
+    if (!confirm(message)) return;
+    
     try {
-        // Manuel eklenen müşteriyi sil
-        const custSnap = await db.collection('salons').doc(AdminState.selectedSalon.id).collection('customers').where('phone', '==', phone).get();
-        for (const doc of custSnap.docs) {
-            await doc.ref.delete();
+        let deleted = false;
+        
+        // 1. Manuel eklenen müşteriyi customers koleksiyonundan sil
+        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+        
+        // Farklı phone formatlarını dene
+        const phoneVariants = [phone, cleanPhone, '0' + cleanPhone, '+90' + cleanPhone];
+        
+        for (const phoneVar of phoneVariants) {
+            try {
+                const custSnap = await db.collection('salons').doc(AdminState.selectedSalon.id).collection('customers').where('phone', '==', phoneVar).get();
+                for (const doc of custSnap.docs) {
+                    await doc.ref.delete();
+                    deleted = true;
+                    console.log('[Delete] Müşteri silindi, phone:', phoneVar);
+                }
+            } catch (e) {
+                console.log('[Delete] Phone variant failed:', phoneVar);
+            }
         }
-        showToast('Müşteri silindi', 'success');
+        
+        // 2. Doğrudan doc ID ile de dene (bazen phone doc ID olarak kullanılıyor)
+        try {
+            const docRef = db.collection('salons').doc(AdminState.selectedSalon.id).collection('customers').doc(cleanPhone);
+            const docSnap = await docRef.get();
+            if (docSnap.exists) {
+                await docRef.delete();
+                deleted = true;
+                console.log('[Delete] Müşteri doc ID ile silindi:', cleanPhone);
+            }
+        } catch (e) {}
+        
+        if (deleted) {
+            showToast('Müşteri silindi', 'success');
+        } else {
+            showToast('Müşteri kaydı bulunamadı (randevudan gelen müşteri olabilir)', 'info');
+        }
+        
+        // Listeyi yenile
         await loadSalonCustomers(AdminState.selectedSalon.id);
         renderApp();
+        
     } catch (e) {
+        console.error('[Delete] Hata:', e);
         showToast('Hata: ' + e.message, 'error');
     }
 }

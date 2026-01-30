@@ -7828,9 +7828,10 @@ Panel: ${window.location.href}`);
             }
             
             container.innerHTML = allCustomers.map((customer, idx) => {
-                const lastApt = customer.appointments[customer.appointments.length - 1];
-                const completedCount = customer.appointments.filter(a => a.status === 'completed').length;
-                const hasAppointments = customer.appointments.length > 0;
+                const lastApt = customer.appointments?.[customer.appointments.length - 1];
+                const totalAppointments = customer.appointments?.length || 0;
+                const completedCount = customer.appointments?.filter(a => a.status === 'completed').length || 0;
+                const hasAppointments = totalAppointments > 0;
                 
                 return `
                     <div class="customer-card ${customer.isManual && !hasAppointments ? 'manual-customer' : ''}">
@@ -7842,11 +7843,11 @@ Panel: ${window.location.href}`);
                             </div>
                             <div class="customer-stats">
                                 <div class="customer-stat">
-                                    <strong>${completedCount}</strong>
+                                    <strong>${totalAppointments}</strong>
                                     Randevu
                                 </div>
                                 <div class="customer-stat">
-                                    <strong>${customer.totalSpent} ₺</strong>
+                                    <strong>${customer.totalSpent || 0} ₺</strong>
                                     Toplam
                                 </div>
                             </div>
@@ -10162,11 +10163,25 @@ END:VEVENT
             const customers = getAllSavedCustomers();
             console.log('[Search] Toplam müşteri:', customers.length, 'Aranan:', query);
             
+            // Önce isim başlangıcına göre, sonra içerenlere göre sırala
+            const searchPhone = query.replace(/\D/g, '');
+            
             const filtered = customers.filter(c => {
                 const name = (c.name || '').toLowerCase();
                 const phone = (c.phone || '').replace(/\D/g, '');
-                const searchPhone = query.replace(/\D/g, '');
-                return name.includes(query) || phone.includes(searchPhone);
+                return name.includes(query) || (searchPhone.length >= 3 && phone.includes(searchPhone));
+            }).sort((a, b) => {
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                
+                // İsim query ile başlıyorsa öncelikli
+                const startsWithA = nameA.startsWith(query) ? 0 : 1;
+                const startsWithB = nameB.startsWith(query) ? 0 : 1;
+                
+                if (startsWithA !== startsWithB) return startsWithA - startsWithB;
+                
+                // Randevu sayısına göre sırala
+                return (b.appointmentCount || 0) - (a.appointmentCount || 0);
             }).slice(0, 10);
             
             console.log('[Search] Bulunan:', filtered.length);
