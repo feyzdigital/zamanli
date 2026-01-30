@@ -135,9 +135,32 @@ async function loadAllCustomers() {
     
     // Eklenme tarihine göre sırala (en yeni en üstte)
     AdminState.allCustomers = Array.from(customerMap.values()).sort((a, b) => {
-        const dateA = a.createdAt || a.lastAppointment || '0000';
-        const dateB = b.createdAt || b.lastAppointment || '0000';
-        return dateB.localeCompare(dateA);
+        // Tarihleri güvenli şekilde string'e çevir
+        let dateA = a.createdAt || a.lastAppointment || '';
+        let dateB = b.createdAt || b.lastAppointment || '';
+        
+        // Timestamp objesi ise string'e çevir
+        try {
+            if (dateA && typeof dateA === 'object') {
+                if (dateA.toDate) dateA = dateA.toDate().toISOString();
+                else if (dateA.seconds) dateA = new Date(dateA.seconds * 1000).toISOString();
+            }
+            if (dateB && typeof dateB === 'object') {
+                if (dateB.toDate) dateB = dateB.toDate().toISOString();
+                else if (dateB.seconds) dateB = new Date(dateB.seconds * 1000).toISOString();
+            }
+        } catch (e) {
+            console.log('Date conversion error:', e);
+        }
+        
+        // String değilse dönüştür
+        dateA = String(dateA || '0000-00-00');
+        dateB = String(dateB || '0000-00-00');
+        
+        // Güvenli karşılaştırma
+        if (dateB > dateA) return 1;
+        if (dateB < dateA) return -1;
+        return 0;
     });
     
     console.log('[Admin] Müşteriler:', AdminState.allCustomers.length);
@@ -246,9 +269,27 @@ async function loadSalonCustomers(salonId) {
     
     // Eklenme tarihine göre sırala
     AdminState.salonCustomers = Array.from(customerMap.values()).sort((a, b) => {
-        const dateA = a.createdAt || a.lastAppointment || '0000';
-        const dateB = b.createdAt || b.lastAppointment || '0000';
-        return dateB.localeCompare(dateA);
+        let dateA = a.createdAt || a.lastAppointment || '';
+        let dateB = b.createdAt || b.lastAppointment || '';
+        
+        // Timestamp objesi ise string'e çevir
+        try {
+            if (dateA && typeof dateA === 'object') {
+                if (dateA.toDate) dateA = dateA.toDate().toISOString();
+                else if (dateA.seconds) dateA = new Date(dateA.seconds * 1000).toISOString();
+            }
+            if (dateB && typeof dateB === 'object') {
+                if (dateB.toDate) dateB = dateB.toDate().toISOString();
+                else if (dateB.seconds) dateB = new Date(dateB.seconds * 1000).toISOString();
+            }
+        } catch (e) {}
+        
+        dateA = String(dateA || '0000-00-00');
+        dateB = String(dateB || '0000-00-00');
+        
+        if (dateB > dateA) return 1;
+        if (dateB < dateA) return -1;
+        return 0;
     });
     
     console.log('[Admin] Salon müşterileri:', AdminState.salonCustomers.length);
@@ -498,7 +539,16 @@ function renderAdminControls(s) {
 
 function renderAllAppointments() {
     const today = new Date().toISOString().split('T')[0];
-    let list = [...AdminState.allAppointments].sort((a, b) => { if (a.date !== b.date) return b.date.localeCompare(a.date); return (a.time || '').localeCompare(b.time || ''); });
+    let list = [...AdminState.allAppointments].sort((a, b) => { 
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        if (dateA !== dateB) {
+            if (dateB > dateA) return 1;
+            if (dateB < dateA) return -1;
+            return 0;
+        }
+        return (a.time || '').localeCompare(b.time || ''); 
+    });
     let h = '<div class="view-header"><h1>Tüm Randevular</h1><span class="badge badge-info">' + list.length + ' randevu</span></div>';
     h += '<div class="card"><table class="data-table"><thead><tr><th>Tarih</th><th>Saat</th><th>Salon</th><th>Müşteri</th><th>Hizmet</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>';
     list.slice(0, 100).forEach(apt => {

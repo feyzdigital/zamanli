@@ -5093,6 +5093,15 @@
             if (targetContent) {
                 targetContent.classList.add('active');
             }
+            
+            // Eğer appointments sekmesine geçiliyorsa, staff filtrelerini doldur
+            if (tabName === 'appointments') {
+                setTimeout(() => {
+                    populateStaffFilter('calendarStaffFilter');
+                    populateStaffFilter('staffFilterSelect');
+                    renderWeeklyCalendar();
+                }, 100);
+            }
         }
         
         // ===== YENİ LAYOUT FONKSİYONLARI =====
@@ -5927,7 +5936,13 @@
                     appointments = snapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data()
-                    })).sort((a, b) => b.date?.localeCompare(a.date));
+                    })).sort((a, b) => {
+                        const dateA = a.date || '';
+                        const dateB = b.date || '';
+                        if (dateB > dateA) return 1;
+                        if (dateB < dateA) return -1;
+                        return 0;
+                    });
                     
                     // Personel modunda sadece kendi randevularını göster
                     if (isStaffMode && currentStaffId) {
@@ -7759,10 +7774,27 @@ Panel: ${window.location.href}`);
                 
                 // Eklenme zamanına göre sırala (en yeni en üstte)
                 allCustomers.sort((a, b) => {
-                    // createdAt varsa onu kullan, yoksa son randevu tarihini kullan
-                    const dateA = a.createdAt || a.appointments?.[a.appointments.length - 1]?.date || '0000-00-00';
-                    const dateB = b.createdAt || b.appointments?.[b.appointments.length - 1]?.date || '0000-00-00';
-                    return dateB.localeCompare(dateA); // Descending (yeni önce)
+                    let dateA = a.createdAt || a.appointments?.[a.appointments.length - 1]?.date || '';
+                    let dateB = b.createdAt || b.appointments?.[b.appointments.length - 1]?.date || '';
+                    
+                    // Timestamp objesi ise string'e çevir
+                    try {
+                        if (dateA && typeof dateA === 'object') {
+                            if (dateA.toDate) dateA = dateA.toDate().toISOString();
+                            else if (dateA.seconds) dateA = new Date(dateA.seconds * 1000).toISOString();
+                        }
+                        if (dateB && typeof dateB === 'object') {
+                            if (dateB.toDate) dateB = dateB.toDate().toISOString();
+                            else if (dateB.seconds) dateB = new Date(dateB.seconds * 1000).toISOString();
+                        }
+                    } catch (e) {}
+                    
+                    dateA = String(dateA || '0000-00-00');
+                    dateB = String(dateB || '0000-00-00');
+                    
+                    if (dateB > dateA) return 1;
+                    if (dateB < dateA) return -1;
+                    return 0;
                 });
                 
                 console.log('[Customers] Toplam müşteri:', allCustomers.length);
@@ -9095,7 +9127,7 @@ Panel: ${window.location.href}`);
             const today = new Date().toISOString().split('T')[0];
             const todayApts = appointments
                 .filter(a => a.date === today && ['pending', 'confirmed'].includes(a.status))
-                .sort((a, b) => a.time.localeCompare(b.time));
+                .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
             
             // Badge güncelle
             const todayCount = document.getElementById('todayCount');
