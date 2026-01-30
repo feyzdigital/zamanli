@@ -4230,12 +4230,17 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: white; border-radius: 8px;">
                             <div>
                                 <div style="font-weight: 600; font-size: 0.9rem; color: var(--slate-700);">📱 Hatırlatma Bildirimi</div>
-                                <div style="font-size: 0.75rem; color: var(--slate-500);">Randevudan önce müşteriye WhatsApp hatırlatması</div>
+                                <div style="font-size: 0.75rem; color: var(--slate-500);">Randevudan önce size bildirim gelir, tek tıkla WhatsApp gönderirsiniz</div>
                             </div>
                             <select id="settingReminderHours" class="form-input" style="width: auto; padding: 0.4rem 0.6rem;" onchange="saveAdvancedSetting('reminderHours', this.value)">
                                 <option value="0">Kapalı</option>
+                                <option value="0.5">30 dakika önce</option>
                                 <option value="1">1 saat önce</option>
                                 <option value="2">2 saat önce</option>
+                                <option value="3">3 saat önce</option>
+                                <option value="4">4 saat önce</option>
+                                <option value="6">6 saat önce</option>
+                                <option value="12">12 saat önce</option>
                                 <option value="24">1 gün önce</option>
                             </select>
                         </div>
@@ -5898,6 +5903,9 @@
                 
                 refreshAllViews();
                 
+                // Hatırlatma kontrolünü başlat
+                checkAppointmentReminders();
+                
                 // Real-time listener'ı başlat (ilk yüklemeden sonra)
                 startAppointmentsListener();
                 
@@ -5920,11 +5928,211 @@
                     }
                     
                     refreshAllViews();
+                    checkAppointmentReminders();
                     startAppointmentsListener();
                 } catch (e) {
                     console.error('Fallback also failed:', e);
                 }
             }
+        }
+        
+        // ========== HATIRLATMA SİSTEMİ ==========
+        
+        let reminderCheckInterval = null;
+        let sentReminders = JSON.parse(localStorage.getItem('sentReminders') || '{}');
+        
+        function checkAppointmentReminders() {
+            // Önceki interval varsa temizle
+            if (reminderCheckInterval) {
+                clearInterval(reminderCheckInterval);
+            }
+            
+            // Hatırlatma ayarını kontrol et
+            const reminderHours = parseFloat(salon?.advancedSettings?.reminderHours) || 0;
+            if (reminderHours === 0) {
+                console.log('[Reminder] Hatırlatma kapalı');
+                return;
+            }
+            
+            console.log('[Reminder] Hatırlatma aktif:', reminderHours, 'saat önce');
+            
+            // İlk kontrolü hemen yap
+            doReminderCheck(reminderHours);
+            
+            // Her 5 dakikada bir kontrol et
+            reminderCheckInterval = setInterval(() => {
+                doReminderCheck(reminderHours);
+            }, 5 * 60 * 1000);
+        }
+        
+        function doReminderCheck(reminderHours) {
+            const now = new Date();
+            const reminderMinutes = reminderHours * 60;
+            
+            // Bugün ve yarın için kontrol et
+            const today = now.toISOString().split('T')[0];
+            const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            
+            appointments.forEach(apt => {
+                // Sadece onaylı veya bekleyen randevuları kontrol et
+                if (!['pending', 'confirmed'].includes(apt.status)) return;
+                
+                // Sadece bugün veya yarın olan randevuları kontrol et
+                if (apt.date !== today && apt.date !== tomorrow) return;
+                
+                // Bu randevu için zaten hatırlatma gönderildi mi?
+                const reminderKey = `${apt.id}_${reminderHours}`;
+                if (sentReminders[reminderKey]) return;
+                
+                // Randevu zamanını hesapla
+                const [aptHour, aptMin] = apt.time.split(':').map(Number);
+                const aptDate = new Date(apt.date + 'T' + apt.time + ':00');
+                
+                // Hatırlatma zamanı
+                const reminderTime = new Date(aptDate.getTime() - reminderMinutes * 60 * 1000);
+                
+                // Şu an hatırlatma zamanı mı?
+                const timeDiff = reminderTime.getTime() - now.getTime();
+                
+                // -5 dakika ile +5 dakika arasında ise hatırlatma göster
+                if (timeDiff >= -5 * 60 * 1000 && timeDiff <= 5 * 60 * 1000) {
+                    showReminderNotification(apt, reminderHours);
+                    
+                    // Gönderildi olarak işaretle
+                    sentReminders[reminderKey] = Date.now();
+                    localStorage.setItem('sentReminders', JSON.stringify(sentReminders));
+                }
+            });
+            
+            // Eski hatırlatmaları temizle (24 saatten eski)
+            const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+            Object.keys(sentReminders).forEach(key => {
+                if (sentReminders[key] < cutoff) {
+                    delete sentReminders[key];
+                }
+            });
+            localStorage.setItem('sentReminders', JSON.stringify(sentReminders));
+        }
+        
+        function showReminderNotification(apt, hours) {
+            const hoursText = hours < 1 ? `${hours * 60} dakika` : `${hours} saat`;
+            
+            // Personel modunda sadece kendi randevuları için bildirim
+            if (isStaffMode) {
+                if (apt.staffId !== currentStaffId && apt.staffName !== currentStaffName) {
+                    return;
+                }
+            }
+            
+            // Toast göster
+            showToast(`⏰ ${apt.customerName} - ${hoursText} sonra randevu var!`, 'warning');
+            
+            // Tarayıcı bildirimi göster
+            if (Notification.permission === 'granted') {
+                const notif = new Notification('⏰ Randevu Hatırlatması', {
+                    body: `${apt.customerName} - ${apt.time}\nHatırlatma mesajı göndermek ister misiniz?`,
+                    icon: '/icons/icon-192x192.png',
+                    tag: 'reminder-' + apt.id,
+                    requireInteraction: true,
+                    actions: [
+                        { action: 'send', title: '📱 WhatsApp Gönder' },
+                        { action: 'dismiss', title: 'Kapat' }
+                    ]
+                });
+                
+                notif.onclick = () => {
+                    window.focus();
+                    openReminderModal(apt);
+                    notif.close();
+                };
+            }
+            
+            // Uygulama içi hatırlatma modal'ı göster
+            openReminderModal(apt);
+        }
+        
+        function openReminderModal(apt) {
+            // Mevcut modal varsa kapat
+            const existingModal = document.getElementById('reminderModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            const formattedDate = formatDate(apt.date);
+            const reminderMessage = `Merhaba ${apt.customerName} 👋
+
+⏰ *Randevu Hatırlatması*
+
+📅 Tarih: ${formattedDate}
+🕐 Saat: ${apt.time}
+✂️ Hizmet: ${apt.service || 'Belirtilmedi'}
+
+Sizi bekliyoruz! 🙏
+
+${salon.name}`;
+            
+            const whatsappUrl = `https://wa.me/90${apt.customerPhone}?text=${encodeURIComponent(reminderMessage)}`;
+            
+            const modal = document.createElement('div');
+            modal.id = 'reminderModal';
+            modal.className = 'modal-overlay active';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 400px;">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+                        <h3 class="modal-title">⏰ Hatırlatma Zamanı!</h3>
+                        <button class="modal-close" onclick="closeReminderModal()" style="color: white;">×</button>
+                    </div>
+                    <div class="modal-body" style="padding: 1.5rem;">
+                        <div style="text-align: center; margin-bottom: 1rem;">
+                            <div style="width: 60px; height: 60px; background: var(--warning); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1rem;">
+                                ⏰
+                            </div>
+                            <h4 style="margin-bottom: 0.5rem;">${apt.customerName}</h4>
+                            <p style="color: var(--slate-500);">${apt.time} - ${apt.service || 'Randevu'}</p>
+                        </div>
+                        
+                        <div style="background: var(--slate-50); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; font-size: 0.85rem; white-space: pre-line; max-height: 150px; overflow-y: auto;">
+${reminderMessage}
+                        </div>
+                        
+                        <a href="${whatsappUrl}" target="_blank" 
+                           onclick="closeReminderModal(); markReminderSent('${apt.id}');"
+                           style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #25D366; color: white; padding: 0.875rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; margin-bottom: 0.75rem;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            WhatsApp ile Gönder
+                        </a>
+                        
+                        <button onclick="closeReminderModal()" class="btn btn-outline" style="width: 100%;">
+                            Şimdi Değil
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 30 saniye sonra otomatik kapat
+            setTimeout(() => {
+                if (document.getElementById('reminderModal')) {
+                    closeReminderModal();
+                }
+            }, 30000);
+        }
+        
+        function closeReminderModal() {
+            const modal = document.getElementById('reminderModal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            }
+        }
+        
+        function markReminderSent(aptId) {
+            // Firebase'de işaretle
+            db.collection('appointments').doc(aptId).update({
+                reminderSentAt: new Date().toISOString(),
+                reminderSentBy: isStaffMode ? currentStaffName : 'Salon Sahibi'
+            }).catch(err => console.log('Reminder mark error:', err));
         }
         
         // ========== REAL-TIME SYNC SİSTEMİ ==========
@@ -7221,7 +7429,7 @@ Panel: ${window.location.href}`);
                 
                 // Canvas boyutları
                 canvas.width = 400;
-                canvas.height = 480;
+                canvas.height = 520;
                 
                 // Arka plan
                 ctx.fillStyle = '#FFFFFF';
@@ -7247,24 +7455,64 @@ Panel: ${window.location.href}`);
                 ctx.lineWidth = 4;
                 ctx.strokeRect(qrX - 12, qrY - 12, 324, 324);
                 
-                // Alt yazılar
-                const textY = qrY + 300 + 35;
+                // Logo yükle
+                const logoImage = new Image();
+                logoImage.crossOrigin = 'anonymous';
                 
-                // zamanli.com
-                ctx.fillStyle = '#0B2B26';
-                ctx.font = 'bold 24px Satoshi, Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('zamanli.com', canvas.width / 2, textY);
-                
-                // Online Randevu Sistemi
-                ctx.fillStyle = '#64748b';
-                ctx.font = '14px Inter, sans-serif';
-                ctx.fillText('Online Randevu Sistemi', canvas.width / 2, textY + 25);
-                
-                // Salon adı
-                ctx.fillStyle = '#10B981';
-                ctx.font = 'bold 16px Inter, sans-serif';
-                ctx.fillText(salon.name, canvas.width / 2, textY + 52);
+                try {
+                    await new Promise((resolve, reject) => {
+                        logoImage.onload = resolve;
+                        logoImage.onerror = reject;
+                        logoImage.src = '/icons/logo.png';
+                    });
+                    
+                    // Logo çiz (QR'ın altında ortada)
+                    const logoSize = 40;
+                    const logoX = (canvas.width - logoSize) / 2;
+                    const logoY = qrY + 300 + 25;
+                    ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+                    
+                    // Alt yazılar (logo'nun yanında)
+                    const textY = logoY + 20;
+                    
+                    // zamanli.com
+                    ctx.fillStyle = '#0B2B26';
+                    ctx.font = 'bold 22px Satoshi, Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('zamanli.com', canvas.width / 2, textY + 45);
+                    
+                    // Online Randevu Sistemi
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '13px Inter, sans-serif';
+                    ctx.fillText('Online Randevu Sistemi', canvas.width / 2, textY + 68);
+                    
+                    // Salon adı
+                    ctx.fillStyle = '#10B981';
+                    ctx.font = 'bold 15px Inter, sans-serif';
+                    ctx.fillText(salon.name, canvas.width / 2, textY + 92);
+                    
+                } catch (logoErr) {
+                    console.log('Logo yüklenemedi, logosuz devam ediliyor');
+                    
+                    // Logosuz versiyon
+                    const textY = qrY + 300 + 35;
+                    
+                    // zamanli.com
+                    ctx.fillStyle = '#0B2B26';
+                    ctx.font = 'bold 24px Satoshi, Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('zamanli.com', canvas.width / 2, textY);
+                    
+                    // Online Randevu Sistemi
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '14px Inter, sans-serif';
+                    ctx.fillText('Online Randevu Sistemi', canvas.width / 2, textY + 25);
+                    
+                    // Salon adı
+                    ctx.fillStyle = '#10B981';
+                    ctx.font = 'bold 16px Inter, sans-serif';
+                    ctx.fillText(salon.name, canvas.width / 2, textY + 52);
+                }
                 
                 // İndir
                 const link = document.createElement('a');

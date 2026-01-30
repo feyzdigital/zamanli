@@ -302,7 +302,9 @@
             const contentEl = document.getElementById('contentState');
             contentEl.style.display = 'block';
             
-            const cancelDeadline = APP_CONFIG?.appointment?.cancelDeadlineMinutes || 90;
+            // Salon'un minimum iptal süresini al (saat cinsinden, dakikaya çevir)
+            const minCancelHours = parseFloat(salon?.advancedSettings?.minCancelHours) || 0;
+            const cancelDeadline = minCancelHours > 0 ? minCancelHours * 60 : (APP_CONFIG?.appointment?.cancelDeadlineMinutes || 90);
             const minutesUntil = getMinutesUntil();
             const canCancel = minutesUntil > cancelDeadline;
             const isPast = minutesUntil <= 0;
@@ -374,9 +376,11 @@
         function closeCancelModal() { document.getElementById('cancelModal').classList.remove('active'); }
         
         async function confirmCancel() {
-            const cancelDeadline = APP_CONFIG?.appointment?.cancelDeadlineMinutes || 90;
+            const minCancelHours = parseFloat(salon?.advancedSettings?.minCancelHours) || 0;
+            const cancelDeadline = minCancelHours > 0 ? minCancelHours * 60 : (APP_CONFIG?.appointment?.cancelDeadlineMinutes || 90);
             if (getMinutesUntil() <= cancelDeadline) {
-                alert(`Randevunuza ${cancelDeadline} dakikadan az kaldığı için iptal edemezsiniz.`);
+                const deadlineText = cancelDeadline >= 60 ? `${Math.round(cancelDeadline/60)} saat` : `${cancelDeadline} dakika`;
+                alert(`Randevunuza ${deadlineText}'dan az kaldığı için iptal edemezsiniz.`);
                 closeCancelModal(); renderAppointment(); return;
             }
             try {
