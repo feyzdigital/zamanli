@@ -306,16 +306,6 @@ async function loadSalonCustomers(salonId) {
         if (dateB < dateA) return -1;
         return 0;
     });
-}
-        } catch (e) {}
-        
-        dateA = String(dateA || '0000-00-00');
-        dateB = String(dateB || '0000-00-00');
-        
-        if (dateB > dateA) return 1;
-        if (dateB < dateA) return -1;
-        return 0;
-    });
     
     console.log('[Admin] Salon müşterileri:', AdminState.salonCustomers.length);
 }
