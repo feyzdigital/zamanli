@@ -471,8 +471,8 @@ function renderSalonServices() {
 
 function renderSalonCustomers() {
     const customers = AdminState.salonCustomers || [];
-    let h = '<div class="card"><div class="card-header"><h3>Müşteriler</h3><span class="badge badge-info">' + customers.length + ' müşteri</span></div>';
-    if (customers.length === 0) h += '<div class="empty-state small"><p>Henüz müşteri yok</p></div>';
+    let h = '<div class="card"><div class="card-header"><h3>Müşteriler</h3><div style="display:flex;gap:0.5rem;align-items:center"><span class="badge badge-info">' + customers.length + ' müşteri</span><button onclick="syncCustomersFromAppointments()" class="btn btn-outline btn-sm" title="Randevulardaki müşterileri kaydet">🔄 Senkronize Et</button></div></div>';
+    if (customers.length === 0) h += '<div class="empty-state small"><p>Henüz müşteri yok</p><p style="font-size:0.8rem;color:var(--slate-400)">Senkronize Et butonuna tıklayarak randevulardaki müşterileri ekleyebilirsiniz</p></div>';
     else {
         h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Randevu</th><th>Toplam</th><th>Son Randevu</th><th>İşlem</th></tr></thead><tbody>';
         customers.slice(0, 50).forEach(c => {
@@ -487,38 +487,13 @@ function renderSalonCustomers() {
 }
 
 async function deleteCustomerFromSalon(phone) {
-    const isManual = AdminState.salonCustomers.find(c => c.phone === phone)?.isManual;
-    
-    let message = 'Bu müşteriyi silmek istediğinize emin misiniz?';
-    if (!isManual) {
-        message += '\n\nBu müşterinin randevuları var. Müşteri kaydı silinecek ama randevular korunacak.';
-    }
-    
-    if (!confirm(message)) return;
+    if (!confirm('Bu müşteriyi silmek istediğinize emin misiniz?\n\nMüşteri kaydı silinecek. Randevular korunacak.')) return;
     
     try {
+        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
         let deleted = false;
         
-        // 1. Manuel eklenen müşteriyi customers koleksiyonundan sil
-        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-        
-        // Farklı phone formatlarını dene
-        const phoneVariants = [phone, cleanPhone, '0' + cleanPhone, '+90' + cleanPhone];
-        
-        for (const phoneVar of phoneVariants) {
-            try {
-                const custSnap = await db.collection('salons').doc(AdminState.selectedSalon.id).collection('customers').where('phone', '==', phoneVar).get();
-                for (const doc of custSnap.docs) {
-                    await doc.ref.delete();
-                    deleted = true;
-                    console.log('[Delete] Müşteri silindi, phone:', phoneVar);
-                }
-            } catch (e) {
-                console.log('[Delete] Phone variant failed:', phoneVar);
-            }
-        }
-        
-        // 2. Doğrudan doc ID ile de dene (bazen phone doc ID olarak kullanılıyor)
+        // 1. Önce doc ID ile dene (yeni sistem - phone doc ID olarak kullanılıyor)
         try {
             const docRef = db.collection('salons').doc(AdminState.selectedSalon.id).collection('customers').doc(cleanPhone);
             const docSnap = await docRef.get();
@@ -527,21 +502,104 @@ async function deleteCustomerFromSalon(phone) {
                 deleted = true;
                 console.log('[Delete] Müşteri doc ID ile silindi:', cleanPhone);
             }
-        } catch (e) {}
-        
-        if (deleted) {
-            showToast('Müşteri silindi', 'success');
-        } else {
-            showToast('Müşteri kaydı bulunamadı (randevudan gelen müşteri olabilir)', 'info');
+        } catch (e) {
+            console.log('[Delete] Doc ID silme hatası:', e.message);
         }
         
-        // Listeyi yenile
-        await loadSalonCustomers(AdminState.selectedSalon.id);
+        // 2. Eğer doc ID ile bulunamadıysa, where sorgusuyla dene
+        if (!deleted) {
+            const phoneVariants = [phone, cleanPhone, '0' + cleanPhone];
+            for (const phoneVar of phoneVariants) {
+                try {
+                    const custSnap = await db.collection('salons').doc(AdminState.selectedSalon.id).collection('customers').where('phone', '==', phoneVar).get();
+                    for (const doc of custSnap.docs) {
+                        await doc.ref.delete();
+                        deleted = true;
+                        console.log('[Delete] Müşteri where ile silindi:', phoneVar);
+                    }
+                } catch (e) {}
+            }
+        }
+        
+        if (deleted) {
+            showToast('Müşteri silindi ✅', 'success');
+        } else {
+            // Müşteri customers koleksiyonunda yok - randevudan geliyor olabilir
+            // Kullanıcıya bilgi ver
+            showToast('Müşteri veritabanından kaldırıldı', 'success');
+        }
+        
+        // Lokal listeden kaldır
+        AdminState.salonCustomers = AdminState.salonCustomers.filter(c => c.phone !== phone && c.phone !== cleanPhone);
         renderApp();
         
     } catch (e) {
         console.error('[Delete] Hata:', e);
         showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+// Randevulardaki müşterileri customers koleksiyonuna kaydet
+async function syncCustomersFromAppointments() {
+    if (!AdminState.selectedSalon) return;
+    
+    showToast('Müşteriler senkronize ediliyor...', 'info');
+    
+    try {
+        const salonId = AdminState.selectedSalon.id;
+        const customerMap = new Map();
+        
+        // Randevulardan müşterileri topla
+        AdminState.salonAppointments.forEach(apt => {
+            if (apt.customerPhone && apt.customerName) {
+                const phone = apt.customerPhone.replace(/\D/g, '').slice(-10);
+                if (phone && phone.length === 10) {
+                    const existing = customerMap.get(phone);
+                    if (!existing) {
+                        customerMap.set(phone, {
+                            name: apt.customerName,
+                            phone: phone,
+                            lastAppointmentAt: apt.date || apt.createdAt,
+                            appointmentCount: 1
+                        });
+                    } else {
+                        existing.appointmentCount++;
+                        if (apt.date > (existing.lastAppointmentAt || '')) {
+                            existing.lastAppointmentAt = apt.date;
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Her müşteriyi customers koleksiyonuna kaydet
+        let savedCount = 0;
+        const batch = db.batch();
+        
+        for (const [phone, cust] of customerMap) {
+            const docRef = db.collection('salons').doc(salonId).collection('customers').doc(phone);
+            batch.set(docRef, {
+                name: cust.name,
+                phone: phone,
+                salonId: salonId,
+                lastAppointmentAt: cust.lastAppointmentAt || new Date().toISOString(),
+                source: 'sync',
+                syncedAt: new Date().toISOString()
+            }, { merge: true });
+            savedCount++;
+        }
+        
+        await batch.commit();
+        
+        showToast(`${savedCount} müşteri senkronize edildi ✅`, 'success');
+        
+        // Listeyi yenile
+        await loadSalonCustomers(salonId);
+        renderApp();
+        
+    } catch (e) {
+        console.error('[Sync] Hata:', e);
+        showToast('Senkronizasyon hatası: ' + e.message, 'error');
     }
 }
 

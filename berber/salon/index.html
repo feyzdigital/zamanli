@@ -2964,6 +2964,9 @@
                 await db.collection('appointments').add(appointment);
                 window.lastAppointment = appointment;
                 
+                // MÜŞTERİYİ OTOMATİK KAYDET
+                await autoSaveCustomerToSalon(salon.id, customerName, customerPhone.slice(-10));
+                
                 closeBookingModal();
                 showSuccess(appointment);
                 notifySalonOwner(appointment);
@@ -3119,6 +3122,29 @@ Onayınızı bekliyorum. Teşekkürler!`;
             document.getElementById('bookingForm').reset();
             document.getElementById('toggleSummary').textContent = 'Hizmet ve tarih seçin';
             loadExistingAppointments();
+        }
+        
+        // Randevu oluşturulduğunda müşteriyi otomatik kaydet
+        async function autoSaveCustomerToSalon(salonId, name, phone) {
+            try {
+                const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+                if (!cleanPhone || cleanPhone.length !== 10) return;
+                
+                const now = new Date().toISOString();
+                
+                await db.collection('salons').doc(salonId).collection('customers').doc(cleanPhone).set({
+                    name: name,
+                    phone: cleanPhone,
+                    salonId: salonId,
+                    lastAppointmentAt: now,
+                    source: 'website',
+                    updatedAt: now
+                }, { merge: true });
+                
+                console.log('[AutoSave] Müşteri kaydedildi:', cleanPhone);
+            } catch (e) {
+                console.log('[AutoSave] Müşteri kaydetme hatası:', e.message);
+            }
         }
         
         // PWA Service Worker
