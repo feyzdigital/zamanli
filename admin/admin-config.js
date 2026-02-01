@@ -37,12 +37,14 @@ const ADMIN_CONFIG = {
         kuafor: { name: 'Kuaför', icon: '💇‍♀️', color: '#ec4899' },
         beauty: { name: 'Güzellik', icon: '💆', color: '#14b8a6' }
     },
-    // Genişletilmiş paket sistemi - anlık güncelleme desteği
+    // 3 Paket Sistemi - Basitleştirilmiş
     packages: {
         free: { 
             name: 'Ücretsiz', 
             color: 'slate', 
             price: 0,
+            yearlyPrice: 0,
+            badge: '',
             limits: { 
                 monthlyAppointments: 30, 
                 staff: 1,
@@ -50,71 +52,46 @@ const ADMIN_CONFIG = {
                 whatsappNotifications: true,
                 emailNotifications: false,
                 customerManagement: false,
+                customerNotes: false,
                 reports: false,
+                reportsBasic: true,
                 multiLocation: false,
                 customBranding: false,
-                prioritySupport: false
+                prioritySupport: false,
+                apiAccess: false
             },
-            features: ['Temel randevu yönetimi', 'WhatsApp bildirimleri', 'Online rezervasyon']
-        },
-        starter: { 
-            name: 'Starter', 
-            color: 'blue', 
-            price: 99,
-            limits: { 
-                monthlyAppointments: 100, 
-                staff: 2,
-                smsNotifications: false,
-                whatsappNotifications: true,
-                emailNotifications: true,
-                customerManagement: true,
-                reports: false,
-                multiLocation: false,
-                customBranding: false,
-                prioritySupport: false
-            },
-            features: ['100 aylık randevu', '2 personel', 'Müşteri yönetimi', 'E-posta bildirimleri']
+            features: ['30 aylık randevu', '1 personel', 'WhatsApp bildirimleri', 'Online rezervasyon']
         },
         pro: { 
             name: 'Pro', 
             color: 'primary', 
-            price: 249,
+            price: 499,
+            yearlyPrice: 399,
+            badge: 'Popüler',
             limits: { 
-                monthlyAppointments: 500, 
+                monthlyAppointments: -1,
                 staff: 5,
                 smsNotifications: true,
                 whatsappNotifications: true,
                 emailNotifications: true,
                 customerManagement: true,
+                customerNotes: true,
                 reports: true,
+                reportsBasic: true,
+                reportsAdvanced: true,
                 multiLocation: false,
                 customBranding: true,
-                prioritySupport: false
+                prioritySupport: false,
+                apiAccess: false
             },
-            features: ['500 aylık randevu', '5 personel', 'SMS bildirimleri', 'Raporlar', 'Özel marka']
+            features: ['Sınırsız randevu', '5 personel', 'SMS + E-posta', 'Müşteri yönetimi', 'Detaylı raporlar', 'Özel marka']
         },
         business: { 
             name: 'Business', 
-            color: 'success', 
-            price: 499,
-            limits: { 
-                monthlyAppointments: -1, // Sınırsız
-                staff: -1, // Sınırsız
-                smsNotifications: true,
-                whatsappNotifications: true,
-                emailNotifications: true,
-                customerManagement: true,
-                reports: true,
-                multiLocation: true,
-                customBranding: true,
-                prioritySupport: true
-            },
-            features: ['Sınırsız randevu', 'Sınırsız personel', 'Çoklu şube', 'Öncelikli destek', 'Tüm özellikler']
-        },
-        enterprise: { 
-            name: 'Enterprise', 
-            color: 'purple', 
+            color: 'gold', 
             price: 999,
+            yearlyPrice: 799,
+            badge: 'En Kapsamlı',
             limits: { 
                 monthlyAppointments: -1,
                 staff: -1,
@@ -122,20 +99,23 @@ const ADMIN_CONFIG = {
                 whatsappNotifications: true,
                 emailNotifications: true,
                 customerManagement: true,
+                customerNotes: true,
                 reports: true,
+                reportsBasic: true,
+                reportsAdvanced: true,
+                reportsExport: true,
                 multiLocation: true,
                 customBranding: true,
                 prioritySupport: true,
-                apiAccess: true,
-                whiteLabel: true
+                onlinePayment: true,
+                apiAccess: true
             },
-            features: ['Tüm Business özellikleri', 'API erişimi', 'White-label', 'Özel entegrasyonlar']
+            features: ['Sınırsız randevu', 'Sınırsız personel', 'Çoklu şube', 'Rapor export', 'Online ödeme', 'API erişimi', '7/24 destek']
         }
     },
     // Paket süreleri
     packageDurations: {
         monthly: { name: 'Aylık', multiplier: 1, discount: 0 },
-        quarterly: { name: '3 Aylık', multiplier: 3, discount: 10 },
         yearly: { name: 'Yıllık', multiplier: 12, discount: 20 }
     }
 };

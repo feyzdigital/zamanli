@@ -162,23 +162,24 @@
         .package-card { border: 2px solid var(--slate-200); border-radius: var(--radius); padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative; }
         .package-card:hover { border-color: var(--slate-300); }
         .package-card.selected { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
-        .package-card.starter.selected { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
-        .package-card.pro.selected { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
-        .package-card.premium.selected { border-color: #C5A065; background: rgba(139, 92, 246, 0.05); }
+        .package-card.free.selected { border-color: var(--slate-500); background: rgba(100, 116, 139, 0.05); }
+        .package-card.pro.selected { border-color: var(--primary); background: rgba(16, 185, 129, 0.05); }
+        .package-card.business.selected { border-color: #C5A065; background: rgba(197, 160, 101, 0.05); }
         .package-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .package-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
-        .package-card.starter .package-name { color: var(--success); }
-        .package-card.pro .package-name { color: #3b82f6; }
-        .package-card.premium .package-name { color: #C5A065; }
+        .package-card.free .package-name { color: var(--slate-600); }
+        .package-card.pro .package-name { color: var(--primary); }
+        .package-card.business .package-name { color: #C5A065; }
         .package-desc { font-size: 0.8rem; color: var(--slate-500); margin-bottom: 0.5rem; }
         .package-price { font-size: 1.25rem; font-weight: 800; }
         .package-price span { font-size: 0.85rem; font-weight: 500; color: var(--slate-500); }
-        .package-badge { position: absolute; top: -10px; right: 10px; background: #3b82f6; color: white; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 600; }
+        .package-badge { position: absolute; top: -10px; right: 10px; background: var(--primary); color: white; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 10px; font-weight: 600; }
         .package-check { position: absolute; top: 0.5rem; right: 0.5rem; width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: none; align-items: center; justify-content: center; font-size: 0.8rem; }
         .package-card.selected .package-check { display: flex; }
-        .package-card.starter.selected .package-check { background: var(--success); }
-        .package-card.pro.selected .package-check { background: #3b82f6; }
-        .package-card.premium.selected .package-check { background: #C5A065; }
+        .package-card.free.selected .package-check { background: var(--slate-500); }
+        .package-card.pro.selected .package-check { background: var(--primary); }
+        .package-card.business.selected .package-check { background: #C5A065; }
+        .package-yearly { font-size: 0.7rem; color: var(--primary); margin-top: 0.5rem; font-weight: 500; background: rgba(16, 185, 129, 0.1); padding: 0.25rem 0.5rem; border-radius: 4px; display: inline-block; }
         .package-suggestion { background: #fffbeb; border: 1px solid #f59e0b; border-radius: var(--radius); padding: 0.75rem 1rem; margin-top: 0.75rem; display: none; }
         .package-suggestion.show { display: block; }
         .package-suggestion p { font-size: 0.9rem; color: #92400e; margin: 0; }
@@ -456,10 +457,35 @@
                     <span>veya manuel doldurun</span>
                 </div>
                 
+                <!-- Kategori Seçimi -->
+                <div class="form-group">
+                    <label class="form-label">🏷️ Salon Türü <span class="required">*</span></label>
+                    <div class="category-selector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+                        <label class="category-option" style="display: flex; flex-direction: column; align-items: center; padding: 1rem; border: 2px solid #10B981; border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: center; background: rgba(16,185,129,0.05);">
+                            <input type="radio" name="category" value="berber" style="display: none;" checked onchange="updateCategorySelection()">
+                            <span style="font-size: 2rem; margin-bottom: 0.5rem;">💈</span>
+                            <span style="font-weight: 600; color: var(--slate-700);">Berber</span>
+                            <span style="font-size: 0.75rem; color: var(--slate-500);">Erkek saç & sakal</span>
+                        </label>
+                        <label class="category-option" style="display: flex; flex-direction: column; align-items: center; padding: 1rem; border: 2px solid var(--slate-200); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: center;">
+                            <input type="radio" name="category" value="kuafor" style="display: none;" onchange="updateCategorySelection()">
+                            <span style="font-size: 2rem; margin-bottom: 0.5rem;">💇‍♀️</span>
+                            <span style="font-weight: 600; color: var(--slate-700);">Kuaför</span>
+                            <span style="font-size: 0.75rem; color: var(--slate-500);">Kadın saç bakımı</span>
+                        </label>
+                        <label class="category-option" style="display: flex; flex-direction: column; align-items: center; padding: 1rem; border: 2px solid var(--slate-200); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: center;">
+                            <input type="radio" name="category" value="beauty" style="display: none;" onchange="updateCategorySelection()">
+                            <span style="font-size: 2rem; margin-bottom: 0.5rem;">💆</span>
+                            <span style="font-weight: 600; color: var(--slate-700);">Güzellik</span>
+                            <span style="font-size: 0.75rem; color: var(--slate-500);">Cilt bakımı & spa</span>
+                        </label>
+                    </div>
+                </div>
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Salon Adı <span class="required">*</span></label>
-                        <input type="text" class="form-input" id="salonName" placeholder="Örn: Usta Berber">
+                        <input type="text" class="form-input" id="salonName" placeholder="Örn: Usta Salon">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Yetkili Adı <span class="required">*</span></label>
@@ -556,27 +582,30 @@
                 <h2 class="form-section-title">📦 Size Uygun Paketi Seçin</h2>
                 <p style="color: var(--slate-500); font-size: 0.9rem; margin-bottom: 1rem;" id="packageRecommendation"></p>
                 <div class="package-grid">
-                    <div class="package-card starter" data-package="starter" onclick="selectPackage('starter')">
+                    <div class="package-card free" data-package="free" onclick="selectPackage('free')">
                         <div class="package-check">✓</div>
-                        <div class="package-icon">🟢</div>
-                        <div class="package-name">Başlangıç</div>
-                        <div class="package-desc">1 personel • 1 işletme</div>
-                        <div class="package-price">249 ₺ <span>/ ay</span></div>
+                        <div class="package-icon">🆓</div>
+                        <div class="package-name">Ücretsiz</div>
+                        <div class="package-desc">1 personel • 30 randevu/ay</div>
+                        <div class="package-price">0 ₺ <span>/ ay</span></div>
                     </div>
                     <div class="package-card pro" data-package="pro" onclick="selectPackage('pro')">
                         <div class="package-badge">Popüler</div>
                         <div class="package-check">✓</div>
-                        <div class="package-icon">🔵</div>
-                        <div class="package-name">Profesyonel</div>
-                        <div class="package-desc">3 personele kadar</div>
+                        <div class="package-icon">⭐</div>
+                        <div class="package-name">Pro</div>
+                        <div class="package-desc">5 personel • Sınırsız randevu</div>
                         <div class="package-price">499 ₺ <span>/ ay</span></div>
+                        <div class="package-yearly">Yıllık: 399 ₺/ay (%20 indirim)</div>
                     </div>
-                    <div class="package-card premium" data-package="premium" onclick="selectPackage('premium')">
+                    <div class="package-card business" data-package="business" onclick="selectPackage('business')">
+                        <div class="package-badge" style="background: linear-gradient(135deg, #C5A065, #D4AF37);">En Kapsamlı</div>
                         <div class="package-check">✓</div>
-                        <div class="package-icon">🟣</div>
-                        <div class="package-name">Premium</div>
-                        <div class="package-desc">Sınırsız personel</div>
-                        <div class="package-price">799 ₺ <span>/ ay</span></div>
+                        <div class="package-icon">👑</div>
+                        <div class="package-name">Business</div>
+                        <div class="package-desc">Sınırsız personel • Tüm özellikler</div>
+                        <div class="package-price">999 ₺ <span>/ ay</span></div>
+                        <div class="package-yearly">Yıllık: 799 ₺/ay (%20 indirim)</div>
                     </div>
                 </div>
                 <a href="/fiyatlandirma/" target="_blank" style="font-size: 0.85rem; color: var(--primary); display: inline-block; margin-top: 0.75rem;">📋 Paket özelliklerini karşılaştır</a>
@@ -694,25 +723,83 @@
         let otpCountdown = 60;
         
         const PACKAGES = {
-            starter: { name: 'Başlangıç', maxStaff: 1, price: 249, setup: 0 },
-            pro: { name: 'Profesyonel', maxStaff: 3, price: 499, setup: 990 },
-            premium: { name: 'Premium', maxStaff: 999, price: 799, setup: 1990 }
+            free: { name: 'Ücretsiz', maxStaff: 1, price: 0, setup: 0 },
+            pro: { name: 'Pro', maxStaff: 5, price: 499, setup: 0 },
+            business: { name: 'Business', maxStaff: 999, price: 999, setup: 0 }
         };
         
-        const SERVICES = [
-            { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 30, price: 300 },
-            { id: 'sakal-trasi', name: 'Sakal Tıraşı', icon: '🪒', duration: 20, price: 150 },
-            { id: 'sac-sakal', name: 'Saç + Sakal', icon: '💈', duration: 45, price: 450 },
-            { id: 'sac-yikama', name: 'Saç + Yıkama', icon: '💧', duration: 40, price: 400 },
-            { id: 'sac-sakal-yikama', name: 'Saç + Sakal + Yıkama', icon: '🚿', duration: 55, price: 550 },
-            { id: 'sac-sakal-cilt', name: 'Saç + Sakal + Cilt Bakımı (Maske)', icon: '🧴', duration: 60, price: 550 },
-            { id: 'sac-sakal-yikama-cilt', name: 'Saç + Sakal + Yıkama + Cilt Bakımı', icon: '✨', duration: 75, price: 650 },
-            { id: 'sac-sakal-agda', name: 'Saç + Sakal + Ağda (Gözaltı + Kulak)', icon: '👁️', duration: 60, price: 520 }
-        ];
+        // Kategoriye göre hizmetler
+        const SERVICES_BY_CATEGORY = {
+            berber: [
+                { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 30, price: 300 },
+                { id: 'sakal-trasi', name: 'Sakal Tıraşı', icon: '🪒', duration: 20, price: 150 },
+                { id: 'sac-sakal', name: 'Saç + Sakal', icon: '💈', duration: 45, price: 450 },
+                { id: 'sac-yikama', name: 'Saç + Yıkama', icon: '💧', duration: 40, price: 400 },
+                { id: 'sac-sakal-yikama', name: 'Saç + Sakal + Yıkama', icon: '🚿', duration: 55, price: 550 },
+                { id: 'sac-sakal-cilt', name: 'Saç + Sakal + Cilt Bakımı', icon: '🧴', duration: 60, price: 550 },
+                { id: 'cocuk-tiras', name: 'Çocuk Tıraşı', icon: '👦', duration: 20, price: 200 }
+            ],
+            kuafor: [
+                { id: 'sac-kesimi', name: 'Saç Kesimi', icon: '✂️', duration: 45, price: 350 },
+                { id: 'fon', name: 'Fön', icon: '💨', duration: 30, price: 200 },
+                { id: 'sac-fon', name: 'Saç Kesimi + Fön', icon: '💇‍♀️', duration: 60, price: 500 },
+                { id: 'boya', name: 'Saç Boyama', icon: '🎨', duration: 120, price: 800 },
+                { id: 'balyaj', name: 'Balyaj / Ombre', icon: '✨', duration: 180, price: 1500 },
+                { id: 'manikur', name: 'Manikür', icon: '💅', duration: 45, price: 250 },
+                { id: 'pedikur', name: 'Pedikür', icon: '🦶', duration: 60, price: 300 },
+                { id: 'keratin', name: 'Keratin Bakım', icon: '💎', duration: 90, price: 1200 }
+            ],
+            beauty: [
+                { id: 'cilt-bakimi', name: 'Cilt Bakımı', icon: '🧴', duration: 60, price: 500 },
+                { id: 'hydrafacial', name: 'HydraFacial', icon: '💧', duration: 60, price: 800 },
+                { id: 'masaj', name: 'Masaj', icon: '💆', duration: 60, price: 600 },
+                { id: 'epilasyon', name: 'Lazer Epilasyon', icon: '✨', duration: 45, price: 400 },
+                { id: 'kirpik', name: 'Kirpik Lifting', icon: '👁️', duration: 60, price: 450 },
+                { id: 'kas-dizayn', name: 'Kaş Dizayn', icon: '✏️', duration: 30, price: 200 },
+                { id: 'kalici-makyaj', name: 'Kalıcı Makyaj', icon: '💄', duration: 120, price: 2000 },
+                { id: 'manikur', name: 'Manikür', icon: '💅', duration: 45, price: 250 },
+                { id: 'pedikur', name: 'Pedikür', icon: '🦶', duration: 60, price: 300 }
+            ]
+        };
+        
+        // Mevcut kategori
+        let selectedCategory = 'berber';
+        
+        // Kategori seçimi güncelle
+        function updateCategorySelection() {
+            const selected = document.querySelector('input[name="category"]:checked');
+            if (selected) {
+                selectedCategory = selected.value;
+                
+                // Görsel güncelleme
+                document.querySelectorAll('.category-option').forEach(opt => {
+                    const input = opt.querySelector('input');
+                    if (input.value === selectedCategory) {
+                        opt.style.borderColor = getCategoryColor(selectedCategory);
+                        opt.style.background = `${getCategoryColor(selectedCategory)}10`;
+                    } else {
+                        opt.style.borderColor = 'var(--slate-200)';
+                        opt.style.background = 'white';
+                    }
+                });
+                
+                // Hizmetleri yenile
+                renderServices();
+            }
+        }
+        
+        function getCategoryColor(cat) {
+            const colors = { berber: '#10B981', kuafor: '#ec4899', beauty: '#14b8a6' };
+            return colors[cat] || '#10B981';
+        }
+        
+        // Eski SERVICES referansları için (geriye uyumluluk)
+        const SERVICES = SERVICES_BY_CATEGORY.berber;
         
         function init() {
             if (typeof firebase !== 'undefined') db = firebase.firestore();
             if (typeof emailjs !== 'undefined' && typeof EMAILJS_CONFIG !== 'undefined') emailjs.init(EMAILJS_CONFIG.publicKey);
+            updateCategorySelection(); // İlk kategori seçimini uygula
             renderServices();
             initPlacesSearch();
             loadGoogleMapsAPI();
@@ -931,7 +1018,13 @@
         }
         
         function renderServices() {
-            document.getElementById('servicesGrid').innerHTML = SERVICES.map(s => 
+            // Seçili kategoriye göre hizmetleri al
+            const services = SERVICES_BY_CATEGORY[selectedCategory] || SERVICES_BY_CATEGORY.berber;
+            
+            // Seçili servisleri temizle
+            selectedServices.clear();
+            
+            document.getElementById('servicesGrid').innerHTML = services.map(s => 
                 `<div class="service-item-edit" data-id="${s.id}">
                     <label class="service-checkbox" onclick="toggleService('${s.id}')">
                         <span class="checkbox-mark">✓</span>
@@ -946,19 +1039,37 @@
                     </div>
                 </div>`
             ).join('');
-            ['sac-kesimi', 'sakal-trasi', 'sac-sakal'].forEach(id => toggleService(id));
+            
+            // Kategoriye göre varsayılan seçilecek hizmetler
+            const defaultSelections = {
+                berber: ['sac-kesimi', 'sakal-trasi', 'sac-sakal'],
+                kuafor: ['sac-kesimi', 'fon', 'sac-fon'],
+                beauty: ['cilt-bakimi', 'manikur', 'pedikur']
+            };
+            (defaultSelections[selectedCategory] || defaultSelections.berber).forEach(id => {
+                const el = document.querySelector(`.service-item-edit[data-id="${id}"]`);
+                if (el) toggleService(id);
+            });
+        }
+        
+        function getCurrentCategoryServices() {
+            return SERVICES_BY_CATEGORY[selectedCategory] || SERVICES_BY_CATEGORY.berber;
         }
         
         function toggleService(id) {
             const el = document.querySelector(`.service-item-edit[data-id="${id}"]`);
+            if (!el) return;
             const checkbox = el.querySelector('.service-checkbox');
+            const services = getCurrentCategoryServices();
             if (selectedServices.has(id)) { 
                 selectedServices.delete(id); 
                 checkbox.classList.remove('selected'); 
             } else { 
-                const service = SERVICES.find(s => s.id === id);
-                selectedServices.set(id, { ...service }); 
-                checkbox.classList.add('selected'); 
+                const service = services.find(s => s.id === id);
+                if (service) {
+                    selectedServices.set(id, { ...service }); 
+                    checkbox.classList.add('selected');
+                }
             }
         }
         
@@ -1000,13 +1111,13 @@
             
             if (staffCount === 1) {
                 rec.innerHTML = '👤 <strong>1 personeliniz</strong> var. Tüm paketleri seçebilirsiniz.';
-                selectPackage('starter');
-            } else if (staffCount <= 3) {
-                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. <span style="color: #3b82f6;">Profesyonel</span> veya <span style="color: #C5A065;">Premium</span> paket seçebilirsiniz.`;
+                selectPackage('free');
+            } else if (staffCount <= 5) {
+                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. <span style="color: var(--primary);">Pro</span> veya <span style="color: #C5A065;">Business</span> paket seçebilirsiniz.`;
                 selectPackage('pro');
             } else {
-                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. Sadece <span style="color: #C5A065;">Premium paket</span> seçebilirsiniz.`;
-                selectPackage('premium');
+                rec.innerHTML = `👥 <strong>${staffCount} personeliniz</strong> var. Sadece <span style="color: #C5A065;">Business paket</span> seçebilirsiniz.`;
+                selectPackage('business');
             }
         }
         
@@ -1155,11 +1266,19 @@
                 `<div style="display:flex;justify-content:space-between;padding:0.25rem 0;"><span>${s.icon} ${s.name}</span><span style="font-weight:600">${s.price} ₺</span></div>`
             ).join('');
             
+            // Paket renklerini belirle
+            const packageColors = {
+                free: '#64748b',
+                pro: '#10b981',
+                business: '#C5A065'
+            };
+            const packageColor = packageColors[selectedPackage] || '#10b981';
+            
             document.getElementById('reviewContent').innerHTML = `
-                <div class="review-card" style="border-left: 4px solid ${selectedPackage === 'starter' ? '#10b981' : selectedPackage === 'pro' ? '#3b82f6' : '#C5A065'};">
+                <div class="review-card" style="border-left: 4px solid ${packageColor};">
                     <h4>SEÇİLEN PAKET</h4>
                     <p>${pkg.name}</p>
-                    <p class="sub">${pkg.price} ₺/ay${pkg.setup > 0 ? ` • Kurulum: ${pkg.setup} ₺` : ' • Kurulum Ücretsiz'}</p>
+                    <p class="sub">${pkg.price === 0 ? 'Ücretsiz' : pkg.price + ' ₺/ay'}${pkg.price > 0 ? ' • Yıllık %20 indirim' : ''}</p>
                 </div>
                 <div class="review-card"><h4>SALON</h4><p>${escapeHtml(d.name)}</p><p class="sub">${escapeHtml(d.district)}, ${escapeHtml(d.city)}</p></div>
                 <div class="review-card"><h4>İLETİŞİM</h4><p>${escapeHtml(d.ownerName)}</p><p class="sub">${d.phone} • ${escapeHtml(d.email)}</p></div>
@@ -1224,7 +1343,7 @@
                     landlinePhone: d.landlinePhone,
                     email: d.email,
                     city: d.city, district: d.district, address: d.address, pin: d.pin,
-                    category: 'berber', 
+                    category: selectedCategory, // Seçilen kategori
                     package: d.package,
                     packageName: d.packageName,
                     packagePrice: d.packagePrice,

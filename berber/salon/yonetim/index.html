@@ -4047,6 +4047,30 @@
                             <label class="form-label">Salon Adı</label>
                             <input type="text" id="settingName" class="form-input" required>
                         </div>
+                        
+                        <!-- Kategori Seçimi -->
+                        <div class="form-group">
+                            <label class="form-label">🏷️ Salon Türü</label>
+                            <div class="category-selector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.5rem;">
+                                <label class="category-option" id="catOptBerber" style="display: flex; flex-direction: column; align-items: center; padding: 1rem; border: 2px solid var(--slate-200); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: center;">
+                                    <input type="radio" name="settingCategory" value="berber" style="display: none;" onchange="updateSettingCategory('berber')">
+                                    <span style="font-size: 1.5rem; margin-bottom: 0.25rem;">💈</span>
+                                    <span style="font-weight: 600; font-size: 0.85rem;">Berber</span>
+                                </label>
+                                <label class="category-option" id="catOptKuafor" style="display: flex; flex-direction: column; align-items: center; padding: 1rem; border: 2px solid var(--slate-200); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: center;">
+                                    <input type="radio" name="settingCategory" value="kuafor" style="display: none;" onchange="updateSettingCategory('kuafor')">
+                                    <span style="font-size: 1.5rem; margin-bottom: 0.25rem;">💇‍♀️</span>
+                                    <span style="font-weight: 600; font-size: 0.85rem;">Kuaför</span>
+                                </label>
+                                <label class="category-option" id="catOptBeauty" style="display: flex; flex-direction: column; align-items: center; padding: 1rem; border: 2px solid var(--slate-200); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: center;">
+                                    <input type="radio" name="settingCategory" value="beauty" style="display: none;" onchange="updateSettingCategory('beauty')">
+                                    <span style="font-size: 1.5rem; margin-bottom: 0.25rem;">💆</span>
+                                    <span style="font-weight: 600; font-size: 0.85rem;">Güzellik</span>
+                                </label>
+                            </div>
+                            <p class="form-hint" style="margin-top: 0.5rem;">Kategori, salonunuzun listelenme şeklini ve varsayılan hizmetleri belirler</p>
+                        </div>
+                        
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div class="form-group">
                                 <label class="form-label">İl</label>
@@ -4064,6 +4088,10 @@
                         <div class="form-group">
                             <label class="form-label">Telefon</label>
                             <input type="tel" id="settingPhone" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">E-posta</label>
+                            <input type="email" id="settingEmail" class="form-input" placeholder="salon@email.com">
                         </div>
                         <button type="submit" class="btn btn-primary">
                             Kaydet
@@ -7404,7 +7432,16 @@ Panel: ${window.location.href}`);
             document.getElementById('settingDistrict').value = salon.district || '';
             document.getElementById('settingAddress').value = salon.address || '';
             document.getElementById('settingPhone').value = salon.phone || '';
+            document.getElementById('settingEmail').value = salon.email || '';
             document.getElementById('settingGoogleBusiness').value = salon.googleBusinessUrl || '';
+            
+            // Kategori seçimi yükle
+            const category = salon.category || 'berber';
+            const categoryRadio = document.querySelector(`input[name="settingCategory"][value="${category}"]`);
+            if (categoryRadio) {
+                categoryRadio.checked = true;
+                updateSettingCategory(category);
+            }
             
             // Salon Sahibi Profili yükle
             loadOwnerProfile();
@@ -7422,6 +7459,29 @@ Panel: ${window.location.href}`);
             // color: Emerald (#10B981), bgcolor: White
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=0B2B26&bgcolor=FFFFFF&data=${encodeURIComponent(location.origin + '/berber/salon/?slug=' + salon.slug)}`;
             document.getElementById('qrCodeDisplay').innerHTML = `<img src="${qrUrl}" alt="QR Kod" id="qrImage" style="width:180px;height:180px; border-radius: 8px;">`;
+        }
+        
+        // Kategori seçim UI güncelleme
+        function updateSettingCategory(category) {
+            const colors = {
+                berber: '#10B981',
+                kuafor: '#ec4899',
+                beauty: '#14b8a6'
+            };
+            
+            ['berber', 'kuafor', 'beauty'].forEach(cat => {
+                const opt = document.getElementById(`catOpt${cat.charAt(0).toUpperCase() + cat.slice(1)}`);
+                if (opt) {
+                    if (cat === category) {
+                        opt.style.borderColor = colors[cat];
+                        opt.style.background = `${colors[cat]}10`;
+                    } else {
+                        opt.style.borderColor = 'var(--slate-200)';
+                        opt.style.background = 'white';
+                    }
+                }
+            });
+        }
         }
         
         // QR Kod İndir - Basit versiyon
@@ -8048,18 +8108,32 @@ Panel: ${window.location.href}`);
         async function saveSettings(e) {
             e.preventDefault();
             
+            // Seçili kategoriyi al
+            const selectedCategory = document.querySelector('input[name="settingCategory"]:checked');
+            
             const updates = {
                 name: document.getElementById('settingName').value,
                 city: document.getElementById('settingCity').value,
                 district: document.getElementById('settingDistrict').value,
                 address: document.getElementById('settingAddress').value,
-                phone: document.getElementById('settingPhone').value
+                phone: document.getElementById('settingPhone').value,
+                email: document.getElementById('settingEmail').value,
+                category: selectedCategory ? selectedCategory.value : (salon.category || 'berber'),
+                updatedAt: new Date().toISOString()
             };
             
             try {
                 await db.collection('salons').doc(salon.id).update(updates);
                 Object.assign(salon, updates);
                 document.getElementById('headerSalonName').textContent = salon.name;
+                
+                // Kategori değiştiyse header'ı da güncelle
+                const catIcons = { berber: '💈', kuafor: '💇‍♀️', beauty: '💆' };
+                const headerType = document.getElementById('headerSalonType');
+                if (headerType) {
+                    headerType.textContent = catIcons[updates.category] || '💈';
+                }
+                
                 showToast('Ayarlar kaydedildi', 'success');
             } catch (error) {
                 console.error('Error saving settings:', error);

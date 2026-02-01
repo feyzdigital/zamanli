@@ -2,91 +2,162 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Salonlar - Herkes okuyabilir, yazma için kısıtlama
+    // ==================== YARDIMCI FONKSİYONLAR ====================
+    
+    // Geçerli PIN formatı kontrolü (4-6 haneli)
+    function isValidPin(pin) {
+      return pin is string && pin.size() >= 4 && pin.size() <= 6;
+    }
+    
+    // Telefon numarası formatı kontrolü
+    function isValidPhone(phone) {
+      return phone is string && phone.size() >= 10;
+    }
+    
+    // Randevu verisi doğrulama
+    function isValidAppointment(data) {
+      return data.keys().hasAll(['salonId', 'customerName', 'customerPhone', 'date', 'time']) &&
+             data.customerName is string && data.customerName.size() > 0 &&
+             data.customerPhone is string && data.customerPhone.size() >= 10;
+    }
+    
+    // ==================== SALONLAR ====================
     match /salons/{salonId} {
+      // Herkes salonları okuyabilir (public listing için)
       allow read: if true;
-      allow create: if true; // Kayıt için
-      allow update: if true; // PIN doğrulaması frontend'de yapılıyor
-      allow delete: if false; // Silme devre dışı - güvenlik için
       
-      // Salon altındaki personeller
+      // Yeni salon kaydı - temel validasyon
+      allow create: if request.resource.data.keys().hasAll(['name', 'phone', 'pin']) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.name.size() > 0 &&
+                       isValidPhone(request.resource.data.phone) &&
+                       isValidPin(request.resource.data.pin);
+      
+      // Salon güncelleme - PIN korunmalı veya admin alanları değişmeli
+      allow update: if request.resource.data.pin == resource.data.pin ||
+                       // Admin güncelleme (status, package değişiklikleri PIN değiştirmez)
+                       (request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status', 'package', 'packageLimits', 'active', 'approvedAt', 'approvedBy', 'updatedAt', 'monthlyStats']));
+      
+      // Silme devre dışı - güvenlik için
+      allow delete: if false;
+      
+      // ----- Salon Alt Koleksiyonları -----
+      
+      // Personel - Salon yönetimi
       match /staff/{staffId} {
-        allow read, write: if true;
+        allow read: if true;
+        allow write: if true;
       }
       
-      // Salon altındaki hizmetler
+      // Hizmetler
       match /services/{serviceId} {
-        allow read, write: if true;
+        allow read: if true;
+        allow write: if true;
       }
       
-      // Salon altındaki randevular
+      // Salon randevuları
       match /appointments/{appointmentId} {
-        allow read, write: if true;
+        allow read: if true;
+        allow create: if true;
+        allow update: if true;
+        allow delete: if false;
       }
       
-      // Salon altındaki müşteriler
+      // Müşteriler
       match /customers/{customerId} {
-        allow read, write: if true;
+        allow read: if true;
+        allow write: if true;
       }
       
       // Personel blokları (izin/kapalı günler)
       match /staffBlocks/{blockId} {
-        allow read, write: if true;
+        allow read: if true;
+        allow write: if true;
       }
       
       // Müşteri notları
       match /customerNotes/{noteId} {
-        allow read, write: if true;
+        allow read: if true;
+        allow write: if true;
       }
       
-      // Salon altındaki yorumlar
+      // Yorumlar - Oluşturma serbest, değiştirme yasak
       match /reviews/{reviewId} {
         allow read: if true;
-        allow create: if true;
+        allow create: if request.resource.data.keys().hasAll(['rating', 'customerName']) &&
+                        request.resource.data.rating is number &&
+                        request.resource.data.rating >= 1 &&
+                        request.resource.data.rating <= 5;
         allow update, delete: if false;
       }
     }
     
-    // Randevular (global collection)
+    // ==================== GLOBAL RANDEVULAR ====================
     match /appointments/{appointmentId} {
       allow read: if true;
-      allow create: if true;
-      allow update: if true;
-      allow delete: if false; // Silme yerine iptal durumu kullan
+      
+      // Randevu oluşturma - Temel validasyon
+      allow create: if isValidAppointment(request.resource.data);
+      
+      // Randevu güncelleme - salonId değiştirilemez
+      allow update: if request.resource.data.salonId == resource.data.salonId;
+      
+      // Silme yerine iptal durumu kullan
+      allow delete: if false;
     }
     
-    // Müşteriler
+    // ==================== MÜŞTERİLER ====================
     match /customers/{customerId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['name', 'phone']) &&
+                      request.resource.data.name is string &&
+                      isValidPhone(request.resource.data.phone);
+      allow update: if true;
+      allow delete: if false;
+    }
+    
+    // ==================== ADMIN ====================
+    match /admin/{docId} {
+      // Admin koleksiyonu - Production'da Firebase Auth ile kısıtlanmalı
       allow read, write: if true;
     }
     
-    // Admin collection - sadece admin erişebilir
-    match /admin/{docId} {
-      allow read, write: if true; // Production'da kısıtlanmalı
-    }
-    
-    // Sistem ayarları
+    // ==================== SİSTEM AYARLARI ====================
     match /settings/{docId} {
       allow read: if true;
       allow write: if false;
     }
     
-    // Push Notification Tokens
+    // ==================== PUSH NOTIFICATIONS ====================
+    
+    // Push Token'lar
     match /push_tokens/{tokenId} {
-      allow read: if false; // Sadece cloud functions erişebilir
-      allow create, update: if true; // Token kaydı için
+      allow read: if false; // Sadece Cloud Functions erişebilir
+      allow create: if request.resource.data.keys().hasAll(['token', 'salonId']) &&
+                      request.resource.data.token is string;
+      allow update: if request.resource.data.token == resource.data.token;
       allow delete: if false;
     }
     
-    // Notifications Queue (Cloud Functions tarafından işlenir)
+    // Bildirim kuyruğu
     match /notifications/{notificationId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false;
     }
     
-    // Notification Logs (Cloud Functions tarafından yazılır)
+    // Bildirim logları
     match /notification_logs/{logId} {
       allow read: if true;
-      allow write: if true; // Cloud Functions yazacak
+      allow write: if true;
+    }
+    
+    // ==================== ANALİTİK ====================
+    match /analytics/{docId} {
+      allow read: if true;
+      allow write: if true;
     }
   }
 }

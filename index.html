@@ -162,9 +162,9 @@
                 <span class="logo-text">Zamanli</span>
             </a>
             <nav class="nav desktop-nav">
-                <a href="/berber/" class="nav-link">💈 Berberler</a>
+                <a href="/berber/" class="nav-link">✨ Salonlar</a>
                 <a href="/berber/kayit/" class="nav-link highlight">Salonunu Ekle</a>
-                <a href="/berber/salon/yonetim/" class="nav-link">🔑 Giriş</a>
+                <a href="#" onclick="showLoginModal(); return false;" class="nav-link">🔑 Giriş</a>
             </nav>
             <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
         </div>
@@ -181,10 +181,14 @@
         </div>
         <nav class="mobile-menu-nav">
             <a href="/" class="active">🏠 Ana Sayfa</a>
-            <a href="/berber/">💈 Berber Bul</a>
-            <a href="/fiyatlandirma/">💰 Fiyatlandırma</a>
+            <span style="padding: 0.5rem 1.5rem; font-size: 0.75rem; color: var(--slate-400); text-transform: uppercase;">Kategoriler</span>
+            <a href="/berber/?category=berber">💈 Berberler</a>
+            <a href="/berber/?category=kuafor">💇‍♀️ Kuaförler</a>
+            <a href="/berber/?category=beauty">💆 Güzellik Merkezleri</a>
+            <a href="/berber/">✨ Tüm Salonlar</a>
             <div class="mobile-menu-divider"></div>
-            <a href="/berber/salon/yonetim/">🔑 Giriş Yap</a>
+            <a href="/fiyatlandirma/">💰 Fiyatlandırma</a>
+            <a href="#" onclick="showLoginModal(); toggleMobileMenu(); return false;">🔑 Giriş Yap</a>
             <a href="/berber/kayit/" class="highlight">✨ Salonunu Ekle</a>
             <a href="#" onclick="ZamanliUX.showInstallPrompt(); toggleMobileMenu(); return false;" id="mobileInstallBtn" class="pwa-hide-when-installed pwa-hide-on-ios">📲 Uygulamayı İndir</a>
         </nav>
@@ -197,13 +201,29 @@
     <section class="hero">
         <div class="container">
             <div class="hero-content">
-                <span class="hero-badge">💈 Berber Randevu Sistemi</span>
-                <h1>Berber Randevusu<br><span class="gradient-text">Artık Çok Kolay!</span></h1>
-                <p class="hero-desc">Favori berberini bul, anında randevu al. Sıra bekleme, zaman kaybetme!</p>
+                <span class="hero-badge">✨ Online Randevu Sistemi</span>
+                <h1>Salon Randevusu<br><span class="gradient-text">Artık Çok Kolay!</span></h1>
+                <p class="hero-desc">Berber, kuaför ve güzellik merkezlerini bul, anında randevu al!</p>
+                
+                <!-- Kategori Kartları -->
+                <div class="category-cards" style="display: flex; gap: 1rem; margin: 2rem 0; flex-wrap: wrap; justify-content: center;">
+                    <a href="/berber/?category=berber" class="category-card" style="background: white; border-radius: 12px; padding: 1.5rem 2rem; text-decoration: none; color: inherit; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s; text-align: center; min-width: 140px;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">💈</span>
+                        <span style="font-weight: 700; color: #10B981;">Berberler</span>
+                    </a>
+                    <a href="/berber/?category=kuafor" class="category-card" style="background: white; border-radius: 12px; padding: 1.5rem 2rem; text-decoration: none; color: inherit; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s; text-align: center; min-width: 140px;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">💇‍♀️</span>
+                        <span style="font-weight: 700; color: #ec4899;">Kuaförler</span>
+                    </a>
+                    <a href="/berber/?category=beauty" class="category-card" style="background: white; border-radius: 12px; padding: 1.5rem 2rem; text-decoration: none; color: inherit; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s; text-align: center; min-width: 140px;">
+                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">💆</span>
+                        <span style="font-weight: 700; color: #14b8a6;">Güzellik</span>
+                    </a>
+                </div>
                 
                 <div class="hero-actions">
                     <a href="/berber/" class="btn btn-primary btn-lg">
-                        <span>🔍</span> Berber Bul
+                        <span>🔍</span> Tüm Salonları Gör
                     </a>
                     <a href="/demo/berber/" class="btn btn-outline btn-lg">
                         <span>👁️</span> Demo İncele
@@ -229,20 +249,20 @@
                 <div class="phone-mockup">
                     <div class="phone-screen">
                         <div class="mock-header">
-                            <span>💈</span> Demo Berber
+                            <span>✨</span> Zamanli
                         </div>
                         <div class="mock-services">
                             <div class="mock-service">
-                                <span>✂️ Saç Kesimi</span>
-                                <span>250 ₺</span>
+                                <span>💈 Berber</span>
+                                <span>→</span>
                             </div>
                             <div class="mock-service">
-                                <span>🪒 Sakal Tıraşı</span>
-                                <span>150 ₺</span>
+                                <span>💇‍♀️ Kuaför</span>
+                                <span>→</span>
                             </div>
                             <div class="mock-service active">
-                                <span>💈 Saç + Sakal</span>
-                                <span>350 ₺</span>
+                                <span>💆 Güzellik</span>
+                                <span>→</span>
                             </div>
                         </div>
                         <div class="mock-calendar">

@@ -1107,9 +1107,11 @@
                 <span class="logo-text">Zamanli</span>
             </a>
             <nav class="nav nav-desktop">
-                <a href="/berber/" class="nav-link" style="color: var(--primary); font-weight: 600;">💈 Berberler</a>
+                <a href="/berber/?category=berber" class="nav-link category-link" data-category="berber">💈 Berberler</a>
+                <a href="/berber/?category=kuafor" class="nav-link category-link" data-category="kuafor">💇‍♀️ Kuaförler</a>
+                <a href="/berber/?category=beauty" class="nav-link category-link" data-category="beauty">💆 Güzellik</a>
                 <a href="/berber/kayit/" class="nav-link highlight">Salonunu Ekle</a>
-                <a href="/berber/salon/yonetim/" class="nav-link">🔑 Giriş Yap</a>
+                <a href="#" onclick="showLoginModal(); return false;" class="nav-link">🔑 Giriş</a>
             </nav>
             <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
         </div>
@@ -1126,10 +1128,15 @@
         </div>
         <nav class="mobile-menu-nav">
             <a href="/">🏠 Ana Sayfa</a>
-            <a href="/berber/" class="active">💈 Berber Bul</a>
-            <a href="/fiyatlandirma/">💰 Fiyatlandırma</a>
             <div class="mobile-menu-divider"></div>
-            <a href="/berber/salon/yonetim/">🔑 Giriş Yap</a>
+            <span style="padding: 0.5rem 1.5rem; font-size: 0.75rem; color: var(--slate-400); text-transform: uppercase;">Kategoriler</span>
+            <a href="/berber/?category=berber" class="category-link" data-category="berber">💈 Berberler</a>
+            <a href="/berber/?category=kuafor" class="category-link" data-category="kuafor">💇‍♀️ Kuaförler</a>
+            <a href="/berber/?category=beauty" class="category-link" data-category="beauty">💆 Güzellik Merkezleri</a>
+            <a href="/berber/" class="category-link" data-category="all">✨ Tüm Salonlar</a>
+            <div class="mobile-menu-divider"></div>
+            <a href="/fiyatlandirma/">💰 Fiyatlandırma</a>
+            <a href="#" onclick="showLoginModal(); toggleMobileMenu(); return false;">🔑 Giriş Yap</a>
             <a href="/berber/kayit/" class="highlight">✨ Salonunu Ekle</a>
         </nav>
         <div class="mobile-menu-footer">
@@ -1141,9 +1148,17 @@
     <div id="mobileMenuOverlay" class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
     
     <!-- Hero -->
-    <section class="hero">
-        <h1>💈 Berber Bul</h1>
-        <p>Yakınındaki en iyi berberleri keşfet, anında randevu al</p>
+    <section class="hero" id="heroSection">
+        <h1 id="heroTitle">✨ Salon Bul</h1>
+        <p id="heroSubtitle">Berber, kuaför ve güzellik salonları tek yerde</p>
+        
+        <!-- Kategori Tabları -->
+        <div class="category-tabs" style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <button class="category-tab" data-category="all" onclick="setCategory('all')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">✨ Tümü</button>
+            <button class="category-tab" data-category="berber" onclick="setCategory('berber')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">💈 Berber</button>
+            <button class="category-tab" data-category="kuafor" onclick="setCategory('kuafor')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">💇‍♀️ Kuaför</button>
+            <button class="category-tab" data-category="beauty" onclick="setCategory('beauty')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">💆 Güzellik</button>
+        </div>
         
         <div class="search-box">
             <input type="text" class="search-input" id="searchInput" placeholder="Salon adı veya konum ara...">
@@ -1299,11 +1314,138 @@
         let allSalons = [];
         let filteredSalons = [];
         let userLocation = null;
+        let currentCategory = 'all'; // Mevcut kategori
+        
+        // Kategori Metinleri
+        const CATEGORY_TEXT = {
+            berber: {
+                singular: 'Berber', plural: 'Berberler', icon: '💈', color: '#10B981',
+                heroTitle: '💈 Berber Bul', heroSubtitle: 'Yakınındaki en iyi berberleri keşfet',
+                searchPlaceholder: 'Berber adı veya konum ara...',
+                resultText: 'berber bulundu', emptyText: 'Henüz kayıtlı berber yok'
+            },
+            kuafor: {
+                singular: 'Kuaför', plural: 'Kuaförler', icon: '💇‍♀️', color: '#ec4899',
+                heroTitle: '💇‍♀️ Kuaför Bul', heroSubtitle: 'Profesyonel kuaförler, kolay randevu',
+                searchPlaceholder: 'Kuaför adı veya konum ara...',
+                resultText: 'kuaför bulundu', emptyText: 'Henüz kayıtlı kuaför yok'
+            },
+            beauty: {
+                singular: 'Güzellik Merkezi', plural: 'Güzellik Merkezleri', icon: '💆', color: '#14b8a6',
+                heroTitle: '💆 Güzellik Merkezi Bul', heroSubtitle: 'Cilt bakımı, spa ve wellness hizmetleri',
+                searchPlaceholder: 'Güzellik merkezi ara...',
+                resultText: 'güzellik merkezi bulundu', emptyText: 'Henüz kayıtlı güzellik merkezi yok'
+            },
+            all: {
+                singular: 'Salon', plural: 'Salonlar', icon: '✨', color: '#10B981',
+                heroTitle: '✨ Salon Bul', heroSubtitle: 'Berber, kuaför ve güzellik salonları tek yerde',
+                searchPlaceholder: 'Salon adı veya konum ara...',
+                resultText: 'salon bulundu', emptyText: 'Henüz kayıtlı salon yok'
+            }
+        };
+        
+        // URL'den kategori al
+        function getCategoryFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const cat = urlParams.get('category');
+            return ['berber', 'kuafor', 'beauty'].includes(cat) ? cat : 'all';
+        }
+        
+        // Kategori değiştir
+        function setCategory(category) {
+            currentCategory = category;
+            
+            // URL güncelle (sayfa yenilemeden)
+            const url = new URL(window.location);
+            if (category === 'all') {
+                url.searchParams.delete('category');
+            } else {
+                url.searchParams.set('category', category);
+            }
+            window.history.pushState({}, '', url);
+            
+            // UI güncelle
+            updateCategoryUI();
+            
+            // Salonları filtrele
+            filterByCategory();
+        }
+        
+        // Kategori UI güncelle
+        function updateCategoryUI() {
+            const catText = CATEGORY_TEXT[currentCategory];
+            
+            // Hero güncelle
+            const heroTitle = document.getElementById('heroTitle');
+            const heroSubtitle = document.getElementById('heroSubtitle');
+            const searchInput = document.getElementById('searchInput');
+            const heroSection = document.getElementById('heroSection');
+            
+            if (heroTitle) heroTitle.textContent = catText.heroTitle;
+            if (heroSubtitle) heroSubtitle.textContent = catText.heroSubtitle;
+            if (searchInput) searchInput.placeholder = catText.searchPlaceholder;
+            
+            // Hero rengi değiştir
+            if (heroSection && currentCategory !== 'all') {
+                heroSection.style.background = `linear-gradient(135deg, ${catText.color}, ${adjustColor(catText.color, -20)})`;
+            } else if (heroSection) {
+                heroSection.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+            }
+            
+            // Aktif tab'ı işaretle
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                if (tab.dataset.category === currentCategory) {
+                    tab.style.background = 'white';
+                    tab.style.color = catText.color;
+                    tab.style.borderColor = 'white';
+                } else {
+                    tab.style.background = 'rgba(255,255,255,0.1)';
+                    tab.style.color = 'white';
+                    tab.style.borderColor = 'rgba(255,255,255,0.3)';
+                }
+            });
+            
+            // Nav link aktif işareti
+            document.querySelectorAll('.category-link').forEach(link => {
+                const linkCat = link.dataset.category;
+                if (linkCat === currentCategory) {
+                    link.style.color = 'var(--primary)';
+                    link.style.fontWeight = '600';
+                } else {
+                    link.style.color = '';
+                    link.style.fontWeight = '';
+                }
+            });
+        }
+        
+        // Renk koyulaştırma
+        function adjustColor(hex, amount) {
+            const num = parseInt(hex.slice(1), 16);
+            const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+            const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+            const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+            return '#' + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+        }
+        
+        // Kategoriye göre filtrele
+        function filterByCategory() {
+            if (currentCategory === 'all') {
+                filteredSalons = [...allSalons];
+            } else {
+                filteredSalons = allSalons.filter(s => (s.category || 'berber') === currentCategory);
+            }
+            renderSalons();
+        }
         
         // Initialize
         async function init() {
             if (typeof firebase !== 'undefined') {
                 db = firebase.firestore();
+                
+                // URL'den kategori al
+                currentCategory = getCategoryFromUrl();
+                updateCategoryUI();
+                
                 await loadSalons();
                 setupEventListeners();
             }
@@ -1363,14 +1505,13 @@
             return R * c;
         }
         
-        // Load Salons
+        // Load Salons - Tüm kategorileri yükle
         async function loadSalons() {
             try {
-                // İlk olarak boolean true ile dene
+                // TÜM onaylı ve aktif salonları çek (kategori fark etmez)
                 let snapshot = await db.collection('salons')
                     .where('active', '==', true)
                     .where('status', '==', 'approved')
-                    .where('category', '==', 'berber')
                     .get();
                 
                 allSalons = snapshot.docs.map(doc => ({
@@ -1383,7 +1524,6 @@
                     const stringSnapshot = await db.collection('salons')
                         .where('active', '==', 'true')
                         .where('status', '==', 'approved')
-                        .where('category', '==', 'berber')
                         .get();
                     
                     allSalons = stringSnapshot.docs.map(doc => ({
@@ -1392,13 +1532,13 @@
                     }));
                 }
                 
-                // Hala boşsa, category filtresi olmadan dene
+                // Hala boşsa, sadece status kontrolü yap
                 if (allSalons.length === 0) {
                     const fallbackSnapshot = await db.collection('salons')
                         .where('status', '==', 'approved')
                         .get();
                     
-                    // Client-side active filtresi (hem boolean hem string)
+                    // Client-side active filtresi
                     allSalons = fallbackSnapshot.docs
                         .map(doc => ({ id: doc.id, ...doc.data() }))
                         .filter(s => s.active === true || s.active === 'true');
@@ -1406,34 +1546,39 @@
                 
                 console.log('[Salons] Loaded:', allSalons.length, 'salons');
                 
-                // Mark demo salons and filter out old demo-berber
+                // Demo salonları işaretle ve eski demo-berber'i filtrele
                 allSalons = allSalons
-                    .filter(s => s.slug !== 'demo-berber') // Eski demo-berber'i filtrele
+                    .filter(s => s.slug !== 'demo-berber')
                     .map(s => ({
                         ...s,
+                        category: s.category || 'berber', // Varsayılan kategori
                         isDemo: s.slug === 'demo' || s.name?.toLowerCase().includes('demo')
                     }));
                 
-                // Add demo salon if no salons exist
+                // Demo salonlar ekle (hiç salon yoksa)
                 if (allSalons.length === 0) {
-                    allSalons = [{
-                        id: 'demo',
-                        name: 'Demo Berber',
-                        slug: 'demo',
-                        city: 'Istanbul',
-                        district: 'Kadikoy',
-                        rating: 4.8,
-                        reviewCount: 124,
-                        services: ['Sac Kesimi', 'Sakal', 'Cilt Bakimi'],
-                        minPrice: 100,
-                        isOpen: true,
-                        isDemo: true
-                    }];
+                    allSalons = [
+                        {
+                            id: 'demo-berber', name: 'Demo Berber', slug: 'demo', category: 'berber',
+                            city: 'Istanbul', district: 'Kadikoy', rating: 4.8, reviewCount: 124,
+                            services: ['Saç Kesimi', 'Sakal', 'Cilt Bakımı'], minPrice: 100, isOpen: true, isDemo: true
+                        },
+                        {
+                            id: 'demo-kuafor', name: 'Demo Kuaför', slug: 'demo-kuafor', category: 'kuafor',
+                            city: 'Istanbul', district: 'Besiktas', rating: 4.9, reviewCount: 89,
+                            services: ['Saç Kesimi', 'Fön', 'Boyama'], minPrice: 150, isOpen: true, isDemo: true
+                        },
+                        {
+                            id: 'demo-beauty', name: 'Demo Güzellik', slug: 'demo-beauty', category: 'beauty',
+                            city: 'Istanbul', district: 'Sisli', rating: 4.7, reviewCount: 56,
+                            services: ['Cilt Bakımı', 'Manikür', 'Masaj'], minPrice: 200, isOpen: true, isDemo: true
+                        }
+                    ];
                 }
                 
-                filteredSalons = [...allSalons];
+                // Kategoriye göre filtrele
+                filterByCategory();
                 populateCityFilter();
-                renderSalons();
                 
             } catch (error) {
                 console.error('Error loading salons:', error);
@@ -1475,16 +1620,17 @@
             const countEl = document.getElementById('resultsCount');
             const countElMobile = document.getElementById('resultsCountMobile');
             
-            const countText = `${filteredSalons.length} berber bulundu`;
+            const catText = CATEGORY_TEXT[currentCategory];
+            const countText = `${filteredSalons.length} ${catText.resultText}`;
             countEl.textContent = countText;
-            if (countElMobile) countElMobile.textContent = `${filteredSalons.length} berber`;
+            if (countElMobile) countElMobile.textContent = `${filteredSalons.length} ${catText.singular.toLowerCase()}`;
             
             if (filteredSalons.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-state" style="grid-column: 1/-1;">
-                        <div class="empty-icon">🔍</div>
-                        <h3>Sonuç bulunamadı</h3>
-                        <p>Farklı bir arama yapmayı deneyin</p>
+                        <div class="empty-icon">${catText.icon}</div>
+                        <h3>${catText.emptyText}</h3>
+                        <p>Farklı bir kategori veya arama deneyin</p>
                     </div>
                 `;
                 return;
@@ -1496,6 +1642,9 @@
                     ? services.slice(0, 3) 
                     : ['Saç Kesimi', 'Sakal'];
                 
+                // Kategori bazlı URL ve ikon
+                const salonCat = salon.category || 'berber';
+                const salonCatText = CATEGORY_TEXT[salonCat] || CATEGORY_TEXT.berber;
                 const salonUrl = salon.isDemo ? '/demo/berber/' : `/berber/salon/?slug=${salon.slug}`;
                 const openNow = isOpenNow(salon);
                 const distanceText = salon.distance && salon.distance < 999 
@@ -1504,11 +1653,17 @@
                 const hasLocation = salon.location?.lat && salon.location?.lng;
                 const earliestBadge = salon.earliestSlot ? `<span class="earliest-badge">⚡ ${salon.earliestSlot}</span>` : '';
                 
+                // Kategori badge'i (tümü görünümünde)
+                const categoryBadge = currentCategory === 'all' 
+                    ? `<span class="category-badge" style="position:absolute;top:0.75rem;left:0.75rem;background:${salonCatText.color};color:white;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600;">${salonCatText.icon} ${salonCatText.singular}</span>` 
+                    : '';
+                
                 return `
                     <div class="salon-card" onclick="window.location.href='${salonUrl}'">
                         <div class="salon-image">
-                            ${salon.logo ? `<img src="${salon.logo}" alt="${escapeHtml(salon.name)}" style="width:100%;height:100%;object-fit:cover;">` : '💈'}
+                            ${salon.logo ? `<img src="${salon.logo}" alt="${escapeHtml(salon.name)}" style="width:100%;height:100%;object-fit:cover;">` : salonCatText.icon}
                             ${openNow ? '<span class="salon-badge open">Açık</span>' : '<span class="salon-badge closed">Kapalı</span>'}
+                            ${categoryBadge}
                             ${earliestBadge}
                         </div>
                         <div class="salon-content">

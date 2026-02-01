@@ -1,3 +1,83 @@
+/**
+ * ZAMANLI - Konfigürasyon Dosyası v2.0
+ * Roller, Yetkiler, Paketler ve Kategori Ayarları
+ */
+
+// ==================== ROL VE YETKİ SİSTEMİ ====================
+const ROLES = {
+    superAdmin: {
+        name: 'Süper Admin',
+        level: 100,
+        icon: '👑',
+        permissions: ['*'], // Tüm yetkiler
+        description: 'Platform yöneticisi - Tüm salonlara tam erişim'
+    },
+    salonOwner: {
+        name: 'Salon Sahibi',
+        level: 50,
+        icon: '👔',
+        permissions: [
+            'view_dashboard', 'view_appointments', 'manage_appointments',
+            'view_customers', 'manage_customers', 'add_customer_notes',
+            'view_services', 'manage_services',
+            'view_staff', 'manage_staff',
+            'view_hours', 'manage_hours',
+            'view_reports', 'export_reports',
+            'view_settings', 'manage_settings',
+            'manage_salon_info', 'change_category', 'change_pin',
+            'upload_logo', 'manage_gallery',
+            'view_qr', 'generate_qr'
+        ],
+        description: 'Salon sahibi - Kendi salonuna tam erişim'
+    },
+    staff: {
+        name: 'Personel',
+        level: 20,
+        icon: '✂️',
+        permissions: [
+            'view_dashboard', 'view_appointments', 
+            'confirm_appointment', 'complete_appointment', 'cancel_appointment',
+            'view_own_schedule', 'manage_own_blocks',
+            'view_customers', 'view_customer_history',
+            'view_services',
+            'view_own_profile', 'edit_own_profile', 'change_own_pin'
+        ],
+        description: 'Salon personeli - Sınırlı erişim'
+    },
+    assistant: {
+        name: 'Asistan',
+        level: 10,
+        icon: '📋',
+        permissions: [
+            'view_dashboard', 'view_appointments',
+            'confirm_appointment',
+            'view_customers',
+            'view_services'
+        ],
+        description: 'Resepsiyonist/Asistan - Salt okunur + randevu onaylama'
+    },
+    customer: {
+        name: 'Müşteri',
+        level: 1,
+        icon: '👤',
+        permissions: [
+            'view_salon_public', 'book_appointment',
+            'view_own_appointments', 'cancel_own_appointment',
+            'leave_review'
+        ],
+        description: 'Müşteri - Sadece randevu alma ve görüntüleme'
+    }
+};
+
+// Yetki kontrol fonksiyonu
+function hasPermission(role, permission) {
+    const roleData = ROLES[role];
+    if (!roleData) return false;
+    if (roleData.permissions.includes('*')) return true;
+    return roleData.permissions.includes(permission);
+}
+
+// ==================== FIREBASE CONFIG ====================
 // Firebase Configuration - Zamanli
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyCCaSmLE9Ww3GTUqdeAINua3vNrmqNV-TQ",
@@ -25,6 +105,80 @@ const APP_CONFIG = {
         reminderBeforeMinutes: 120,     // Hatırlatma zamanı - randevudan kaç dakika önce
         maxGalleryImages: 5,            // Maksimum galeri görseli
         defaultRating: 5.0              // Varsayılan puan
+    },
+    
+    // Kategori Metinleri - Dinamik UI için
+    categoryText: {
+        berber: {
+            singular: 'Berber',
+            plural: 'Berberler',
+            accusative: 'Berberi',          // -i hali
+            locative: 'Berberde',           // -de hali
+            owner: 'Berber Sahibi',
+            description: 'Erkek saç kesimi ve sakal bakımı',
+            searchPlaceholder: 'Berber adı veya konum ara...',
+            heroTitle: 'En İyi Berberi Bul',
+            heroSubtitle: 'Yakınındaki berberleri keşfet, anında randevu al',
+            emptyState: 'Henüz kayıtlı berber yok',
+            resultText: 'berber bulundu',
+            icon: '💈',
+            color: '#10B981',
+            gradient: 'linear-gradient(135deg, #10B981, #059669)'
+        },
+        kuafor: {
+            singular: 'Kuaför',
+            plural: 'Kuaförler',
+            accusative: 'Kuaförü',
+            locative: 'Kuaförde',
+            owner: 'Kuaför Sahibi',
+            description: 'Kadın saç bakımı, kesim ve şekillendirme',
+            searchPlaceholder: 'Kuaför adı veya konum ara...',
+            heroTitle: 'Kuaförünü Bul',
+            heroSubtitle: 'Profesyonel kuaförler, kolay randevu',
+            emptyState: 'Henüz kayıtlı kuaför yok',
+            resultText: 'kuaför bulundu',
+            icon: '💇‍♀️',
+            color: '#ec4899',
+            gradient: 'linear-gradient(135deg, #ec4899, #db2777)'
+        },
+        beauty: {
+            singular: 'Güzellik Merkezi',
+            plural: 'Güzellik Merkezleri',
+            accusative: 'Güzellik Merkezini',
+            locative: 'Güzellik Merkezinde',
+            owner: 'İşletme Sahibi',
+            description: 'Cilt bakımı, makyaj, spa ve wellness',
+            searchPlaceholder: 'Güzellik merkezi ara...',
+            heroTitle: 'Güzellik Merkezini Bul',
+            heroSubtitle: 'Profesyonel bakım ve spa hizmetleri',
+            emptyState: 'Henüz kayıtlı güzellik merkezi yok',
+            resultText: 'güzellik merkezi bulundu',
+            icon: '💆',
+            color: '#14b8a6',
+            gradient: 'linear-gradient(135deg, #14b8a6, #0d9488)'
+        },
+        all: {
+            singular: 'Salon',
+            plural: 'Salonlar',
+            accusative: 'Salonu',
+            locative: 'Salonda',
+            owner: 'Salon Sahibi',
+            description: 'Tüm güzellik ve bakım hizmetleri',
+            searchPlaceholder: 'Salon adı veya konum ara...',
+            heroTitle: 'Randevu Al',
+            heroSubtitle: 'Berber, kuaför ve güzellik salonları tek yerde',
+            emptyState: 'Henüz kayıtlı salon yok',
+            resultText: 'salon bulundu',
+            icon: '✨',
+            color: '#6366f1',
+            gradient: 'linear-gradient(135deg, #6366f1, #4f46e5)'
+        }
+    },
+    
+    // Kategori yardımcı fonksiyonları
+    getCategoryText: function(category, key) {
+        const cat = this.categoryText[category] || this.categoryText.all;
+        return cat[key] || this.categoryText.all[key];
     },
     
     // QR Kod Ayarları
@@ -98,38 +252,113 @@ const APP_CONFIG = {
         free: { 
             name: 'Ücretsiz', 
             price: 0, 
+            yearlyPrice: 0,
             color: 'slate',
-            limits: { monthlyAppointments: 30, staff: 1, smsNotifications: false, whatsappNotifications: true },
-            features: ['Temel randevu yönetimi', 'WhatsApp bildirimleri', 'Online rezervasyon']
-        },
-        starter: { 
-            name: 'Starter', 
-            price: 99, 
-            color: 'blue',
-            limits: { monthlyAppointments: 100, staff: 2, smsNotifications: false, whatsappNotifications: true, emailNotifications: true, customerManagement: true },
-            features: ['100 aylık randevu', '2 personel', 'Müşteri yönetimi', 'E-posta bildirimleri']
+            badge: '',
+            limits: { 
+                monthlyAppointments: 30, 
+                staff: 1, 
+                smsNotifications: false, 
+                whatsappNotifications: true,
+                emailNotifications: false,
+                customerManagement: false,
+                customerNotes: false,
+                reports: false,
+                reportsBasic: true,
+                reportsAdvanced: false,
+                reportsExport: false,
+                customBranding: false,
+                onlinePayment: false,
+                multiLocation: false,
+                prioritySupport: false,
+                apiAccess: false
+            },
+            features: [
+                'Aylık 30 randevu',
+                '1 personel',
+                'WhatsApp bildirimleri',
+                'Online rezervasyon sayfası',
+                'Günlük istatistikler',
+                'QR kod'
+            ]
         },
         pro: { 
             name: 'Pro', 
-            price: 249, 
+            price: 499, 
+            yearlyPrice: 399,  // %20 indirimli (499 * 0.8)
             color: 'primary',
-            limits: { monthlyAppointments: 500, staff: 5, smsNotifications: true, whatsappNotifications: true, emailNotifications: true, customerManagement: true, reports: true, customBranding: true },
-            features: ['500 aylık randevu', '5 personel', 'SMS bildirimleri', 'Raporlar', 'Özel marka']
+            badge: 'Popüler',
+            limits: { 
+                monthlyAppointments: -1,  // Sınırsız
+                staff: 5, 
+                smsNotifications: true, 
+                whatsappNotifications: true, 
+                emailNotifications: true, 
+                customerManagement: true,
+                customerNotes: true,
+                reports: true,
+                reportsBasic: true,
+                reportsAdvanced: true,
+                reportsExport: false,
+                customBranding: true,
+                onlinePayment: false,
+                multiLocation: false,
+                prioritySupport: false,
+                apiAccess: false
+            },
+            features: [
+                'Sınırsız randevu',
+                '5 personele kadar',
+                'SMS + E-posta + WhatsApp bildirimleri',
+                'Müşteri yönetimi ve notlar',
+                'Detaylı raporlar ve grafikler',
+                'Personel performans takibi',
+                'Özel logo ve marka',
+                'Google Business entegrasyonu'
+            ]
         },
         business: { 
             name: 'Business', 
-            price: 499, 
-            color: 'success',
-            limits: { monthlyAppointments: -1, staff: -1, smsNotifications: true, whatsappNotifications: true, emailNotifications: true, customerManagement: true, reports: true, multiLocation: true, customBranding: true, prioritySupport: true },
-            features: ['Sınırsız randevu', 'Sınırsız personel', 'Çoklu şube', 'Öncelikli destek', 'Tüm özellikler']
-        },
-        enterprise: { 
-            name: 'Enterprise', 
             price: 999, 
-            color: 'purple',
-            limits: { monthlyAppointments: -1, staff: -1, smsNotifications: true, whatsappNotifications: true, emailNotifications: true, customerManagement: true, reports: true, multiLocation: true, customBranding: true, prioritySupport: true, apiAccess: true, whiteLabel: true },
-            features: ['Tüm Business özellikleri', 'API erişimi', 'White-label', 'Özel entegrasyonlar']
+            yearlyPrice: 799,  // %20 indirimli (999 * 0.8)
+            color: 'gold',
+            badge: 'En Kapsamlı',
+            limits: { 
+                monthlyAppointments: -1, 
+                staff: -1,  // Sınırsız
+                smsNotifications: true, 
+                whatsappNotifications: true, 
+                emailNotifications: true, 
+                customerManagement: true,
+                customerNotes: true,
+                reports: true,
+                reportsBasic: true,
+                reportsAdvanced: true,
+                reportsExport: true,
+                customBranding: true,
+                onlinePayment: true,
+                multiLocation: true, 
+                prioritySupport: true,
+                apiAccess: true
+            },
+            features: [
+                'Sınırsız randevu',
+                'Sınırsız personel',
+                'Tüm Pro özellikleri',
+                'Çoklu şube yönetimi',
+                'Rapor dışa aktarma (Excel/PDF)',
+                'Online ödeme entegrasyonu',
+                'API erişimi',
+                'Öncelikli destek',
+                '7/24 teknik destek'
+            ]
         }
+    },
+    
+    // Paket süreleri ve indirimler
+    packageDurations: {
+        monthly: { name: 'Aylık', multiplier: 1, discount: 0 },
+        yearly: { name: 'Yıllık', multiplier: 12, discount: 20 }  // %20 indirim
     },
     workingHours: {
         default: {

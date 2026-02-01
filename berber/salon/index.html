@@ -2611,10 +2611,24 @@
         }
         
         function renderSalon() {
+            // Kategori bilgileri
+            const categoryInfo = {
+                berber: { icon: '💈', color: '#10B981', role: 'Berber' },
+                kuafor: { icon: '💇‍♀️', color: '#ec4899', role: 'Kuaför' },
+                beauty: { icon: '💆', color: '#14b8a6', role: 'Uzman' }
+            };
+            const catInfo = categoryInfo[salon.category] || categoryInfo.berber;
+            
             document.getElementById('salonName').textContent = salon.name;
             document.getElementById('salonLocation').textContent = `${salon.district || ''}, ${salon.city || ''}`;
             document.getElementById('salonPhone').textContent = salon.phone || '';
             document.getElementById('salonRating').textContent = (salon.rating || 5).toFixed(1);
+            
+            // Kategori badge ekle (sayfa başlığına)
+            const nameEl = document.getElementById('salonName');
+            if (nameEl && salon.category && salon.category !== 'berber') {
+                nameEl.innerHTML = `<span style="margin-right: 0.5rem;">${catInfo.icon}</span>${salon.name}`;
+            }
             
             // Review count
             if (salon.reviewCount > 0) {
@@ -2632,6 +2646,9 @@
             if (salon.logo) {
                 coverEl.classList.add('has-logo');
                 coverEl.innerHTML = `<img src="${salon.logo}" alt="${salon.name} Logo" class="salon-cover-logo">`;
+            } else {
+                // Logo yoksa kategori iconu göster
+                coverEl.innerHTML = `<span style="font-size: 4rem;">${catInfo.icon}</span>`;
             }
             
             // Yol Tarifi butonu (konum varsa göster)
@@ -2671,12 +2688,12 @@
             `}).join('');
             document.getElementById('serviceList').innerHTML = serviceHtml || '<p style="color:var(--slate-500)">Hizmet bilgisi yok</p>';
             
-            // Staff
+            // Staff - Kategoriye göre varsayılan rol
             const staffHtml = salon.staffList.map(s => `
                 <div class="staff-card">
                     <div class="staff-avatar">${(s.avatar || s.photo) ? `<img src="${s.avatar || s.photo}" alt="${s.name}">` : '👤'}</div>
                     <div class="staff-name">${s.name}</div>
-                    <div class="staff-role">${s.title || s.role || 'Berber'}</div>
+                    <div class="staff-role">${s.title || s.role || catInfo.role}</div>
                 </div>
             `).join('');
             document.getElementById('staffGrid').innerHTML = staffHtml || '<p style="color:var(--slate-500)">Personel bilgisi yok</p>';
