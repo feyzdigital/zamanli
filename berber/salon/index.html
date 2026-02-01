@@ -709,6 +709,10 @@
         }
         
         /* Staff */
+        .staff-section {
+            position: relative;
+        }
+        
         .staff-grid {
             display: flex;
             gap: 1rem;
@@ -716,10 +720,45 @@
             padding-bottom: 0.5rem;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+            scroll-behavior: smooth;
         }
         
         .staff-grid::-webkit-scrollbar {
             display: none;
+        }
+        
+        /* Kaydırma göstergesi */
+        .staff-scroll-indicator {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.9));
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 4px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .staff-scroll-indicator.visible {
+            opacity: 1;
+        }
+        
+        .scroll-arrow {
+            width: 24px;
+            height: 24px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--slate-600);
         }
         
         .staff-card {
@@ -2014,9 +2053,14 @@
                     <div id="galleryGrid" class="gallery-grid"></div>
                 </div>
                 
-                <div class="section">
+                <div class="section staff-section">
                     <h3 class="section-title">Ekibimiz</h3>
-                    <div id="staffGrid" class="staff-grid"></div>
+                    <div style="position: relative;">
+                        <div id="staffGrid" class="staff-grid"></div>
+                        <div id="staffScrollIndicator" class="staff-scroll-indicator">
+                            <span class="scroll-arrow">›</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="section">
@@ -2636,6 +2680,20 @@
                 </div>
             `).join('');
             document.getElementById('staffGrid').innerHTML = staffHtml || '<p style="color:var(--slate-500)">Personel bilgisi yok</p>';
+            
+            // Staff kaydırma göstergesini kontrol et (4'ten fazla personel varsa göster)
+            setTimeout(() => {
+                const staffGrid = document.getElementById('staffGrid');
+                const scrollIndicator = document.getElementById('staffScrollIndicator');
+                if (staffGrid && scrollIndicator && salon.staffList.length > 4) {
+                    scrollIndicator.classList.add('visible');
+                    // Kaydırıldığında gizle
+                    staffGrid.addEventListener('scroll', function() {
+                        const isAtEnd = staffGrid.scrollLeft + staffGrid.clientWidth >= staffGrid.scrollWidth - 20;
+                        scrollIndicator.classList.toggle('visible', !isAtEnd);
+                    });
+                }
+            }, 100);
             
             // Hours
             const defaultHours = { mon: { open: '09:00', close: '19:00' }, tue: { open: '09:00', close: '19:00' }, wed: { open: '09:00', close: '19:00' }, thu: { open: '09:00', close: '19:00' }, fri: { open: '09:00', close: '19:00' }, sat: { open: '09:00', close: '18:00' }, sun: { closed: true } };

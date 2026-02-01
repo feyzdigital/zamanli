@@ -1528,9 +1528,6 @@
                                 ${displayServices.map(s => `<span class="service-tag">${escapeHtml(typeof s === 'string' ? s : s.name)}</span>`).join('')}
                             </div>
                             <div class="salon-footer">
-                                <div class="salon-price">
-                                    <strong>${salon.minPrice || 100} ₺</strong>'den başlayan
-                                </div>
                                 <div class="salon-actions-row">
                                     ${hasLocation ? `<button class="btn-directions" onclick="event.stopPropagation(); openDirections(${salon.location.lat}, ${salon.location.lng})">🗺️</button>` : ''}
                                     <span class="btn btn-primary">Randevu Al</span>
