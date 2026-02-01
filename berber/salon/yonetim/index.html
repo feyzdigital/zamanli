@@ -6704,7 +6704,7 @@ ${reminderMessage}
             const sendBtn = document.getElementById('notifySendBtn');
             
             customerName.textContent = apt.customerName;
-            customerPhone.textContent = '0' + apt.customerPhone;
+            customerPhone.textContent = formatPhoneDisplay(apt.customerPhone);
             appointmentInfo.textContent = `${formatDateDisplay(apt.date)} - ${apt.time} - ${apt.service}`;
             
             // Status'a göre modal içeriğini değiştir
@@ -8670,7 +8670,7 @@ Panel: ${window.location.href}`);
                             </div>
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; font-size: 1.1rem;">${escapeHtml(apt.customerName)}</div>
-                                <div style="color: var(--slate-500); font-size: 0.9rem;">📞 0${apt.customerPhone}</div>
+                                <div style="color: var(--slate-500); font-size: 0.9rem;">📞 ${formatPhoneDisplay(apt.customerPhone)}</div>
                             </div>
                             <span style="padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: ${apt.status === 'confirmed' ? 'var(--success-light)' : apt.status === 'pending' ? 'var(--warning-light)' : 'var(--slate-200)'}; color: ${apt.status === 'confirmed' ? '#047857' : apt.status === 'pending' ? '#b45309' : 'var(--slate-600)'};">
                                 ${statusLabels[apt.status] || apt.status}
@@ -8837,7 +8837,7 @@ Panel: ${window.location.href}`);
                             <!-- Müşteri Bilgisi (sadece görüntüleme) -->
                             <div style="background: var(--slate-50); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">
                                 <div style="font-weight: 600;">${escapeHtml(apt.customerName)}</div>
-                                <div style="font-size: 0.85rem; color: var(--slate-500);">📞 0${apt.customerPhone}</div>
+                                <div style="font-size: 0.85rem; color: var(--slate-500);">📞 ${formatPhoneDisplay(apt.customerPhone)}</div>
                             </div>
                             
                             <!-- Tarih ve Saat -->
@@ -9547,6 +9547,20 @@ Panel: ${window.location.href}`);
             const div = document.createElement('div');
             div.textContent = text || '';
             return div.innerHTML;
+        }
+        
+        // Telefon numarasını doğru formatta göster (05XX XXX XX XX)
+        function formatPhoneDisplay(phone) {
+            if (!phone) return '-';
+            // Sadece rakamları al
+            let digits = phone.toString().replace(/\D/g, '');
+            // Son 10 haneyi al
+            digits = digits.slice(-10);
+            // Başına 0 ekle
+            if (digits.length === 10 && !digits.startsWith('0')) {
+                return '0' + digits;
+            }
+            return digits;
         }
         
         // ==================== GOOGLE TAKVİM EXPORT ====================

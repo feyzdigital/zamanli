@@ -106,6 +106,22 @@
         html, body {
             overflow-x: hidden;
             width: 100%;
+            max-width: 100vw;
+        }
+        
+        /* Tüm container'ların taşmasını engelle */
+        .salon-card,
+        .section,
+        .service-item,
+        .hour-item,
+        .staff-grid,
+        .hours-grid,
+        .salon-info,
+        .salon-meta,
+        .gallery-grid,
+        .reviews-list {
+            max-width: 100%;
+            overflow-x: hidden;
         }
         
         @media (max-width: 768px) {
@@ -115,9 +131,10 @@
                 max-width: 100vw;
             }
             
-            .main-content, .booking-section {
+            .main-content, .booking-section, .main, .salon-card {
                 overflow-x: hidden;
                 max-width: 100vw;
+                width: 100%;
             }
             
             input, select, textarea, button {
@@ -127,14 +144,86 @@
             
             .section {
                 padding: 0.75rem;
+                width: 100%;
+                max-width: 100%;
             }
             
             .salon-info {
                 padding: 1rem;
+                width: 100%;
             }
             
             .salon-name {
                 font-size: 1.25rem;
+            }
+            
+            /* Service item mobil düzeni */
+            .service-item {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                padding: 0.75rem 0;
+                gap: 0.5rem;
+            }
+            
+            .service-info {
+                flex: 1;
+                min-width: 0; /* Taşmayı engelle */
+            }
+            
+            .service-info h4 {
+                font-size: 0.9rem;
+                word-break: break-word;
+            }
+            
+            .service-price {
+                flex-shrink: 0;
+                font-size: 0.9rem;
+                white-space: nowrap;
+            }
+            
+            /* Hour item mobil düzeni */
+            .hour-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                padding: 0.5rem 0;
+            }
+            
+            .hour-day {
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .hour-time {
+                flex-shrink: 0;
+                text-align: right;
+                white-space: nowrap;
+            }
+            
+            /* Staff grid yatay kaydırma */
+            .staff-grid {
+                display: flex;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 0.5rem;
+                gap: 0.75rem;
+            }
+            
+            .staff-card {
+                min-width: 70px;
+                flex-shrink: 0;
+            }
+            
+            .staff-name {
+                font-size: 0.75rem;
+            }
+            
+            .staff-role {
+                font-size: 0.65rem;
             }
         }
         
@@ -153,14 +242,20 @@
                 gap: 0.5rem;
             }
             
-            .service-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
+            .service-info h4 {
+                font-size: 0.85rem;
+            }
+            
+            .service-info span {
+                font-size: 0.7rem;
             }
             
             .service-price {
-                align-self: flex-end;
+                font-size: 0.85rem;
+            }
+            
+            .hour-item {
+                font-size: 0.8rem;
             }
         }
         
@@ -564,6 +659,9 @@
         .section {
             padding: 1.25rem;
             border-top: 1px solid var(--slate-100);
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
         }
         
         .section-title {
@@ -580,14 +678,22 @@
             align-items: center;
             padding: 0.875rem 0;
             border-bottom: 1px solid var(--slate-100);
+            width: 100%;
+            gap: 1rem;
         }
         
         .service-item:last-child { border-bottom: none; }
+        
+        .service-info {
+            flex: 1;
+            min-width: 0; /* Flex item taşmasını engelle */
+        }
         
         .service-info h4 {
             font-size: 0.95rem;
             font-weight: 600;
             margin-bottom: 0.15rem;
+            word-break: break-word;
         }
         
         .service-info span {
@@ -598,6 +704,8 @@
         .service-price {
             font-weight: 700;
             color: var(--primary);
+            flex-shrink: 0;
+            white-space: nowrap;
         }
         
         /* Staff */
@@ -655,6 +763,7 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: 0.25rem;
+            width: 100%;
         }
         
         .hour-item {
@@ -664,6 +773,7 @@
             padding: 0.6rem 0;
             font-size: 0.875rem;
             border-bottom: 1px solid var(--slate-100);
+            width: 100%;
         }
         
         .hour-item:last-child {
@@ -672,11 +782,14 @@
         
         .hour-day { 
             color: var(--slate-600);
-            min-width: 90px;
+            flex: 1;
+            min-width: 80px;
         }
         .hour-time { 
             font-weight: 500;
             text-align: right;
+            flex-shrink: 0;
+            white-space: nowrap;
         }
         .hour-time.closed { color: var(--danger); }
         
@@ -2501,15 +2614,17 @@
             }
             
             // Services
-            const serviceHtml = salon.serviceList.map(s => `
+            const serviceHtml = salon.serviceList.map(s => {
+                const priceText = s.price && s.price > 0 ? `${s.price} ₺` : 'Fiyat için arayın';
+                return `
                 <div class="service-item">
                     <div class="service-info">
                         <h4>${s.name}</h4>
                         <span>${s.duration || 30} dakika</span>
                     </div>
-                    <span class="service-price">${s.price || 100} ₺</span>
+                    <span class="service-price">${priceText}</span>
                 </div>
-            `).join('');
+            `}).join('');
             document.getElementById('serviceList').innerHTML = serviceHtml || '<p style="color:var(--slate-500)">Hizmet bilgisi yok</p>';
             
             // Staff
@@ -2527,8 +2642,11 @@
             const hours = salon.workingHours || defaultHours;
             const dayNames = { mon: 'Pazartesi', tue: 'Salı', wed: 'Çarşamba', thu: 'Perşembe', fri: 'Cuma', sat: 'Cumartesi', sun: 'Pazar' };
             const hoursHtml = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => {
-                const h = hours[d];
-                return `<div class="hour-item"><span class="hour-day">${dayNames[d]}</span><span class="hour-time${h?.closed ? ' closed' : ''}">${h?.closed ? 'Kapalı' : `${h?.open || '09:00'} - ${h?.close || '19:00'}`}</span></div>`;
+                const h = hours[d] || {};
+                const isClosed = h.closed === true || h.active === false;
+                const openTime = h.open || '09:00';
+                const closeTime = h.close || '19:00';
+                return `<div class="hour-item"><span class="hour-day">${dayNames[d]}</span><span class="hour-time${isClosed ? ' closed' : ''}">${isClosed ? 'Kapalı' : `${openTime} - ${closeTime}`}</span></div>`;
             }).join('');
             document.getElementById('hoursList').innerHTML = hoursHtml;
             
@@ -3234,8 +3352,18 @@ Onayınızı bekliyorum. Teşekkürler!`;
         }
         
         async function verifyForReview() {
-            const phone = document.getElementById('verifyPhone').value.replace(/\D/g, '').slice(-10);
+            const rawPhone = document.getElementById('verifyPhone').value.replace(/\D/g, '');
             const errorEl = document.getElementById('verifyError');
+            
+            // Farklı formatları normalize et (05XX, 5XX, 905XX hepsi kabul edilsin)
+            let phone = rawPhone;
+            if (phone.startsWith('90') && phone.length === 12) {
+                phone = phone.slice(2); // 905XXXXXXXXX -> 5XXXXXXXXX
+            }
+            if (phone.startsWith('0') && phone.length === 11) {
+                phone = phone.slice(1); // 05XXXXXXXXX -> 5XXXXXXXXX
+            }
+            phone = phone.slice(-10); // Son 10 hane
             
             if (phone.length !== 10) {
                 errorEl.textContent = 'Geçerli bir telefon numarası girin';
@@ -3244,51 +3372,69 @@ Onayınızı bekliyorum. Teşekkürler!`;
             }
             
             try {
-                // Son 7 gün içindeki tamamlanmış randevuları bul
-                const sevenDaysAgo = new Date();
-                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                const dateStr = sevenDaysAgo.toISOString().split('T')[0];
+                // Farklı formatlarda arama yap
+                const phoneVariants = [phone, '0' + phone, phone.slice(-10)];
+                let foundAppointment = null;
+                let foundDocId = null;
                 
-                const snap = await db.collection('appointments')
-                    .where('salonId', '==', salon.id)
-                    .where('customerPhone', '==', phone)
-                    .where('status', 'in', ['confirmed', 'completed'])
-                    .orderBy('date', 'desc')
-                    .limit(1)
-                    .get();
+                for (const phoneVar of phoneVariants) {
+                    const snap = await db.collection('appointments')
+                        .where('salonId', '==', salon.id)
+                        .where('customerPhone', '==', phoneVar)
+                        .get();
+                    
+                    if (!snap.empty) {
+                        // confirmed veya completed olanları filtrele
+                        const validApts = snap.docs.filter(doc => {
+                            const apt = doc.data();
+                            return ['confirmed', 'completed'].includes(apt.status);
+                        }).sort((a, b) => (b.data().date || '').localeCompare(a.data().date || ''));
+                        
+                        if (validApts.length > 0) {
+                            foundAppointment = validApts[0].data();
+                            foundDocId = validApts[0].id;
+                            break;
+                        }
+                    }
+                }
                 
-                if (snap.empty) {
-                    errorEl.textContent = 'Bu numarayla kayıtlı randevu bulunamadı';
+                if (!foundAppointment) {
+                    errorEl.textContent = 'Bu numarayla kayıtlı onaylı randevu bulunamadı';
                     errorEl.style.display = 'block';
                     return;
                 }
                 
-                const apt = snap.docs[0].data();
-                
                 // Zaten yorum yapılmış mı kontrol et
                 const existingReview = await db.collection('salons').doc(salon.id)
                     .collection('reviews')
-                    .where('appointmentId', '==', snap.docs[0].id)
+                    .where('customerPhone', '==', phone)
                     .get();
                 
                 if (!existingReview.empty) {
-                    errorEl.textContent = 'Bu randevu için zaten yorum yapmışsınız';
+                    errorEl.textContent = 'Bu numara ile zaten yorum yapmışsınız';
                     errorEl.style.display = 'block';
                     return;
                 }
                 
                 // Doğrulama başarılı
                 verifiedAppointment = {
-                    id: snap.docs[0].id,
-                    ...apt
+                    id: foundDocId,
+                    ...foundAppointment
                 };
                 
                 document.getElementById('reviewVerifySection').style.display = 'none';
                 document.getElementById('reviewVerifiedInfo').style.display = 'block';
                 document.getElementById('reviewFormSection').style.display = 'block';
                 
-                document.getElementById('verifiedName').textContent = apt.customerName;
-                document.getElementById('verifiedService').textContent = `${apt.service} - ${apt.date}`;
+                // İsmin baş harflerini göster (Ahmet Yılmaz -> A. Y.)
+                const nameParts = (foundAppointment.customerName || 'Müşteri').split(' ');
+                const displayName = nameParts.map((part, i) => {
+                    if (i === 0) return part; // İlk isim tam
+                    return part.charAt(0) + '.'; // Soyadın baş harfi
+                }).join(' ');
+                
+                document.getElementById('verifiedName').textContent = displayName;
+                document.getElementById('verifiedService').textContent = `${foundAppointment.service} - ${foundAppointment.date}`;
                 
             } catch (error) {
                 console.error('Verify error:', error);
@@ -3323,10 +3469,17 @@ Onayınızı bekliyorum. Teşekkürler!`;
             btn.textContent = 'Gönderiliyor...';
             
             try {
+                // İsmin formatı: Ad + Soyadın baş harfi (Ahmet Yılmaz -> Ahmet Y.)
+                const nameParts = (verifiedAppointment.customerName || 'Müşteri').split(' ');
+                const displayName = nameParts.map((part, i) => {
+                    if (i === 0) return part; // İlk isim tam
+                    return part.charAt(0) + '.'; // Soyadın baş harfi
+                }).join(' ');
+                
                 const review = {
                     appointmentId: verifiedAppointment.id,
-                    customerName: verifiedAppointment.customerName,
-                    customerPhone: verifiedAppointment.customerPhone,
+                    customerName: displayName, // Gizlilik için sadece ilk isim + soyadın baş harfi
+                    customerPhone: verifiedAppointment.customerPhone?.slice(-10), // Normalize phone
                     serviceName: verifiedAppointment.service,
                     rating: reviewRating,
                     comment: comment,
@@ -3335,6 +3488,20 @@ Onayınızı bekliyorum. Teşekkürler!`;
                 };
                 
                 await db.collection('salons').doc(salon.id).collection('reviews').add(review);
+                
+                // Salon rating'ini güncelle
+                try {
+                    const reviewsSnap = await db.collection('salons').doc(salon.id).collection('reviews').get();
+                    const totalRating = reviewsSnap.docs.reduce((sum, doc) => sum + (doc.data().rating || 5), 0);
+                    const avgRating = reviewsSnap.docs.length > 0 ? totalRating / reviewsSnap.docs.length : 5;
+                    
+                    await db.collection('salons').doc(salon.id).update({
+                        rating: Math.round(avgRating * 10) / 10,
+                        reviewCount: reviewsSnap.docs.length
+                    });
+                } catch (e) {
+                    console.log('Rating update skipped:', e);
+                }
                 
                 // Başarı
                 closeReviewModal();
