@@ -736,6 +736,9 @@
                 font-size: 0.65rem;
             }
         }
+            min-width: 100px;
+            text-align: center;
+        }
         
         .cal-today-btn-small {
             padding: 0.35rem 0.6rem;
@@ -8451,8 +8454,8 @@ Panel: ${window.location.href}`);
                 return;
             }
             
-            // Quick add popup göster
-            showQuickAddPopup(event, date, time);
+            // Direkt modal aç (tarih ve saat ile)
+            openManualAppointmentWithDate(date, time);
         }
         
         // Hızlı randevu ekleme popup'ı

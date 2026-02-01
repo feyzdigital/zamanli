@@ -102,10 +102,6 @@ async function loadAllCustomers() {
                     if (apt.date > (existing.lastAppointment || '')) {
                         existing.lastAppointment = apt.date;
                     }
-                    // En eski createdAt'i koru
-                    if (apt.createdAt && (!existing.createdAt || apt.createdAt < existing.createdAt)) {
-                        existing.createdAt = apt.createdAt;
-                    }
                 }
             }
         }
@@ -137,8 +133,9 @@ async function loadAllCustomers() {
         }
     }
     
-    // En son kayıt en üstte olacak şekilde sırala (createdAt DESC)
+    // Eklenme tarihine göre sırala (en yeni en üstte)
     AdminState.allCustomers = Array.from(customerMap.values()).sort((a, b) => {
+        // Tarihleri güvenli şekilde string'e çevir
         let dateA = a.createdAt || a.lastAppointment || '';
         let dateB = b.createdAt || b.lastAppointment || '';
         
@@ -160,7 +157,7 @@ async function loadAllCustomers() {
         dateA = String(dateA || '0000-00-00');
         dateB = String(dateB || '0000-00-00');
         
-        // En yeni en üstte (DESC)
+        // Güvenli karşılaştırma
         if (dateB > dateA) return 1;
         if (dateB < dateA) return -1;
         return 0;
@@ -247,10 +244,6 @@ async function loadSalonCustomers(salonId) {
                     if (apt.status === 'completed') {
                         existing.totalSpent = (existing.totalSpent || 0) + (apt.servicePrice || 0);
                     }
-                    // En eski createdAt'i koru (ilk kayıt tarihi)
-                    if (apt.createdAt && (!existing.createdAt || apt.createdAt < existing.createdAt)) {
-                        existing.createdAt = apt.createdAt;
-                    }
                 }
             }
         }
@@ -281,7 +274,7 @@ async function loadSalonCustomers(salonId) {
         console.log('No customers collection');
     }
     
-    // En son kayıt en üstte olacak şekilde sırala (createdAt DESC)
+    // Eklenme tarihine göre sırala
     AdminState.salonCustomers = Array.from(customerMap.values()).sort((a, b) => {
         let dateA = a.createdAt || a.lastAppointment || '';
         let dateB = b.createdAt || b.lastAppointment || '';
@@ -301,7 +294,6 @@ async function loadSalonCustomers(salonId) {
         dateA = String(dateA || '0000-00-00');
         dateB = String(dateB || '0000-00-00');
         
-        // En yeni en üstte (DESC)
         if (dateB > dateA) return 1;
         if (dateB < dateA) return -1;
         return 0;
@@ -485,39 +477,16 @@ function renderSalonServices() {
 }
 
 function renderSalonCustomers() {
-    // Müşterileri createdAt'e göre sırala (en yeni en üstte)
-    const sortedCustomers = [...(AdminState.salonCustomers || [])].sort((a, b) => {
-        let dateA = a.createdAt || a.lastAppointment || '0000-00-00';
-        let dateB = b.createdAt || b.lastAppointment || '0000-00-00';
-        
-        try {
-            if (dateA && typeof dateA === 'object') {
-                if (dateA.toDate) dateA = dateA.toDate().toISOString();
-                else if (dateA.seconds) dateA = new Date(dateA.seconds * 1000).toISOString();
-            }
-            if (dateB && typeof dateB === 'object') {
-                if (dateB.toDate) dateB = dateB.toDate().toISOString();
-                else if (dateB.seconds) dateB = new Date(dateB.seconds * 1000).toISOString();
-            }
-        } catch (e) {}
-        
-        dateA = String(dateA || '0000-00-00');
-        dateB = String(dateB || '0000-00-00');
-        
-        if (dateB > dateA) return 1;
-        if (dateB < dateA) return -1;
-        return 0;
-    });
-    
-    let h = '<div class="card"><div class="card-header"><h3>Müşteriler</h3><div style="display:flex;gap:0.5rem;align-items:center"><span class="badge badge-info">' + sortedCustomers.length + ' müşteri</span><button onclick="syncCustomersFromAppointments()" class="btn btn-outline btn-sm" title="Randevulardaki müşterileri kaydet">🔄 Senkronize Et</button></div></div>';
-    if (sortedCustomers.length === 0) h += '<div class="empty-state small"><p>Henüz müşteri yok</p><p style="font-size:0.8rem;color:var(--slate-400)">Senkronize Et butonuna tıklayarak randevulardaki müşterileri ekleyebilirsiniz</p></div>';
+    const customers = AdminState.salonCustomers || [];
+    let h = '<div class="card"><div class="card-header"><h3>Müşteriler</h3><div style="display:flex;gap:0.5rem;align-items:center"><span class="badge badge-info">' + customers.length + ' müşteri</span><button onclick="syncCustomersFromAppointments()" class="btn btn-outline btn-sm" title="Randevulardaki müşterileri kaydet">🔄 Senkronize Et</button></div></div>';
+    if (customers.length === 0) h += '<div class="empty-state small"><p>Henüz müşteri yok</p><p style="font-size:0.8rem;color:var(--slate-400)">Senkronize Et butonuna tıklayarak randevulardaki müşterileri ekleyebilirsiniz</p></div>';
     else {
         h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Randevu</th><th>Toplam</th><th>Son Randevu</th><th>İşlem</th></tr></thead><tbody>';
-        sortedCustomers.slice(0, 50).forEach(c => {
+        customers.slice(0, 50).forEach(c => {
             h += '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + (c.totalSpent || 0) + ' ₺</td><td>' + (c.lastAppointment || '-') + '</td><td><button onclick="deleteCustomerFromSalon(\'' + c.phone + '\')" class="btn btn-icon danger" title="Sil">🗑️</button></td></tr>';
         });
         h += '</tbody></table>';
-        if (sortedCustomers.length > 50) {
+        if (customers.length > 50) {
             h += '<p style="text-align:center;padding:0.5rem;color:var(--slate-500);font-size:0.85rem">İlk 50 müşteri gösteriliyor</p>';
         }
     }
@@ -687,52 +656,26 @@ function renderAllAppointments() {
     list.slice(0, 100).forEach(apt => {
         const salon = AdminState.salons.find(s => s.id === apt.salonId);
         const isToday = apt.date === today;
-        h += '<tr class="' + (isToday ? 'highlight-row' : '') + '"><td>' + (apt.date || '-') + (isToday ? ' <span class="badge badge-success">Bugün</span>' : '') + '</td><td><strong>' + (apt.time || '-') + '</strong></td><td><a href="#" onclick="loadSalonDetails(\'' + apt.salonId + '\');return false">' + esc(salon?.name || '-') + '</a></td><td><div>' + esc(apt.customerName || '-') + '</div><small>' + (apt.customerPhone || '') + '</small></td><td>' + esc(apt.service || apt.serviceName || '-') + '</td><td><span class="status-badge ' + (apt.status || 'pending') + '">' + getStatusText(apt.status) + '</span></td><td><div class="action-buttons"><button onclick="showGlobalEditAppointmentModal(\'' + apt.id + '\')" class="btn btn-icon" title="Düzenle">✏️</button><button onclick="deleteGlobalAppointment(\'' + apt.id + '\')" class="btn btn-icon danger" title="Sil">🗑️</button></div></td></tr>';
+        h += '<tr class="' + (isToday ? 'highlight-row' : '') + '"><td>' + (apt.date || '-') + (isToday ? ' <span class="badge badge-success">Bugün</span>' : '') + '</td><td><strong>' + (apt.time || '-') + '</strong></td><td><a href="#" onclick="loadSalonDetails(\'' + apt.salonId + '\');return false">' + esc(salon?.name || '-') + '</a></td><td><div>' + esc(apt.customerName || '-') + '</div><small>' + (apt.customerPhone || '') + '</small></td><td>' + esc(apt.service || apt.serviceName || '-') + '</td><td><span class="status-badge ' + (apt.status || 'pending') + '">' + getStatusText(apt.status) + '</span></td><td><button onclick="showGlobalEditAppointmentModal(\'' + apt.id + '\')" class="btn btn-icon">✏️</button></td></tr>';
     });
     return h + '</tbody></table></div>';
 }
 
 function renderCustomers() {
-    // Müşterileri createdAt'e göre sırala (en yeni en üstte)
-    const sortedCustomers = [...AdminState.allCustomers].sort((a, b) => {
-        let dateA = a.createdAt || a.lastAppointment || '0000-00-00';
-        let dateB = b.createdAt || b.lastAppointment || '0000-00-00';
-        
-        // Timestamp objesi ise string'e çevir
-        try {
-            if (dateA && typeof dateA === 'object') {
-                if (dateA.toDate) dateA = dateA.toDate().toISOString();
-                else if (dateA.seconds) dateA = new Date(dateA.seconds * 1000).toISOString();
-            }
-            if (dateB && typeof dateB === 'object') {
-                if (dateB.toDate) dateB = dateB.toDate().toISOString();
-                else if (dateB.seconds) dateB = new Date(dateB.seconds * 1000).toISOString();
-            }
-        } catch (e) {}
-        
-        dateA = String(dateA || '0000-00-00');
-        dateB = String(dateB || '0000-00-00');
-        
-        // En yeni en üstte (DESC)
-        if (dateB > dateA) return 1;
-        if (dateB < dateA) return -1;
-        return 0;
-    });
-    
-    let h = '<div class="view-header"><h1>Müşteriler</h1><span class="badge badge-info">' + sortedCustomers.length + ' müşteri</span><button onclick="loadAllCustomers().then(()=>renderApp())" class="btn btn-outline btn-sm" style="margin-left:1rem">🔄 Yenile</button></div>';
+    let h = '<div class="view-header"><h1>Müşteriler</h1><span class="badge badge-info">' + AdminState.allCustomers.length + ' müşteri</span><button onclick="loadAllCustomers().then(()=>renderApp())" class="btn btn-outline btn-sm" style="margin-left:1rem">🔄 Yenile</button></div>';
     h += '<div class="filters-bar"><input type="text" id="customerSearchInput" class="search-input" placeholder="İsim veya telefon ara..." oninput="filterCustomers(this.value)"></div>';
     h += '<div class="card">';
-    if (sortedCustomers.length === 0) h += '<div class="empty-state"><p>Müşteri bulunamadı. Randevulardan ve salon kayıtlarından otomatik toplanır.</p></div>';
+    if (AdminState.allCustomers.length === 0) h += '<div class="empty-state"><p>Müşteri bulunamadı. Randevulardan ve salon kayıtlarından otomatik toplanır.</p></div>';
     else {
-        h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Salon</th><th>Randevu</th><th>Son Tarih</th><th>Kayıt</th><th>İşlem</th></tr></thead><tbody id="customerTableBody">';
-        sortedCustomers.slice(0, 100).forEach(c => { 
+        h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Salon</th><th>Randevu</th><th>Son Tarih</th><th>Kayıt</th></tr></thead><tbody id="customerTableBody">';
+        AdminState.allCustomers.slice(0, 100).forEach(c => { 
             const createdDate = c.createdAt ? (typeof c.createdAt === 'string' ? c.createdAt.split('T')[0] : new Date(c.createdAt).toLocaleDateString('tr-TR')) : '-';
             const lastDate = c.lastAppointment || '-';
-            h += '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + esc(c.salonName || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + lastDate + '</td><td>' + createdDate + '</td><td><button onclick="deleteGlobalCustomer(\'' + c.phone + '\', \'' + (c.salonId || '') + '\')" class="btn btn-icon danger" title="Sil">🗑️</button></td></tr>'; 
+            h += '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + esc(c.salonName || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + lastDate + '</td><td>' + createdDate + '</td></tr>'; 
         });
         h += '</tbody></table>';
-        if (sortedCustomers.length > 100) {
-            h += '<p style="text-align:center;padding:1rem;color:var(--slate-500)">İlk 100 müşteri gösteriliyor (toplam: ' + sortedCustomers.length + ')</p>';
+        if (AdminState.allCustomers.length > 100) {
+            h += '<p style="text-align:center;padding:1rem;color:var(--slate-500)">İlk 100 müşteri gösteriliyor (toplam: ' + AdminState.allCustomers.length + ')</p>';
         }
     }
     return h + '</div>';
@@ -995,125 +938,7 @@ async function updateGlobalAppointment(aptId) {
     try {
         await db.collection('appointments').doc(aptId).update({ customerName: document.getElementById('aptCustomerName').value.trim(), customerPhone: document.getElementById('aptCustomerPhone').value.replace(/\D/g, ''), date: document.getElementById('aptDate').value, time: document.getElementById('aptTime').value, status: document.getElementById('aptStatus').value, updatedAt: new Date().toISOString(), updatedBy: 'admin' });
         showToast('Güncellendi!', 'success'); closeModal();
-        // Lokal listeyi güncelle
-        const idx = AdminState.allAppointments.findIndex(a => a.id === aptId);
-        if (idx >= 0) {
-            AdminState.allAppointments[idx] = {
-                ...AdminState.allAppointments[idx],
-                customerName: document.getElementById('aptCustomerName').value.trim(),
-                customerPhone: document.getElementById('aptCustomerPhone').value.replace(/\D/g, ''),
-                date: document.getElementById('aptDate').value,
-                time: document.getElementById('aptTime').value,
-                status: document.getElementById('aptStatus').value
-            };
-        }
-        renderApp();
     } catch (e) { showToast('Hata: ' + e.message, 'error'); }
-}
-
-// Randevu silme fonksiyonu
-async function deleteAppointment(aptId) {
-    if (!confirm('Bu randevuyu silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz!')) return;
-    
-    try {
-        showToast('Siliniyor...', 'info');
-        await db.collection('appointments').doc(aptId).delete();
-        
-        // Lokal listelerden kaldır
-        AdminState.salonAppointments = AdminState.salonAppointments.filter(a => a.id !== aptId);
-        AdminState.allAppointments = AdminState.allAppointments.filter(a => a.id !== aptId);
-        
-        // Admin log kaydet
-        try {
-            await db.collection('admin_logs').add({
-                action: 'delete_appointment',
-                appointmentId: aptId,
-                deletedAt: new Date().toISOString(),
-                deletedBy: 'super_admin'
-            });
-        } catch (e) {}
-        
-        showToast('Randevu silindi ✅', 'success');
-        calculateStats();
-        renderApp();
-    } catch (e) {
-        console.error('[Delete] Randevu silme hatası:', e);
-        showToast('Hata: ' + e.message, 'error');
-    }
-}
-
-// Global randevu silme
-async function deleteGlobalAppointment(aptId) {
-    if (!confirm('Bu randevuyu silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz!')) return;
-    
-    try {
-        showToast('Siliniyor...', 'info');
-        await db.collection('appointments').doc(aptId).delete();
-        
-        AdminState.allAppointments = AdminState.allAppointments.filter(a => a.id !== aptId);
-        
-        try {
-            await db.collection('admin_logs').add({
-                action: 'delete_appointment',
-                appointmentId: aptId,
-                deletedAt: new Date().toISOString(),
-                deletedBy: 'super_admin'
-            });
-        } catch (e) {}
-        
-        showToast('Randevu silindi ✅', 'success');
-        calculateStats();
-        renderApp();
-    } catch (e) {
-        showToast('Hata: ' + e.message, 'error');
-    }
-}
-
-// Müşteri silme fonksiyonu (global)
-async function deleteGlobalCustomer(phone, salonId) {
-    if (!confirm('Bu müşteriyi silmek istediğinize emin misiniz?\n\nMüşteri kaydı silinecek. Randevular korunacak.')) return;
-    
-    try {
-        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-        
-        // Salon customers koleksiyonundan sil
-        if (salonId) {
-            try {
-                await db.collection('salons').doc(salonId).collection('customers').doc(cleanPhone).delete();
-            } catch (e) {}
-            
-            // Blacklist'e ekle
-            try {
-                await db.collection('salons').doc(salonId).collection('deletedCustomers').doc(cleanPhone).set({
-                    phone: cleanPhone,
-                    deletedAt: new Date().toISOString(),
-                    deletedBy: 'super_admin'
-                });
-            } catch (e) {}
-        }
-        
-        // Admin log
-        try {
-            await db.collection('admin_logs').add({
-                action: 'delete_customer',
-                phone: cleanPhone,
-                salonId: salonId,
-                deletedAt: new Date().toISOString(),
-                deletedBy: 'super_admin'
-            });
-        } catch (e) {}
-        
-        // Lokal listeden kaldır
-        AdminState.allCustomers = AdminState.allCustomers.filter(c => c.phone !== cleanPhone);
-        if (AdminState.salonCustomers) {
-            AdminState.salonCustomers = AdminState.salonCustomers.filter(c => c.phone !== cleanPhone);
-        }
-        
-        showToast('Müşteri silindi ✅', 'success');
-        renderApp();
-    } catch (e) {
-        showToast('Hata: ' + e.message, 'error');
-    }
 }
 
 async function createSalon() {
