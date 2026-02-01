@@ -4870,16 +4870,40 @@
         let currentStaffName = null;
         
         async function init() {
-            if (typeof firebase !== 'undefined') {
+            console.log('[Init] Başlatılıyor...');
+            
+            // Firebase yüklenmesini bekle (max 5 saniye)
+            let waitTime = 0;
+            while (typeof firebase === 'undefined' && waitTime < 5000) {
+                await new Promise(r => setTimeout(r, 100));
+                waitTime += 100;
+            }
+            
+            if (typeof firebase === 'undefined') {
+                console.error('[Init] Firebase yüklenemedi!');
+                document.getElementById('loadingOverlay').innerHTML = `
+                    <div style="text-align:center;color:#64748b;">
+                        <p style="font-size:1.2rem;margin-bottom:1rem;">❌ Bağlantı Hatası</p>
+                        <p>Lütfen sayfayı yenileyin veya internet bağlantınızı kontrol edin.</p>
+                        <button onclick="location.reload()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#10B981;color:white;border:none;border-radius:8px;cursor:pointer;">Yenile</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
                 db = firebase.firestore();
                 
                 const urlParams = new URLSearchParams(window.location.search);
                 const slug = getSlugFromUrl();
                 
+                console.log('[Init] Slug:', slug);
+                
                 // 1. Süper Admin kontrolü - admin=true parametresi ve geçerli admin session'ı varsa
                 const adminParam = urlParams.get('admin');
                 if (adminParam === 'true' && isSuperAdmin()) {
                     isSuperAdminMode = true;
+                    console.log('[Init] Süper Admin modu aktif');
                     if (slug) {
                         await loadSalonData(slug);
                         if (salon) {
@@ -5005,6 +5029,15 @@
                 }
                 
                 showLoginScreen();
+            } catch (error) {
+                console.error('[Init] Hata:', error);
+                document.getElementById('loadingOverlay').innerHTML = `
+                    <div style="text-align:center;color:#64748b;">
+                        <p style="font-size:1.2rem;margin-bottom:1rem;">❌ Bir hata oluştu</p>
+                        <p>${error.message || 'Bilinmeyen hata'}</p>
+                        <button onclick="location.reload()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#10B981;color:white;border:none;border-radius:8px;cursor:pointer;">Yenile</button>
+                    </div>
+                `;
             }
         }
         

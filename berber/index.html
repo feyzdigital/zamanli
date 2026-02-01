@@ -11,8 +11,8 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Berber Bul - Zamanli</title>
-    <meta name="description" content="Yakınındaki berberleri bul, karşılaştır ve anında online randevu al.">
+    <title>Salon Bul - Zamanli</title>
+    <meta name="description" content="Yakınındaki berberleri, kuaförleri ve güzellik merkezlerini bul, karşılaştır ve anında online randevu al.">
     
     <!-- PWA Install Prompt - En Erken Yakala -->
     <script>window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();window.__pwaPrompt=e;console.log('[PWA] Install prompt yakalandı');});</script>
@@ -1270,9 +1270,9 @@
         </div>
         
         <!-- CTA Banner -->
-        <div class="cta-banner">
+        <div class="cta-banner" id="ctaBanner">
             <div class="cta-content">
-                <h3>💼 Berber Salonunuz mu Var?</h3>
+                <h3 id="ctaTitle">💼 Salonunuz mu Var?</h3>
                 <p>Hemen kayıt olun, online randevu almaya başlayın!</p>
             </div>
             <a href="/berber/kayit/" class="btn btn-white">Şimdi Kayıt Ol →</a>
@@ -1289,7 +1289,7 @@
                     <p>Online randevu sistemi</p>
                 </div>
                 <div class="footer-links">
-                    <a href="/berber/">Berber Bul</a>
+                    <a href="/berber/" id="footerSalonBul">Salon Bul</a>
                     <a href="/berber/kayit/">Salonunu Ekle</a>
                     <a href="https://wa.me/905433838587" target="_blank">İletişim</a>
                 </div>
@@ -1416,6 +1416,24 @@
                     link.style.fontWeight = '';
                 }
             });
+            
+            // CTA Banner güncelle
+            const ctaTitle = document.getElementById('ctaTitle');
+            if (ctaTitle) {
+                const ctaTexts = {
+                    berber: '💈 Berber Salonunuz mu Var?',
+                    kuafor: '💇‍♀️ Kuaför Salonunuz mu Var?',
+                    beauty: '💆 Güzellik Merkeziniz mi Var?',
+                    all: '💼 Salonunuz mu Var?'
+                };
+                ctaTitle.textContent = ctaTexts[currentCategory] || ctaTexts.all;
+            }
+            
+            // Footer link güncelle
+            const footerLink = document.getElementById('footerSalonBul');
+            if (footerLink) {
+                footerLink.textContent = catText.heroTitle.replace(/[💈💇‍♀️💆✨]\s*/, '');
+            }
         }
         
         // Renk koyulaştırma
