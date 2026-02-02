@@ -5350,6 +5350,7 @@
         
         // Personel modu yetki kontrolü - işlem öncesi çağrılacak
         function checkStaffPermission(action) {
+            if (isSuperAdminMode) return true; // Süper admin her şeyi yapabilir
             if (!isStaffMode) return true; // Salon sahibi her şeyi yapabilir
             
             const blockedActions = [
@@ -8639,24 +8640,8 @@ Panel: ${window.location.href}`);
         // Tarih ve saat ile manuel randevu modal'ını aç
         function openManualAppointmentWithDate(date, time) {
             closeQuickAddPopup();
-            openManualAppointmentModal();
-            
-            // Tarih ve saati ayarla
-            setTimeout(() => {
-                const dateInput = document.getElementById('manualAppointmentDate');
-                const timeSelect = document.getElementById('manualAppointmentTime');
-                
-                if (dateInput) dateInput.value = date;
-                if (timeSelect) {
-                    // Saati bul ve seç
-                    for (let option of timeSelect.options) {
-                        if (option.value === time || option.value.startsWith(time.split(':')[0])) {
-                            option.selected = true;
-                            break;
-                        }
-                    }
-                }
-            }, 100);
+            // Tarihi ve saati direkt parametre olarak geçir
+            openManualAppointmentModal(date, time);
         }
         
         function handleDragStart(event, appointmentId) {
@@ -10240,20 +10225,46 @@ END:VEVENT
         let selectedCustomerForAppointment = null;
         let customerMode = 'existing'; // 'existing' veya 'new'
         
-        async function openManualAppointmentModal() {
+        async function openManualAppointmentModal(prefillDate, prefillTime) {
             const modal = document.getElementById('manualAppointmentModal');
             
             // Müşterileri yükle (her zaman taze veri çek)
             showToast('Müşteriler yükleniyor...', 'info');
             await loadCustomers();
             
-            // Tarihi bugün olarak ayarla
+            // Tarihi ayarla: parametreden gelen veya bugün
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('manualAppointmentDate').value = today;
-            document.getElementById('manualAppointmentDate').min = today;
+            const dateInput = document.getElementById('manualAppointmentDate');
+            dateInput.value = prefillDate || today;
+            dateInput.min = today;
             
             // Saatleri doldur
             populateTimeSlots();
+            
+            // Eğer prefillTime varsa, saati ayarla
+            if (prefillTime) {
+                const timeSelect = document.getElementById('manualAppointmentTime');
+                if (timeSelect) {
+                    let matched = false;
+                    for (let option of timeSelect.options) {
+                        if (option.value === prefillTime) {
+                            option.selected = true;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    // Tam eşleşme yoksa saat kısmıyla dene
+                    if (!matched) {
+                        const hour = prefillTime.split(':')[0];
+                        for (let option of timeSelect.options) {
+                            if (option.value.startsWith(hour + ':')) {
+                                option.selected = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
             
             // Hizmetleri doldur
             populateServices();
@@ -10277,7 +10288,7 @@ END:VEVENT
             toggleCustomerMode('existing');
             
             modal.classList.add('active');
-            console.log('[Manual] Modal açıldı, müşteri sayısı:', allCustomers.length);
+            console.log('[Manual] Modal açıldı, tarih:', prefillDate || today, 'saat:', prefillTime || 'varsayılan');
         }
         
         function toggleCustomerMode(mode) {

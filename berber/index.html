@@ -1284,21 +1284,20 @@
         <div class="footer-container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <img src="/icons/logo.png" alt="Zamanli" class="logo-image" style="height: 36px;">
-                    <span class="logo-text" style="color: white;">Zamanli</span>
-                    <p>Online randevu sistemi</p>
+                    <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
+                    <span class="logo-text">Zamanli</span>
+                    <p>Online Randevu Sistemi</p>
                 </div>
                 <div class="footer-links">
-                    <a href="/berber/" id="footerSalonBul">Salon Bul</a>
+                    <a href="/berber/">Salon Bul</a>
                     <a href="/berber/kayit/">Salonunu Ekle</a>
+                    <a href="/fiyatlandirma/">Fiyatlandırma</a>
                     <a href="https://wa.me/905433838587" target="_blank">İletişim</a>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2026 Zamanli. Tüm hakları saklıdır.</p>
-                <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.7;">
-                    <a href="https://feyzdigital.com" target="_blank" style="color: inherit; text-decoration: none;">Feyz Digital</a> tarafından geliştirildi.
-                </p>
+                <p>&copy; 2026 Zamanli. Tüm hakları saklıdır.</p>
+                <p class="footer-credit"><a href="https://feyzdigital.com" target="_blank">Feyz Digital</a> tarafından geliştirildi.</p>
             </div>
         </div>
     </footer>
@@ -1427,12 +1426,6 @@
                     all: '💼 Salonunuz mu Var?'
                 };
                 ctaTitle.textContent = ctaTexts[currentCategory] || ctaTexts.all;
-            }
-            
-            // Footer link güncelle
-            const footerLink = document.getElementById('footerSalonBul');
-            if (footerLink) {
-                footerLink.textContent = catText.heroTitle.replace(/[💈💇‍♀️💆✨]\s*/, '');
             }
         }
         

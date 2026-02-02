@@ -1869,16 +1869,10 @@
             font-family: inherit;
         }
         
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 2rem 1rem;
-            color: var(--slate-500);
-            font-size: 0.85rem;
-        }
+        /* Footer - styles.css'teki genel stili kullanır */
         
         @media (max-width: 900px) {
-            footer { display: none; }
+            .footer { padding: 2rem 1rem 1rem; }
         }
         
         /* AI Öneri Banner */
@@ -2321,8 +2315,26 @@
         </div>
     </div>
     
-    <footer id="footer">
-        <p>© 2026 Zamanli - Tüm hakları saklıdır.</p>
+    <footer class="footer" id="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <img src="/icons/logo.png" alt="Zamanli" class="logo-image">
+                    <span class="logo-text">Zamanli</span>
+                    <p>Online Randevu Sistemi</p>
+                </div>
+                <div class="footer-links">
+                    <a href="/berber/">Salon Bul</a>
+                    <a href="/berber/kayit/">Salonunu Ekle</a>
+                    <a href="/fiyatlandirma/">Fiyatlandırma</a>
+                    <a href="https://wa.me/905433838587" target="_blank">İletişim</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Zamanli. Tüm hakları saklıdır.</p>
+                <p class="footer-credit"><a href="https://feyzdigital.com" target="_blank">Feyz Digital</a> tarafından geliştirildi.</p>
+            </div>
+        </div>
     </footer>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
