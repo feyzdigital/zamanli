@@ -137,9 +137,32 @@
                 <a href="/fiyatlandirma/" style="color:var(--primary);font-weight:600">Fiyatlandırma</a>
                 <a href="/berber/kayit/" class="btn btn-primary">Ücretsiz Başla</a>
             </nav>
-            <button class="mobile-menu-btn" onclick="alert('Menü')">☰</button>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
         </div>
     </header>
+    
+    <!-- Mobil Menü -->
+    <div id="mobileMenuOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:998" onclick="toggleMobileMenu()"></div>
+    <div id="mobileMenu" style="position:fixed;top:0;right:-300px;width:280px;height:100%;background:white;z-index:999;transition:right 0.3s ease;box-shadow:-4px 0 20px rgba(0,0,0,0.15);display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--slate-200)">
+            <a href="/" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;font-family:var(--font-heading);font-weight:700;font-size:1.25rem;color:var(--brand-deep-forest)">
+                <img src="/icons/logo.png" alt="Zamanli" style="height:28px">
+                <span>Zamanli</span>
+            </a>
+            <button onclick="toggleMobileMenu()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--slate-500)">✕</button>
+        </div>
+        <nav style="flex:1;padding:1rem 0;overflow-y:auto">
+            <a href="/" style="display:block;padding:0.85rem 1.5rem;text-decoration:none;color:var(--slate-700);font-weight:500">🏠 Ana Sayfa</a>
+            <a href="/berber/" style="display:block;padding:0.85rem 1.5rem;text-decoration:none;color:var(--slate-700);font-weight:500">✨ Salon Bul</a>
+            <a href="/fiyatlandirma/" style="display:block;padding:0.85rem 1.5rem;text-decoration:none;color:var(--primary);font-weight:600">💰 Fiyatlandırma</a>
+            <div style="height:1px;background:var(--slate-200);margin:0.5rem 1.5rem"></div>
+            <a href="/berber/kayit/" style="display:block;padding:0.85rem 1.5rem;text-decoration:none;color:var(--primary);font-weight:600">✨ Salonunu Ekle</a>
+            <a href="https://wa.me/905433838587" target="_blank" style="display:block;padding:0.85rem 1.5rem;text-decoration:none;color:var(--slate-700);font-weight:500">💬 İletişim</a>
+        </nav>
+        <div style="padding:1rem 1.5rem;border-top:1px solid var(--slate-200);text-align:center;font-size:0.8rem;color:var(--slate-400)">
+            © 2026 Zamanli
+        </div>
+    </div>
     
     <section class="hero">
         <h1>Salonunuz İçin Doğru Planı Seçin</h1>
@@ -312,6 +335,22 @@
     </footer>
     
     <script>
+        // Mobil Menü
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const overlay = document.getElementById('mobileMenuOverlay');
+            const isOpen = menu.style.right === '0px';
+            if (isOpen) {
+                menu.style.right = '-300px';
+                overlay.style.display = 'none';
+                document.body.style.overflow = '';
+            } else {
+                menu.style.right = '0px';
+                overlay.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
         let isYearly = false;
         const prices = { 
             pro: { monthly: 499, yearly: 399 }, 

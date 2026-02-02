@@ -821,7 +821,7 @@ a:hover { color: var(--link-hover); }
 }
 
 .footer-brand { display: flex; align-items: center; gap: 0.75rem; }
-.footer-brand .logo-image { height: 36px; filter: brightness(0) invert(1); }
+.footer-brand .logo-image { height: 36px; }
 .footer-brand .logo-text {
     font-family: var(--font-heading);
     font-size: 1.35rem;
