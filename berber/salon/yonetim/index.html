@@ -4993,22 +4993,28 @@
                 
                 // 3. Normal salon sahibi girişi
                 const savedSession = localStorage.getItem('salonSession');
-                console.log('[Init] salonSession kontrol:', savedSession ? 'var' : 'yok', 'slug:', slug);
+                console.log('[Init] === SESSION KONTROL ===');
+                console.log('[Init] salonSession var mı:', savedSession ? 'EVET' : 'HAYIR');
+                console.log('[Init] URL slug:', slug || 'YOK');
+                console.log('[Init] localStorage keys:', Object.keys(localStorage));
                 
                 if (savedSession) {
                     try {
                         const session = JSON.parse(savedSession);
-                        console.log('[Init] salonSession içerik:', session);
+                        console.log('[Init] Session içerik:', JSON.stringify(session));
+                        console.log('[Init] Session expires:', new Date(session.expires).toLocaleString());
+                        console.log('[Init] Şu an:', new Date().toLocaleString());
+                        console.log('[Init] Session geçerli mi:', session.expires > Date.now() ? 'EVET' : 'HAYIR');
                         
                         // Session süresi dolmamışsa
                         if (session.expires > Date.now()) {
                             // Session'daki slug'ı öncelikli kullan (PWA'da URL kayboluyor)
                             const targetSlug = session.slug || slug;
+                            console.log('[Init] Hedef slug:', targetSlug);
                             
                             // URL'de farklı bir slug varsa yeni giriş iste
                             if (slug && slug !== session.slug) {
                                 console.log('[Init] Farklı salon için giriş yapılıyor:', slug);
-                                // Bu durumda login ekranı göster
                                 showLoginScreen();
                                 return;
                             }
@@ -5017,20 +5023,25 @@
                                 console.log('[Init] Salon yükleniyor (session):', targetSlug);
                                 await loadSalonData(targetSlug);
                                 if (salon) {
-                                    console.log('[Init] Dashboard gösteriliyor (salon sahibi)');
+                                    console.log('[Init] ✅ Dashboard gösteriliyor (salon sahibi)');
                                     showDashboard();
                                     return;
+                                } else {
+                                    console.log('[Init] ❌ Salon yüklenemedi, session temizleniyor');
+                                    localStorage.removeItem('salonSession');
                                 }
                             }
                         } else {
                             // Session süresi dolmuş, temizle
-                            console.log('[Init] Session süresi dolmuş');
+                            console.log('[Init] Session süresi dolmuş, temizleniyor');
                             localStorage.removeItem('salonSession');
                         }
                     } catch (e) {
                         console.error('[Init] Session parse hatası:', e);
                         localStorage.removeItem('salonSession');
                     }
+                } else {
+                    console.log('[Init] salonSession bulunamadı');
                 }
                 
                 // 4. URL'de slug varsa direkt o salon için login ekranı göster
@@ -5040,6 +5051,7 @@
                 }
                 
                 // Session yok veya geçersiz - login ekranı göster
+                console.log('[Init] Login ekranı gösteriliyor');
                 showLoginScreen();
             } catch (error) {
                 console.error('[Init] Hata:', error);
@@ -5672,11 +5684,11 @@
             // 3. HEADER GÜNCELLE
             const headerSalonName = document.getElementById('headerSalonName');
             if (headerSalonName) {
-                headerSalonName.textContent = currentStaffName + ' (Operatör)';
+                headerSalonName.textContent = currentStaffName + ' (Operator)';
             }
             const headerAvatar = document.getElementById('headerAvatar');
             if (headerAvatar) {
-                headerAvatar.textContent = '📞';
+                headerAvatar.textContent = 'O';
             }
             
             // 4. OPERATÖR MODU BANNER
@@ -5693,8 +5705,8 @@
             banner.className = 'staff-mode-banner';
             banner.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
             banner.innerHTML = `
-                <span>📞 <strong>Operatör Modu</strong> - Randevuları görüntüleyebilir ve düzenleyebilirsiniz</span>
-                <button onclick="logoutStaff()" class="btn btn-sm btn-outline" style="margin-left: auto; background: transparent; border-color: white; color: white;">Çıkış</button>
+                <span><strong>OPERATOR MODU</strong> - Randevulari goruntuleyebilir ve duzenleyebilirsiniz</span>
+                <button onclick="logoutStaff()" class="btn btn-sm btn-outline" style="margin-left: auto; background: transparent; border-color: white; color: white;">Cikis</button>
             `;
             document.querySelector('.dashboard').insertBefore(banner, document.querySelector('.dashboard').firstChild);
         }
@@ -5739,7 +5751,7 @@
             }
             const headerAvatar = document.getElementById('headerAvatar');
             if (headerAvatar) {
-                headerAvatar.textContent = '📋';
+                headerAvatar.textContent = 'A';
             }
             
             // 4. ASİSTAN MODU BANNER
@@ -5756,8 +5768,8 @@
             banner.className = 'staff-mode-banner';
             banner.style.background = 'linear-gradient(135deg, #64748b, #475569)';
             banner.innerHTML = `
-                <span>📋 <strong>Asistan Modu</strong> - Sadece görüntüleme yetkisi</span>
-                <button onclick="logoutStaff()" class="btn btn-sm btn-outline" style="margin-left: auto; background: transparent; border-color: white; color: white;">Çıkış</button>
+                <span><strong>ASISTAN MODU</strong> - Sadece goruntuleme yetkisi</span>
+                <button onclick="logoutStaff()" class="btn btn-sm btn-outline" style="margin-left: auto; background: transparent; border-color: white; color: white;">Cikis</button>
             `;
             document.querySelector('.dashboard').insertBefore(banner, document.querySelector('.dashboard').firstChild);
         }
@@ -6621,24 +6633,24 @@
             
             const formattedDate = formatDate(apt.date);
             const salonLink = `https://zamanli.com/berber/salon/?slug=${salon.slug}`;
-            const reminderMessage = `Merhaba ${apt.customerName} 👋
+            const reminderMessage = `Merhaba ${apt.customerName},
 
-⏰ *Randevu Hatırlatması*
+RANDEVU HATIRLATMASI
 
-📍 *${salon.name}*
-📅 Tarih: ${formattedDate}
-🕐 Saat: ${apt.time}
-✂️ Hizmet: ${apt.service || 'Belirtilmedi'}
-${apt.staffName ? `👤 Personel: ${apt.staffName}` : ''}
+${salon.name}
+Tarih: ${formattedDate}
+Saat: ${apt.time}
+Hizmet: ${apt.service || 'Belirtilmedi'}
+${apt.staffName ? `Personel: ${apt.staffName}` : ''}
 
-📍 Adres: ${salon.address || 'Salonumuzda'}
-${salon.phone ? `📞 Tel: ${salon.phone}` : ''}
+Adres: ${salon.address || 'Salonumuzda'}
+${salon.phone ? `Tel: ${salon.phone}` : ''}
 
-🔗 Online Randevu: ${salonLink}
+Online Randevu: ${salonLink}
 
-Sizi bekliyoruz! 🙏
+Sizi bekliyoruz!
 
-_${salon.name} - Zamanli.com_`;
+${salon.name}`;
             
             const whatsappUrl = `https://wa.me/90${apt.customerPhone}?text=${encodeURIComponent(reminderMessage)}`;
             
@@ -7307,39 +7319,39 @@ ${reminderMessage}
             const customerPhone = (apt.customerPhone || '').replace(/\D/g, '');
             if (!customerPhone) return;
             
-            const salonLink = `${window.location.origin}/berber/salon/?slug=${salon.slug}`;
+            const salonLink = `https://zamanli.com/berber/salon/?slug=${salon.slug}`;
             
             let message;
             if (status === 'confirmed') {
-                message = `✅ Randevunuz Onaylandı!
+                message = `RANDEVUNUZ ONAYLANDI
 
 Merhaba ${apt.customerName},
-${salon.name} randevunuz onaylanmıştır.
+${salon.name} randevunuz onaylanmistir.
 
-📅 Tarih: ${formatDateDisplay(apt.date)}
-⏰ Saat: ${apt.time}
-✂️ Hizmet: ${apt.service}
-💰 Ücret: ${apt.servicePrice} ₺
+Tarih: ${formatDateDisplay(apt.date)}
+Saat: ${apt.time}
+Hizmet: ${apt.service}
+${apt.servicePrice ? `Ucret: ${apt.servicePrice} TL` : ''}
 
-📍 Adres: ${salon.address || `${salon.district}, ${salon.city}`}
+Adres: ${salon.address || `${salon.district}, ${salon.city}`}
 
-Bizi tercih ettiğiniz için teşekkür ederiz! 🙏
+Bizi tercih ettiginiz icin tesekkur ederiz!
 
-🔗 Yeni randevu için: ${salonLink}
+Yeni randevu icin: ${salonLink}
 
 ${salon.name}`;
             } else {
-                message = `❌ Randevunuz İptal Edildi
+                message = `RANDEVUNUZ IPTAL EDILDI
 
 Merhaba ${apt.customerName},
 
-${formatDateDisplay(apt.date)} ${apt.time} tarihli randevunuz iptal edilmiştir.
+${formatDateDisplay(apt.date)} ${apt.time} tarihli randevunuz iptal edilmistir.
 
-Size daha iyi hizmet verebilmek için yeni bir randevu oluşturabilirsiniz.
+Size daha iyi hizmet verebilmek icin yeni bir randevu olusturabilirsiniz.
 
-🔗 Yeni randevu için: ${salonLink}
+Yeni randevu icin: ${salonLink}
 
-Anlayışınız için teşekkür ederiz! 🙏
+Anlayisiniz icin tesekkur ederiz!
 
 ${salon.name}`;
             }
@@ -7542,30 +7554,30 @@ ${salon.name}`;
             // Rol badge'lerini oluştur
             const getRoleBadge = (person) => {
                 if (person.isOwner) {
-                    return '<span style="font-size:0.65rem;background:var(--primary);color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">👑 Patron</span>';
+                    return '<span style="font-size:0.65rem;background:var(--primary);color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">PATRON</span>';
                 }
                 const role = person.staffRole || 'staff';
                 if (role === 'operator') {
-                    return '<span style="font-size:0.65rem;background:#6366f1;color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">📞 Operatör</span>';
+                    return '<span style="font-size:0.65rem;background:#6366f1;color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">OPERATOR</span>';
                 }
                 if (role === 'assistant') {
-                    return '<span style="font-size:0.65rem;background:#64748b;color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">📋 Asistan</span>';
+                    return '<span style="font-size:0.65rem;background:#64748b;color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">ASISTAN</span>';
                 }
-                return '<span style="font-size:0.65rem;background:#10b981;color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">✂️ Personel</span>';
+                return '<span style="font-size:0.65rem;background:#10b981;color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">PERSONEL</span>';
             };
             
             let html = staff.map((person, index) => `
                 <div class="staff-card ${person.isOwner ? 'owner-card' : ''}">
-                    <div class="staff-avatar">${person.isOwner ? '👑' : (person.staffRole === 'operator' ? '📞' : (person.name?.charAt(0) || 'P'))}</div>
+                    <div class="staff-avatar">${person.isOwner ? 'P' : (person.staffRole === 'operator' ? 'O' : (person.name?.charAt(0) || 'P'))}</div>
                     <div class="staff-name">${escapeHtml(person.name)} ${getRoleBadge(person)}</div>
                     <div class="staff-title">${escapeHtml(person.title || 'Personel')}</div>
                     ${person.phone ? `
                         <div class="staff-pin-section">
-                            <div style="font-size: 0.75rem; color: var(--slate-500); margin-bottom: 0.25rem;">Giriş PIN</div>
+                            <div style="font-size: 0.75rem; color: var(--slate-500); margin-bottom: 0.25rem;">Giris PIN</div>
                             <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
                                 <input type="password" id="staffPin-${index}" value="${person.pin || '------'}" readonly style="width: 70px; text-align: center; border: 1px solid var(--slate-200); border-radius: 4px; padding: 0.25rem; font-family: monospace; font-size: 0.9rem;">
-                                <button id="pinToggle-${index}" onclick="togglePinVisibility(${index})" class="btn-icon-sm">👁️</button>
-                                ${!person.isOwner ? `<button onclick="resetStaffPin(${index})" class="btn-icon-sm" title="PIN Sıfırla">🔄</button>` : ''}
+                                <button id="pinToggle-${index}" onclick="togglePinVisibility(${index})" class="btn-icon-sm">Goster</button>
+                                ${!person.isOwner ? `<button onclick="resetStaffPin(${index})" class="btn-icon-sm" title="PIN Sifirla">Sifirla</button>` : ''}
                             </div>
                         </div>
                     ` : `<div style="font-size: 0.75rem; color: var(--warning); margin: 0.5rem 0;">⚠️ Telefon ekleyin</div>`}
@@ -11206,25 +11218,25 @@ END:VEVENT
                     setTimeout(() => {
                         if (confirm('Müşteriye WhatsApp ile onay mesajı göndermek ister misiniz?')) {
                             const salonLink = `https://zamanli.com/berber/salon/?slug=${salon.slug}`;
-                            const msg = `Merhaba ${customerName} 👋
+                            const msg = `Merhaba ${customerName},
 
-✅ *Randevunuz Onaylandı!*
+RANDEVUNUZ ONAYLANDI
 
-📍 *${salon.name}*
-📅 Tarih: ${formatDateTR(date)}
-🕐 Saat: ${time}
-✂️ Hizmet: ${serviceName}
-${staffName ? `👤 Personel: ${staffName}` : ''}
-${servicePrice ? `💰 Ücret: ${servicePrice} ₺` : ''}
+${salon.name}
+Tarih: ${formatDateTR(date)}
+Saat: ${time}
+Hizmet: ${serviceName}
+${staffName ? `Personel: ${staffName}` : ''}
+${servicePrice ? `Ucret: ${servicePrice} TL` : ''}
 
-📍 Adres: ${salon.address || 'Salonumuzda'}
-${salon.phone ? `📞 Tel: ${salon.phone}` : ''}
+Adres: ${salon.address || 'Salonumuzda'}
+${salon.phone ? `Tel: ${salon.phone}` : ''}
 
-🔗 Online Randevu: ${salonLink}
+Online Randevu: ${salonLink}
 
-Sizi bekliyoruz! 🙏
+Sizi bekliyoruz!
 
-_${salon.name} - Zamanli.com_`;
+${salon.name}`;
                             openWhatsAppWithMessage(customerPhone, msg);
                         }
                     }, 500);
@@ -11521,6 +11533,24 @@ _${salon.name} - Zamanli.com_`;
             const targetStaff = staff.find(s => s.id === staffId || s.name === staffName);
             return targetStaff?.phone || salon.phone; // Personel telefonu yoksa salon telefonu
         }
+        
+        // Session debug fonksiyonu - konsola session bilgilerini yazar
+        function debugSession() {
+            console.log('=== SESSION DEBUG ===');
+            console.log('localStorage keys:', Object.keys(localStorage));
+            
+            const salonSession = localStorage.getItem('salonSession');
+            const staffSession = localStorage.getItem('staffSession');
+            const adminSession = localStorage.getItem('zamanli_admin');
+            
+            console.log('salonSession:', salonSession ? JSON.parse(salonSession) : 'YOK');
+            console.log('staffSession:', staffSession ? JSON.parse(staffSession) : 'YOK');
+            console.log('adminSession:', adminSession ? JSON.parse(adminSession) : 'YOK');
+            console.log('====================');
+        }
+        
+        // Sayfa yüklenirken debug
+        debugSession();
         
         // Start
         init();
