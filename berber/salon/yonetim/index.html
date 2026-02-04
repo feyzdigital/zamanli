@@ -4612,10 +4612,11 @@
                     <div class="form-group">
                         <label class="form-label">Rol</label>
                         <select id="staffRole" class="form-input" onchange="toggleStaffRoleOptions()">
-                            <option value="staff">👨‍💼 Personel (Tam yetki)</option>
-                            <option value="assistant">📋 Asistan (Sadece randevu takibi)</option>
+                            <option value="staff">👨‍💼 Personel (Berber/Kuaför)</option>
+                            <option value="operator">📞 Operatör (Randevu Yönetimi)</option>
+                            <option value="assistant">📋 Asistan (Sadece Görüntüleme)</option>
                         </select>
-                        <p class="form-hint" id="staffRoleHint">Personel: Kendi randevularını yönetebilir</p>
+                        <p class="form-hint" id="staffRoleHint">Personel: Kendi randevularını tam yetki ile yönetebilir</p>
                     </div>
                     
                     <div class="form-group" id="staffPinGroup" style="display: none;">
@@ -4628,7 +4629,7 @@
                         <p class="form-hint">6 haneli PIN kodu (giriş için gerekli)</p>
                     </div>
                     
-                    <!-- Personel Çalışma Saatleri (düzenlenebilir) -->
+                    <!-- Personel Çalışma Saatleri (sadece staff için görünür) -->
                     <div class="form-group" id="staffHoursSection" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--slate-200);">
                         <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
                             🕐 Kişisel Çalışma Saatleri
@@ -4868,6 +4869,7 @@
         let isStaffMode = false;
         let currentStaffId = null;
         let currentStaffName = null;
+        let currentStaffRole = null; // staff, operator, assistant
         
         async function init() {
             console.log('[Init] Başlatılıyor...');
@@ -4934,13 +4936,23 @@
                                 isStaffMode = true;
                                 currentStaffId = session.staffId;
                                 currentStaffName = session.staffName;
+                                currentStaffRole = session.staffRole || 'staff';
                                 
-                                console.log('[Init] Personel session geçerli, salon yükleniyor:', targetSlug);
+                                console.log('[Init] Personel session geçerli, salon yükleniyor:', targetSlug, 'Rol:', currentStaffRole);
                                 await loadSalonData(targetSlug);
                                 
                                 if (salon) {
                                     console.log('[Init] Personel dashboard gösteriliyor');
                                     showDashboard();
+                                    
+                                    // Role göre kısıtlamaları uygula
+                                    if (currentStaffRole === 'operator') {
+                                        applyOperatorModeRestrictions();
+                                    } else if (currentStaffRole === 'assistant') {
+                                        applyAssistantModeRestrictions();
+                                    } else {
+                                        applyStaffModeRestrictions();
+                                    }
                                     return;
                                 }
                             }
@@ -4981,28 +4993,31 @@
                 
                 // 3. Normal salon sahibi girişi
                 const savedSession = localStorage.getItem('salonSession');
-                console.log('[Init] Session kontrol:', savedSession ? 'var' : 'yok', 'slug:', slug);
+                console.log('[Init] salonSession kontrol:', savedSession ? 'var' : 'yok', 'slug:', slug);
                 
                 if (savedSession) {
                     try {
                         const session = JSON.parse(savedSession);
-                        console.log('[Init] Session:', session);
+                        console.log('[Init] salonSession içerik:', session);
                         
                         // Session süresi dolmamışsa
                         if (session.expires > Date.now()) {
                             // Session'daki slug'ı öncelikli kullan (PWA'da URL kayboluyor)
                             const targetSlug = session.slug || slug;
                             
-                            // URL'de farklı bir slug varsa ve session'daki ile uyuşmuyorsa
-                            // sadece o zaman yeni giriş iste
+                            // URL'de farklı bir slug varsa yeni giriş iste
                             if (slug && slug !== session.slug) {
                                 console.log('[Init] Farklı salon için giriş yapılıyor:', slug);
-                                // Mevcut session'ı koruyoruz, sadece yeni salon için login gösteriyoruz
-                            } else if (targetSlug) {
-                                console.log('[Init] Salon yükleniyor:', targetSlug);
+                                // Bu durumda login ekranı göster
+                                showLoginScreen();
+                                return;
+                            }
+                            
+                            if (targetSlug) {
+                                console.log('[Init] Salon yükleniyor (session):', targetSlug);
                                 await loadSalonData(targetSlug);
                                 if (salon) {
-                                    console.log('[Init] Dashboard gösteriliyor');
+                                    console.log('[Init] Dashboard gösteriliyor (salon sahibi)');
                                     showDashboard();
                                     return;
                                 }
@@ -5018,16 +5033,13 @@
                     }
                 }
                 
-                // 4. URL'de slug varsa direkt o salon için giriş yap (session olmadan)
+                // 4. URL'de slug varsa direkt o salon için login ekranı göster
                 if (slug) {
-                    console.log('[Init] URL slug ile salon yükleniyor:', slug);
+                    console.log('[Init] URL slug ile salon yükleniyor (login gerekli):', slug);
                     await loadSalonData(slug);
-                    if (salon) {
-                        // Salon bulundu ama session yok - login ekranı göster
-                        console.log('[Init] Salon bulundu, login gerekli');
-                    }
                 }
                 
+                // Session yok veya geçersiz - login ekranı göster
                 showLoginScreen();
             } catch (error) {
                 console.error('[Init] Hata:', error);
@@ -5624,10 +5636,178 @@
             console.log('[Staff Mode] Kısıtlamalar uygulandı - Gizlenen sekmeler:', hiddenTabs.join(', '));
         }
         
+        // ========== OPERATÖR MODU KISITLAMALARI ==========
+        function applyOperatorModeRestrictions() {
+            console.log('[Operator Mode] Kısıtlamalar uygulanıyor...');
+            
+            // Operatör: Tüm randevuları görebilir, düzenleyebilir, manuel ekleyebilir
+            // AMA: Onay/iptal yapamaz, personel/hizmet/saat düzenleyemez
+            
+            // 1. TAMAMEN GİZLENECEK SEKMELER
+            const hiddenTabs = ['staff', 'services', 'hours', 'settings'];
+            
+            document.querySelectorAll('.tab[data-tab]').forEach(btn => {
+                const tabName = btn.dataset.tab;
+                if (hiddenTabs.includes(tabName)) {
+                    btn.style.display = 'none';
+                }
+            });
+            
+            hiddenTabs.forEach(tabName => {
+                const tabContent = document.getElementById(`tab-${tabName}`);
+                if (tabContent) tabContent.remove();
+            });
+            
+            // 2. MOBİL MENÜ
+            const menuSalonSettings = document.getElementById('menuSalonSettings');
+            if (menuSalonSettings) menuSalonSettings.style.display = 'none';
+            
+            document.querySelectorAll('.mobile-menu-nav a[data-menu-tab]').forEach(link => {
+                const tabName = link.getAttribute('data-menu-tab');
+                if (hiddenTabs.includes(tabName)) {
+                    link.style.display = 'none';
+                }
+            });
+            
+            // 3. HEADER GÜNCELLE
+            const headerSalonName = document.getElementById('headerSalonName');
+            if (headerSalonName) {
+                headerSalonName.textContent = currentStaffName + ' (Operatör)';
+            }
+            const headerAvatar = document.getElementById('headerAvatar');
+            if (headerAvatar) {
+                headerAvatar.textContent = '📞';
+            }
+            
+            // 4. OPERATÖR MODU BANNER
+            showOperatorBanner();
+            
+            console.log('[Operator Mode] Kısıtlamalar uygulandı');
+        }
+        
+        function showOperatorBanner() {
+            const existingBanner = document.querySelector('.staff-mode-banner');
+            if (existingBanner) existingBanner.remove();
+            
+            const banner = document.createElement('div');
+            banner.className = 'staff-mode-banner';
+            banner.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
+            banner.innerHTML = `
+                <span>📞 <strong>Operatör Modu</strong> - Randevuları görüntüleyebilir ve düzenleyebilirsiniz</span>
+                <button onclick="logoutStaff()" class="btn btn-sm btn-outline" style="margin-left: auto; background: transparent; border-color: white; color: white;">Çıkış</button>
+            `;
+            document.querySelector('.dashboard').insertBefore(banner, document.querySelector('.dashboard').firstChild);
+        }
+        
+        // ========== ASİSTAN MODU KISITLAMALARI ==========
+        function applyAssistantModeRestrictions() {
+            console.log('[Assistant Mode] Kısıtlamalar uygulanıyor...');
+            
+            // Asistan: Sadece görüntüleme - hiçbir düzenleme yapamaz
+            
+            // 1. TAMAMEN GİZLENECEK SEKMELER
+            const hiddenTabs = ['staff', 'services', 'hours', 'settings'];
+            
+            document.querySelectorAll('.tab[data-tab]').forEach(btn => {
+                const tabName = btn.dataset.tab;
+                if (hiddenTabs.includes(tabName)) {
+                    btn.style.display = 'none';
+                }
+            });
+            
+            hiddenTabs.forEach(tabName => {
+                const tabContent = document.getElementById(`tab-${tabName}`);
+                if (tabContent) tabContent.remove();
+            });
+            
+            // 2. TÜM DÜZENLEME BUTONLARINI GİZLE
+            setTimeout(() => {
+                // Manuel randevu ekleme butonu
+                document.querySelectorAll('[onclick*="openManualAppointment"]').forEach(btn => {
+                    btn.style.display = 'none';
+                });
+                // Düzenle butonları
+                document.querySelectorAll('[onclick*="openEditAppointment"]').forEach(btn => {
+                    btn.style.display = 'none';
+                });
+            }, 500);
+            
+            // 3. HEADER GÜNCELLE
+            const headerSalonName = document.getElementById('headerSalonName');
+            if (headerSalonName) {
+                headerSalonName.textContent = currentStaffName + ' (Asistan)';
+            }
+            const headerAvatar = document.getElementById('headerAvatar');
+            if (headerAvatar) {
+                headerAvatar.textContent = '📋';
+            }
+            
+            // 4. ASİSTAN MODU BANNER
+            showAssistantBanner();
+            
+            console.log('[Assistant Mode] Kısıtlamalar uygulandı');
+        }
+        
+        function showAssistantBanner() {
+            const existingBanner = document.querySelector('.staff-mode-banner');
+            if (existingBanner) existingBanner.remove();
+            
+            const banner = document.createElement('div');
+            banner.className = 'staff-mode-banner';
+            banner.style.background = 'linear-gradient(135deg, #64748b, #475569)';
+            banner.innerHTML = `
+                <span>📋 <strong>Asistan Modu</strong> - Sadece görüntüleme yetkisi</span>
+                <button onclick="logoutStaff()" class="btn btn-sm btn-outline" style="margin-left: auto; background: transparent; border-color: white; color: white;">Çıkış</button>
+            `;
+            document.querySelector('.dashboard').insertBefore(banner, document.querySelector('.dashboard').firstChild);
+        }
+        
+        // Operatör yetki kontrolü
+        function checkOperatorPermission(action) {
+            if (isSuperAdminMode) return true;
+            if (!isStaffMode) return true;
+            if (currentStaffRole !== 'operator') return true;
+            
+            // Operatörün yapamayacağı işlemler
+            const blockedActions = [
+                'approveAppointment', 'confirmAppointment',
+                'cancelAppointment', 'rejectAppointment',
+                'addStaff', 'editStaff', 'deleteStaff',
+                'editService', 'addService', 'deleteService',
+                'editHours', 'saveHours',
+                'editSalon', 'saveSalonSettings'
+            ];
+            
+            if (blockedActions.includes(action)) {
+                showToast('Bu işlem için yetkiniz yok. Randevu onay/iptal işlemleri için salon sahibine başvurun.', 'error');
+                return false;
+            }
+            return true;
+        }
+        
+        // Asistan yetki kontrolü
+        function checkAssistantPermission(action) {
+            if (isSuperAdminMode) return true;
+            if (!isStaffMode) return true;
+            if (currentStaffRole !== 'assistant') return true;
+            
+            // Asistan sadece görüntüleyebilir - tüm düzenleme işlemleri engelli
+            showToast('Asistan olarak sadece görüntüleme yetkiniz var', 'error');
+            return false;
+        }
+        
         // Personel modu yetki kontrolü - işlem öncesi çağrılacak
         function checkStaffPermission(action) {
             if (isSuperAdminMode) return true; // Süper admin her şeyi yapabilir
             if (!isStaffMode) return true; // Salon sahibi her şeyi yapabilir
+            
+            // Rol bazlı kontrol
+            if (currentStaffRole === 'operator') {
+                return checkOperatorPermission(action);
+            }
+            if (currentStaffRole === 'assistant') {
+                return checkAssistantPermission(action);
+            }
             
             const blockedActions = [
                 'addStaff', 'editStaff', 'deleteStaff',
@@ -6094,11 +6274,14 @@
         
         // Personel olarak giriş yap
         function loginAsStaff(matchedStaff, salonId, salonData) {
+            // Rol belirleme - varsayılan "staff"
+            const staffRole = matchedStaff.staffRole || matchedStaff.role || 'staff';
+            
             const staffSession = {
                 type: 'staff',
                 staffId: matchedStaff.id || matchedStaff.name,
                 staffName: matchedStaff.name,
-                staffRole: matchedStaff.role || 'Personel',
+                staffRole: staffRole, // staff, operator, assistant
                 salonId: salonId,
                 salonSlug: salonData.slug,
                 expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün
@@ -6110,11 +6293,21 @@
             isStaffMode = true;
             currentStaffId = staffSession.staffId;
             currentStaffName = staffSession.staffName;
+            currentStaffRole = staffRole; // Global değişken
             
             salon = { id: salonId, ...salonData };
             showDashboard();
-            applyStaffModeRestrictions();
-            console.log('[Login] Personel girişi başarılı:', matchedStaff.name, 'Salon:', salonData.name);
+            
+            // Role göre kısıtlamaları uygula
+            if (staffRole === 'operator') {
+                applyOperatorModeRestrictions();
+            } else if (staffRole === 'assistant') {
+                applyAssistantModeRestrictions();
+            } else {
+                applyStaffModeRestrictions();
+            }
+            
+            console.log('[Login] Personel girişi başarılı:', matchedStaff.name, 'Rol:', staffRole, 'Salon:', salonData.name);
         }
         
         // Show Login Error
@@ -6427,17 +6620,25 @@
             }
             
             const formattedDate = formatDate(apt.date);
+            const salonLink = `https://zamanli.com/berber/salon/?slug=${salon.slug}`;
             const reminderMessage = `Merhaba ${apt.customerName} 👋
 
 ⏰ *Randevu Hatırlatması*
 
+📍 *${salon.name}*
 📅 Tarih: ${formattedDate}
 🕐 Saat: ${apt.time}
 ✂️ Hizmet: ${apt.service || 'Belirtilmedi'}
+${apt.staffName ? `👤 Personel: ${apt.staffName}` : ''}
+
+📍 Adres: ${salon.address || 'Salonumuzda'}
+${salon.phone ? `📞 Tel: ${salon.phone}` : ''}
+
+🔗 Online Randevu: ${salonLink}
 
 Sizi bekliyoruz! 🙏
 
-${salon.name}`;
+_${salon.name} - Zamanli.com_`;
             
             const whatsappUrl = `https://wa.me/90${apt.customerPhone}?text=${encodeURIComponent(reminderMessage)}`;
             
@@ -7144,7 +7345,14 @@ ${salon.name}`;
             }
             
             const whatsappUrl = `https://wa.me/90${customerPhone}?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
+            
+            // iOS için farklı yönlendirme
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+                window.location.href = whatsappUrl;
+            } else {
+                window.open(whatsappUrl, '_blank');
+            }
         }
         
         // Format date for display
@@ -7320,7 +7528,8 @@ ${salon.name}`;
                     title: 'Salon Sahibi',
                     phone: ownerPhone,
                     pin: salon.pin, // Salon PIN'i ile aynı
-                    isOwner: true
+                    isOwner: true,
+                    staffRole: 'owner' // Salon sahibi rolü
                 };
                 staff = [ownerStaff, ...staff];
                 
@@ -7330,10 +7539,25 @@ ${salon.name}`;
                 }).catch(err => console.error('Owner staff save error:', err));
             }
             
+            // Rol badge'lerini oluştur
+            const getRoleBadge = (person) => {
+                if (person.isOwner) {
+                    return '<span style="font-size:0.65rem;background:var(--primary);color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">👑 Patron</span>';
+                }
+                const role = person.staffRole || 'staff';
+                if (role === 'operator') {
+                    return '<span style="font-size:0.65rem;background:#6366f1;color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">📞 Operatör</span>';
+                }
+                if (role === 'assistant') {
+                    return '<span style="font-size:0.65rem;background:#64748b;color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">📋 Asistan</span>';
+                }
+                return '<span style="font-size:0.65rem;background:#10b981;color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">✂️ Personel</span>';
+            };
+            
             let html = staff.map((person, index) => `
                 <div class="staff-card ${person.isOwner ? 'owner-card' : ''}">
-                    <div class="staff-avatar">${person.name?.charAt(0) || 'P'}</div>
-                    <div class="staff-name">${escapeHtml(person.name)} ${person.isOwner ? '<span style="font-size:0.7rem;background:var(--primary);color:white;padding:2px 6px;border-radius:10px;margin-left:4px;">Patron</span>' : ''}</div>
+                    <div class="staff-avatar">${person.isOwner ? '👑' : (person.staffRole === 'operator' ? '📞' : (person.name?.charAt(0) || 'P'))}</div>
+                    <div class="staff-name">${escapeHtml(person.name)} ${getRoleBadge(person)}</div>
                     <div class="staff-title">${escapeHtml(person.title || 'Personel')}</div>
                     ${person.phone ? `
                         <div class="staff-pin-section">
@@ -7402,14 +7626,14 @@ ${salon.name}`;
         
         // Staff Modal
         function openStaffModal(index = null) {
-            // PERSONEL MODU KONTROLÜ
-            if (isStaffMode) {
+            // PERSONEL MODU KONTROLÜ - Süper admin hariç
+            if (isStaffMode && !isSuperAdminMode) {
                 showToast('Personel ekleme/düzenleme yetkiniz yok', 'error');
                 return;
             }
             
-            // Yeni personel ekleme kontrolü
-            if (index === null && !canAddStaff()) {
+            // Yeni personel ekleme kontrolü - Süper admin limitsiz
+            if (index === null && !canAddStaff() && !isSuperAdminMode) {
                 openUpgradeModal();
                 return;
             }
@@ -7419,6 +7643,7 @@ ${salon.name}`;
             
             const pinGroup = document.getElementById('staffPinGroup');
             const pinInput = document.getElementById('staffPinInput');
+            const staffRoleSelect = document.getElementById('staffRole');
             
             if (index !== null) {
                 // Düzenleme modu
@@ -7427,6 +7652,12 @@ ${salon.name}`;
                 document.getElementById('staffName').value = person.name;
                 document.getElementById('staffTitle').value = person.title || '';
                 document.getElementById('staffPhone').value = person.phone || '';
+                
+                // Rol seçimi - mevcut rolü seç
+                if (staffRoleSelect) {
+                    staffRoleSelect.value = person.staffRole || 'staff';
+                    toggleStaffRoleOptions(); // Hint güncelle
+                }
                 
                 // PIN alanını göster ve doldur
                 pinGroup.style.display = 'block';
@@ -7438,10 +7669,12 @@ ${salon.name}`;
                     document.getElementById('staffName').disabled = true;
                     document.getElementById('staffTitle').disabled = true;
                     document.getElementById('staffPhone').disabled = true;
+                    if (staffRoleSelect) staffRoleSelect.disabled = true;
                 } else {
                     document.getElementById('staffName').disabled = false;
                     document.getElementById('staffTitle').disabled = false;
                     document.getElementById('staffPhone').disabled = false;
+                    if (staffRoleSelect) staffRoleSelect.disabled = false;
                 }
             } else {
                 // Yeni personel modu
@@ -7453,6 +7686,13 @@ ${salon.name}`;
                 document.getElementById('staffName').disabled = false;
                 document.getElementById('staffTitle').disabled = false;
                 document.getElementById('staffPhone').disabled = false;
+                
+                // Rol seçimi varsayılanı "staff"
+                if (staffRoleSelect) {
+                    staffRoleSelect.value = 'staff';
+                    staffRoleSelect.disabled = false;
+                    toggleStaffRoleOptions(); // Hint ve çalışma saatleri görünümü güncelle
+                }
             }
             
             document.getElementById('staffModal').classList.add('active');
@@ -7578,8 +7818,8 @@ Panel: ${window.location.href}`);
         async function saveStaff(e) {
             e.preventDefault();
             
-            // PERSONEL MODU KONTROLÜ
-            if (isStaffMode) {
+            // PERSONEL MODU KONTROLÜ - Süper admin hariç
+            if (isStaffMode && !isSuperAdminMode) {
                 showToast('Personel ekleme/düzenleme yetkiniz yok', 'error');
                 closeStaffModal();
                 return;
@@ -7588,6 +7828,7 @@ Panel: ${window.location.href}`);
             const index = document.getElementById('staffIndex').value;
             const phone = document.getElementById('staffPhone').value.replace(/\D/g, '');
             const pinFromModal = document.getElementById('staffPinInput').value;
+            const staffRole = document.getElementById('staffRole').value; // staff, operator, assistant
             
             // Telefon zorunlu
             if (!phone || phone.length < 10) {
@@ -7622,6 +7863,7 @@ Panel: ${window.location.href}`);
                         title: document.getElementById('staffTitle').value || 'Personel',
                         phone: phone.slice(-10),
                         pin: pinFromModal,
+                        staffRole: staffRole, // ÖNEMLİ: Rol kaydediliyor
                         isOwner: existingPerson.isOwner || false
                     };
                     await db.collection('salons').doc(salon.id).update({ staff });
@@ -7632,7 +7874,8 @@ Panel: ${window.location.href}`);
                     name: document.getElementById('staffName').value,
                     title: document.getElementById('staffTitle').value || 'Personel',
                     phone: phone.slice(-10),
-                    pin: pinFromModal
+                    pin: pinFromModal,
+                    staffRole: staffRole // ÖNEMLİ: Rol kaydediliyor
                 };
                 staff.push(person);
                 await db.collection('salons').doc(salon.id).update({ staff });
@@ -9658,6 +9901,17 @@ Panel: ${window.location.href}`);
         
         // Hızlı onaylama
         async function quickApprove(appointmentId) {
+            // Operatör kontrolü
+            if (currentStaffRole === 'operator') {
+                showToast('Operatör olarak randevu onaylama yetkiniz yok. Salon sahibine başvurun.', 'error');
+                return;
+            }
+            // Asistan kontrolü
+            if (currentStaffRole === 'assistant') {
+                showToast('Asistan olarak sadece görüntüleme yetkiniz var', 'error');
+                return;
+            }
+            
             const loadingToast = showToast('Onaylanıyor...', 'info');
             
             try {
@@ -9695,6 +9949,17 @@ Panel: ${window.location.href}`);
         
         // Hızlı reddetme
         async function quickReject(appointmentId) {
+            // Operatör kontrolü
+            if (currentStaffRole === 'operator') {
+                showToast('Operatör olarak randevu iptal etme yetkiniz yok. Salon sahibine başvurun.', 'error');
+                return;
+            }
+            // Asistan kontrolü
+            if (currentStaffRole === 'assistant') {
+                showToast('Asistan olarak sadece görüntüleme yetkiniz var', 'error');
+                return;
+            }
+            
             if (!confirm('Bu randevuyu iptal etmek istediğinize emin misiniz?')) return;
             
             const loadingToast = showToast('İptal ediliyor...', 'info');
@@ -10940,7 +11205,26 @@ END:VEVENT
                 if (status === 'confirmed') {
                     setTimeout(() => {
                         if (confirm('Müşteriye WhatsApp ile onay mesajı göndermek ister misiniz?')) {
-                            const msg = `Merhaba ${customerName}, ${formatDateTR(date)} tarihinde saat ${time}'de ${salon.name} için randevunuz onaylanmıştır. ✅`;
+                            const salonLink = `https://zamanli.com/berber/salon/?slug=${salon.slug}`;
+                            const msg = `Merhaba ${customerName} 👋
+
+✅ *Randevunuz Onaylandı!*
+
+📍 *${salon.name}*
+📅 Tarih: ${formatDateTR(date)}
+🕐 Saat: ${time}
+✂️ Hizmet: ${serviceName}
+${staffName ? `👤 Personel: ${staffName}` : ''}
+${servicePrice ? `💰 Ücret: ${servicePrice} ₺` : ''}
+
+📍 Adres: ${salon.address || 'Salonumuzda'}
+${salon.phone ? `📞 Tel: ${salon.phone}` : ''}
+
+🔗 Online Randevu: ${salonLink}
+
+Sizi bekliyoruz! 🙏
+
+_${salon.name} - Zamanli.com_`;
                             openWhatsAppWithMessage(customerPhone, msg);
                         }
                     }, 500);
@@ -11111,11 +11395,18 @@ END:VEVENT
         function toggleStaffRoleOptions() {
             const role = document.getElementById('staffRole').value;
             const hint = document.getElementById('staffRoleHint');
+            const staffHoursSection = document.getElementById('staffHoursSection');
             
-            if (role === 'assistant') {
-                hint.textContent = 'Asistan: Tüm randevuları görebilir, düzenleyebilir ama silme/iptal yetkisi yoktur';
+            if (role === 'operator') {
+                hint.textContent = 'Operatör: Tüm randevuları görebilir ve düzenleyebilir, manuel randevu ekleyebilir, ancak onay/iptal yetkisi yoktur';
+                // Operatör için çalışma saatleri gerekmez
+                if (staffHoursSection) staffHoursSection.style.display = 'none';
+            } else if (role === 'assistant') {
+                hint.textContent = 'Asistan: Tüm randevuları sadece görüntüleyebilir, düzenleme yetkisi yoktur';
+                if (staffHoursSection) staffHoursSection.style.display = 'none';
             } else {
-                hint.textContent = 'Personel: Kendi randevularını tam yetki ile yönetebilir';
+                hint.textContent = 'Personel: Kendi randevularını tam yetki ile yönetebilir, müşteriler tarafından randevu alınabilir';
+                if (staffHoursSection) staffHoursSection.style.display = 'block';
             }
         }
         
