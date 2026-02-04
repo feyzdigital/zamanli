@@ -5218,12 +5218,288 @@
             banner.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
             banner.innerHTML = `
                 <span>👑 <strong>Süper Admin Modu</strong> - Tüm yetkilere sahipsiniz</span>
-                <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                <div style="margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button onclick="openSuperAdminTools()" class="btn btn-sm btn-outline" style="background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.5);">🛠️ Admin Araçları</button>
                     <button onclick="window.location.href='/admin/'" class="btn btn-sm btn-outline" style="background: white; color: #d97706; border-color: white;">Admin Paneli</button>
                     <button onclick="logoutSuperAdmin()" class="btn btn-sm btn-outline" style="background: transparent; border-color: white; color: white;">Çıkış</button>
                 </div>
             `;
             document.querySelector('.dashboard').insertBefore(banner, document.querySelector('.dashboard').firstChild);
+        }
+        
+        // Süper Admin Araçları Modal
+        function openSuperAdminTools() {
+            let modal = document.getElementById('superAdminToolsModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'superAdminToolsModal';
+                modal.className = 'modal-overlay';
+                document.body.appendChild(modal);
+            }
+            
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 500px;">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                        <h3 class="modal-title">👑 Süper Admin Araçları</h3>
+                        <button class="modal-close" onclick="closeSuperAdminTools()" style="color: white;">×</button>
+                    </div>
+                    <div class="modal-body" style="padding: 1.5rem;">
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="font-size: 0.9rem; color: var(--slate-600); margin-bottom: 0.75rem; text-transform: uppercase;">📊 Salon Bilgileri</h4>
+                            <div style="background: var(--slate-50); padding: 1rem; border-radius: 8px; font-size: 0.9rem;">
+                                <p><strong>Salon ID:</strong> ${salon.id}</p>
+                                <p><strong>Slug:</strong> ${salon.slug}</p>
+                                <p><strong>Durum:</strong> ${salon.active ? '✅ Aktif' : '❌ Pasif'}</p>
+                                <p><strong>Oluşturulma:</strong> ${salon.createdAt ? new Date(salon.createdAt).toLocaleDateString('tr-TR') : '-'}</p>
+                                <p><strong>Paket:</strong> ${salon.packageName || salon.package || 'Belirtilmemiş'}</p>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="font-size: 0.9rem; color: var(--slate-600); margin-bottom: 0.75rem; text-transform: uppercase;">⚡ Hızlı İşlemler</h4>
+                            <div style="display: grid; gap: 0.5rem;">
+                                <button onclick="toggleSalonStatus()" class="btn ${salon.active ? 'btn-outline' : 'btn-success'}" style="justify-content: flex-start;">
+                                    ${salon.active ? '⏸️ Salonu Pasife Al' : '▶️ Salonu Aktifleştir'}
+                                </button>
+                                <button onclick="clearAllAppointments()" class="btn btn-outline" style="justify-content: flex-start; color: var(--warning);">
+                                    🧹 Tüm Randevuları Temizle (İptal edilmişler)
+                                </button>
+                                <button onclick="resetSalonPin()" class="btn btn-outline" style="justify-content: flex-start;">
+                                    🔑 Salon PIN'ini Sıfırla
+                                </button>
+                                <button onclick="viewSalonLogs()" class="btn btn-outline" style="justify-content: flex-start;">
+                                    📋 İşlem Loglarını Gör
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem;">
+                            <h4 style="font-size: 0.9rem; color: var(--danger); margin-bottom: 0.75rem; text-transform: uppercase;">⚠️ Tehlikeli İşlemler</h4>
+                            <div style="display: grid; gap: 0.5rem;">
+                                <button onclick="deleteAllSalonData()" class="btn" style="background: #7f1d1d; color: white; justify-content: flex-start;">
+                                    🗑️ Tüm Salon Verilerini Sil
+                                </button>
+                                <button onclick="deleteSalonCompletely()" class="btn" style="background: #450a0a; color: white; justify-content: flex-start;">
+                                    💀 Salonu Tamamen Sil
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="closeSuperAdminTools()">Kapat</button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+        
+        function closeSuperAdminTools() {
+            const modal = document.getElementById('superAdminToolsModal');
+            if (modal) modal.classList.remove('active');
+        }
+        
+        // Salon durumunu değiştir (aktif/pasif)
+        async function toggleSalonStatus() {
+            if (!isSuperAdminMode) return;
+            
+            const newStatus = !salon.active;
+            const action = newStatus ? 'aktifleştirmek' : 'pasife almak';
+            
+            if (!confirm(`Salonu ${action} istediğinize emin misiniz?`)) return;
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({
+                    active: newStatus,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: 'super_admin'
+                });
+                
+                salon.active = newStatus;
+                showToast(`Salon ${newStatus ? 'aktifleştirildi' : 'pasife alındı'}`, 'success');
+                closeSuperAdminTools();
+                openSuperAdminTools(); // Refresh modal
+                
+            } catch (error) {
+                console.error('Durum değiştirme hatası:', error);
+                showToast('İşlem başarısız', 'error');
+            }
+        }
+        
+        // İptal edilmiş randevuları temizle
+        async function clearAllAppointments() {
+            if (!isSuperAdminMode) return;
+            
+            const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
+            
+            if (cancelledCount === 0) {
+                showToast('Temizlenecek iptal edilmiş randevu yok', 'info');
+                return;
+            }
+            
+            if (!confirm(`${cancelledCount} adet iptal edilmiş randevuyu kalıcı olarak silmek istediğinize emin misiniz?`)) return;
+            
+            try {
+                const batch = db.batch();
+                const cancelledApts = appointments.filter(a => a.status === 'cancelled');
+                
+                cancelledApts.forEach(apt => {
+                    const ref = db.collection('appointments').doc(apt.id);
+                    batch.delete(ref);
+                });
+                
+                await batch.commit();
+                
+                // Lokal listeden kaldır
+                appointments = appointments.filter(a => a.status !== 'cancelled');
+                
+                refreshAllViews();
+                showToast(`${cancelledCount} randevu silindi`, 'success');
+                closeSuperAdminTools();
+                
+            } catch (error) {
+                console.error('Toplu silme hatası:', error);
+                showToast('İşlem başarısız', 'error');
+            }
+        }
+        
+        // Salon PIN'ini sıfırla
+        async function resetSalonPin() {
+            if (!isSuperAdminMode) return;
+            
+            const newPin = prompt('Yeni PIN girin (4-6 haneli):', '');
+            if (!newPin || newPin.length < 4 || newPin.length > 6 || !/^\d+$/.test(newPin)) {
+                showToast('Geçerli bir PIN girin (4-6 haneli rakam)', 'error');
+                return;
+            }
+            
+            if (!confirm(`Salon PIN'ini "${newPin}" olarak değiştirmek istediğinize emin misiniz?`)) return;
+            
+            try {
+                await db.collection('salons').doc(salon.id).update({
+                    pin: newPin,
+                    updatedAt: new Date().toISOString(),
+                    pinResetBy: 'super_admin',
+                    pinResetAt: new Date().toISOString()
+                });
+                
+                salon.pin = newPin;
+                showToast(`PIN "${newPin}" olarak değiştirildi`, 'success');
+                closeSuperAdminTools();
+                
+            } catch (error) {
+                console.error('PIN değiştirme hatası:', error);
+                showToast('İşlem başarısız', 'error');
+            }
+        }
+        
+        // İşlem loglarını görüntüle
+        function viewSalonLogs() {
+            showToast('Log sistemi henüz aktif değil', 'info');
+            // İleride: Firestore'dan logları çek ve göster
+        }
+        
+        // Tüm salon verilerini sil (randevular, müşteriler vb.)
+        async function deleteAllSalonData() {
+            if (!isSuperAdminMode) return;
+            
+            const confirmText = prompt(`⚠️ DİKKAT: Bu işlem geri alınamaz!\n\nTüm randevuları ve müşteri verilerini silmek için "SİL" yazın:`);
+            if (confirmText !== 'SİL') {
+                showToast('İşlem iptal edildi', 'info');
+                return;
+            }
+            
+            try {
+                showToast('Veriler siliniyor...', 'info');
+                
+                // 1. Tüm randevuları sil
+                const appointmentsSnapshot = await db.collection('appointments')
+                    .where('salonId', '==', salon.id)
+                    .get();
+                
+                const batch1 = db.batch();
+                appointmentsSnapshot.docs.forEach(doc => {
+                    batch1.delete(doc.ref);
+                });
+                await batch1.commit();
+                
+                // 2. Tüm müşterileri sil
+                const customersSnapshot = await db.collection('salons').doc(salon.id)
+                    .collection('customers').get();
+                
+                const batch2 = db.batch();
+                customersSnapshot.docs.forEach(doc => {
+                    batch2.delete(doc.ref);
+                });
+                await batch2.commit();
+                
+                // Lokal verileri temizle
+                appointments = [];
+                allCustomers = [];
+                
+                refreshAllViews();
+                showToast('Tüm veriler silindi', 'success');
+                closeSuperAdminTools();
+                
+            } catch (error) {
+                console.error('Veri silme hatası:', error);
+                showToast('İşlem başarısız: ' + error.message, 'error');
+            }
+        }
+        
+        // Salonu tamamen sil
+        async function deleteSalonCompletely() {
+            if (!isSuperAdminMode) return;
+            
+            const confirmText = prompt(`💀 UYARI: Bu işlem salonu tamamen silecek!\n\nSalon adı: ${salon.name}\nSlug: ${salon.slug}\n\nDevam etmek için salon slug'ını yazın:`);
+            if (confirmText !== salon.slug) {
+                showToast('İşlem iptal edildi', 'info');
+                return;
+            }
+            
+            try {
+                showToast('Salon siliniyor...', 'info');
+                
+                // 1. Tüm randevuları sil
+                const appointmentsSnapshot = await db.collection('appointments')
+                    .where('salonId', '==', salon.id)
+                    .get();
+                
+                for (const doc of appointmentsSnapshot.docs) {
+                    await doc.ref.delete();
+                }
+                
+                // 2. Tüm müşterileri sil
+                const customersSnapshot = await db.collection('salons').doc(salon.id)
+                    .collection('customers').get();
+                
+                for (const doc of customersSnapshot.docs) {
+                    await doc.ref.delete();
+                }
+                
+                // 3. Push token'ları sil
+                const tokensSnapshot = await db.collection('push_tokens')
+                    .where('salonId', '==', salon.id)
+                    .get();
+                
+                for (const doc of tokensSnapshot.docs) {
+                    await doc.ref.delete();
+                }
+                
+                // 4. Salonu sil
+                await db.collection('salons').doc(salon.id).delete();
+                
+                showToast('Salon tamamen silindi', 'success');
+                
+                // Admin paneline yönlendir
+                setTimeout(() => {
+                    window.location.href = '/admin/';
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Salon silme hatası:', error);
+                showToast('İşlem başarısız: ' + error.message, 'error');
+            }
         }
         
         // Süper admin çıkışı
@@ -6338,12 +6614,21 @@ ${reminderMessage}
                                         });
                                         
                                         // SADECE yeni ve görülmemiş randevular için bildirim göster
-                                        if (!alreadySeen && isRecent && apt.status === 'pending') {
-                                            console.log('[Sync] 🔔 Bildirim gösteriliyor:', apt.customerName);
+                                        // Personel modunda sadece kendi randevuları için bildirim göster
+                                        const shouldNotify = !alreadySeen && isRecent && apt.status === 'pending';
+                                        const isMyAppointment = !isStaffMode || 
+                                            apt.staffId === currentStaffId || 
+                                            apt.staffName === currentStaffName ||
+                                            (!apt.staffId && !apt.staffName); // Personel atanmamış randevular salon sahibine
+                                        
+                                        if (shouldNotify && isMyAppointment) {
+                                            console.log('[Sync] 🔔 Bildirim gösteriliyor:', apt.customerName, isStaffMode ? '(Personel modu)' : '(Salon sahibi)');
                                             if (NotificationManager?.notifyNewAppointment) {
                                                 NotificationManager.notifyNewAppointment(apt);
                                             }
                                             showToast(`🔔 Yeni randevu: ${apt.customerName}`, 'info');
+                                        } else if (shouldNotify && !isMyAppointment) {
+                                            console.log('[Sync] Bildirim atlandı - farklı personele ait:', apt.staffName || apt.staffId);
                                         }
                                         
                                         // Görülen randevulara ekle
@@ -6869,11 +7154,32 @@ ${salon.name}`;
             return `${date.getDate()} ${MONTHS_TR[date.getMonth()]} ${days[date.getDay()]}`;
         }
         
-        // Open WhatsApp
+        // Open WhatsApp - iOS uyumlu
         function openWhatsApp(phone, name) {
             const cleanPhone = phone.replace(/\D/g, '');
             const url = `https://wa.me/90${cleanPhone}`;
-            window.open(url, '_blank');
+            
+            // iOS için farklı yönlendirme yöntemi
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+                window.location.href = url;
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+        
+        // Genel WhatsApp yönlendirme fonksiyonu - iOS uyumlu
+        function openWhatsAppWithMessage(phone, message) {
+            const cleanPhone = phone.replace(/\D/g, '');
+            const url = `https://wa.me/90${cleanPhone}?text=${encodeURIComponent(message)}`;
+            
+            // iOS için farklı yönlendirme yöntemi
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+                window.location.href = url;
+            } else {
+                window.open(url, '_blank');
+            }
         }
         
         // Render Services
@@ -8495,8 +8801,8 @@ Panel: ${window.location.href}`);
                     // Bu saat için randevular - TAKVİMDE TÜMÜNÜ GÖSTER
                     const cellAppointments = appointments.filter(apt => {
                         if (apt.date !== dateStr) return false;
-                        // Takvimde pending, confirmed, completed göster (cancelled hariç)
-                        if (!['pending', 'confirmed', 'completed'].includes(apt.status)) return false;
+                        // Süper admin: tüm durumları göster, diğerleri: cancelled hariç
+                        if (!isSuperAdminMode && !['pending', 'confirmed', 'completed'].includes(apt.status)) return false;
                         
                         const aptHour = parseInt(apt.time?.split(':')[0] || '0');
                         if (aptHour !== hour) return false;
@@ -8705,7 +9011,7 @@ Panel: ${window.location.href}`);
                         const msg = `Merhaba ${apt.customerName},\n\nRandevunuz değiştirildi:\n\n📅 Yeni Tarih: ${formatDateTR(newDate)}\n⏰ Yeni Saat: ${newTime}\n\nBizi tercih ettiğiniz için teşekkürler!`;
                         
                         if (confirm('Müşteriye WhatsApp ile bildirim göndermek ister misiniz?')) {
-                            window.open(`https://wa.me/90${customerPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                            openWhatsAppWithMessage(customerPhone, msg);
                         }
                     }
                 } catch (e) {
@@ -8865,6 +9171,11 @@ Panel: ${window.location.href}`);
                                 ❌ İptal
                             </button>
                         ` : ''}
+                        ${isSuperAdminMode ? `
+                            <button class="btn btn-sm" onclick="deleteAppointmentPermanently('${apt.id}')" style="background: #7f1d1d; color: white;" title="Kalıcı olarak sil (Süper Admin)">
+                                🗑️ Sil
+                            </button>
+                        ` : ''}
                         <button class="btn btn-outline btn-sm" onclick="closeAppointmentDetailModal()">Kapat</button>
                     </div>
                 </div>
@@ -8873,6 +9184,39 @@ Panel: ${window.location.href}`);
             modal.classList.add('active');
         }
         
+        // Süper Admin: Randevuyu kalıcı olarak sil
+        async function deleteAppointmentPermanently(appointmentId) {
+            if (!isSuperAdminMode) {
+                showToast('Bu işlem için süper admin yetkisi gerekli', 'error');
+                return;
+            }
+            
+            const apt = appointments.find(a => a.id === appointmentId);
+            if (!apt) return;
+            
+            if (!confirm(`⚠️ DİKKAT: Bu randevuyu kalıcı olarak silmek istediğinize emin misiniz?\n\nMüşteri: ${apt.customerName}\nTarih: ${apt.date} ${apt.time}\n\nBu işlem geri alınamaz!`)) {
+                return;
+            }
+            
+            try {
+                await db.collection('appointments').doc(appointmentId).delete();
+                
+                // Lokal listeden kaldır
+                const index = appointments.findIndex(a => a.id === appointmentId);
+                if (index !== -1) {
+                    appointments.splice(index, 1);
+                }
+                
+                closeAppointmentDetailModal();
+                refreshAllViews();
+                showToast('Randevu kalıcı olarak silindi', 'success');
+                
+            } catch (error) {
+                console.error('Randevu silme hatası:', error);
+                showToast('Silme işlemi başarısız', 'error');
+            }
+        }
+
         function closeAppointmentDetailModal() {
             const modal = document.getElementById('appointmentDetailModal');
             if (modal) modal.classList.remove('active');
@@ -9063,8 +9407,8 @@ Panel: ${window.location.href}`);
                 // WhatsApp ile bilgilendirme öner
                 setTimeout(() => {
                     if (confirm('Müşteriye değişiklik hakkında WhatsApp mesajı göndermek ister misiniz?')) {
-                        const msg = encodeURIComponent(`Merhaba ${apt.customerName}, randevunuz güncellendi: ${formatDateTR(newDate)} ${newTime}. ${salon.name}`);
-                        window.open(`https://wa.me/90${apt.customerPhone}?text=${msg}`, '_blank');
+                        const msg = `Merhaba ${apt.customerName}, randevunuz güncellendi: ${formatDateTR(newDate)} ${newTime}. ${salon.name}`;
+                        openWhatsAppWithMessage(apt.customerPhone, msg);
                     }
                 }, 500);
                 
@@ -9466,8 +9810,8 @@ Panel: ${window.location.href}`);
                     // Bu saat için randevular - TAKVİMDE TÜMÜNÜ GÖSTER
                     const cellAppointments = appointments.filter(apt => {
                         if (apt.date !== dateStr) return false;
-                        // Takvimde pending, confirmed, completed göster (cancelled hariç)
-                        if (!['pending', 'confirmed', 'completed'].includes(apt.status)) return false;
+                        // Süper admin: tüm durumları göster, diğerleri: cancelled hariç
+                        if (!isSuperAdminMode && !['pending', 'confirmed', 'completed'].includes(apt.status)) return false;
                         
                         const aptHour = parseInt(apt.time?.split(':')[0] || '0');
                         if (aptHour !== hour) return false;
@@ -9569,7 +9913,7 @@ Panel: ${window.location.href}`);
                         const msg = `Merhaba ${apt.customerName},\n\nRandevunuz değiştirildi:\n\n📅 Yeni Tarih: ${formatDateTR(newDate)}\n⏰ Yeni Saat: ${newTime}\n\nBizi tercih ettiğiniz için teşekkürler!`;
                         
                         if (confirm('Müşteriye WhatsApp ile bildirim göndermek ister misiniz?')) {
-                            window.open(`https://wa.me/90${customerPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                            openWhatsAppWithMessage(customerPhone, msg);
                         }
                     }
                 } catch (e) {
@@ -10596,8 +10940,8 @@ END:VEVENT
                 if (status === 'confirmed') {
                     setTimeout(() => {
                         if (confirm('Müşteriye WhatsApp ile onay mesajı göndermek ister misiniz?')) {
-                            const msg = encodeURIComponent(`Merhaba ${customerName}, ${formatDateTR(date)} tarihinde saat ${time}'de ${salon.name} için randevunuz onaylanmıştır. ✅`);
-                            window.open(`https://wa.me/90${customerPhone}?text=${msg}`, '_blank');
+                            const msg = `Merhaba ${customerName}, ${formatDateTR(date)} tarihinde saat ${time}'de ${salon.name} için randevunuz onaylanmıştır. ✅`;
+                            openWhatsAppWithMessage(customerPhone, msg);
                         }
                     }, 500);
                 }
@@ -11317,6 +11661,17 @@ END:VEVENT
             // Yeni randevu bildirimi
             notifyNewAppointment: function(apt) {
                 console.log('[Notify] Bildirim gönderiliyor...', apt.id);
+                
+                // PERSONEL MODU FİLTRESİ - Sadece kendi randevularım için bildirim al
+                if (typeof isStaffMode !== 'undefined' && isStaffMode) {
+                    const isMyAppointment = apt.staffId === currentStaffId || 
+                                           apt.staffName === currentStaffName ||
+                                           (!apt.staffId && !apt.staffName);
+                    if (!isMyAppointment) {
+                        console.log('[Notify] Farklı personele ait randevu, bildirim atlanıyor:', apt.staffName || apt.staffId);
+                        return;
+                    }
+                }
                 
                 // Daha önce gösterilmiş mi kontrol et
                 if (apt.id) {

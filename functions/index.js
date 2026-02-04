@@ -338,73 +338,201 @@ exports.onAppointmentStatusChange = functions
 
 /**
  * Randevu hatırlatma bildirimi (Scheduled Function)
- * Her saat başı çalışır ve 1 saat sonraki randevuları hatırlatır
+ * Her 15 dakikada bir çalışır ve yaklaşan randevuları kontrol eder
+ * Salon ayarlarından hatırlatma süresini okur
  */
 exports.sendAppointmentReminders = functions
     .region('europe-west1')
     .pubsub
-    .schedule('0 * * * *') // Her saat başı
+    .schedule('*/15 * * * *') // Her 15 dakikada bir
     .timeZone('Europe/Istanbul')
     .onRun(async (context) => {
         console.log('[Reminder] Hatırlatma kontrolü başladı');
         
         const now = new Date();
-        const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-        
-        // Bugünün tarihi
         const today = now.toISOString().split('T')[0];
-        const targetHour = oneHourLater.getHours().toString().padStart(2, '0') + ':00';
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         
         try {
-            // 1 saat sonraki randevuları bul
+            // Bugün ve yarın için bekleyen/onaylı randevuları al
             const appointmentsSnapshot = await db.collection('appointments')
-                .where('date', '==', today)
-                .where('time', '==', targetHour)
+                .where('date', 'in', [today, tomorrow])
                 .where('status', 'in', ['pending', 'confirmed'])
-                .where('reminderSent', '!=', true)
                 .get();
             
-            console.log('[Reminder] Bulunan randevu sayısı:', appointmentsSnapshot.size);
+            console.log('[Reminder] Kontrol edilecek randevu sayısı:', appointmentsSnapshot.size);
+            
+            let sentCount = 0;
             
             for (const doc of appointmentsSnapshot.docs) {
                 const apt = doc.data();
+                const aptId = doc.id;
                 
-                // Müşteriye hatırlatma gönder
-                if (apt.customerPhone) {
-                    const tokensSnapshot = await db.collection('push_tokens')
-                        .where('userType', '==', 'customer')
-                        .where('phone', '==', apt.customerPhone)
+                // Zaten hatırlatma gönderilmiş mi?
+                if (apt.reminderSent === true) {
+                    continue;
+                }
+                
+                // Salon ayarlarını al
+                let reminderHours = 1; // Varsayılan 1 saat
+                if (apt.salonId) {
+                    try {
+                        const salonDoc = await db.collection('salons').doc(apt.salonId).get();
+                        if (salonDoc.exists) {
+                            const salonData = salonDoc.data();
+                            reminderHours = parseFloat(salonData.advancedSettings?.reminderHours) || 1;
+                        }
+                    } catch (e) {
+                        console.log('[Reminder] Salon ayarları alınamadı:', apt.salonId);
+                    }
+                }
+                
+                // Hatırlatma kapalıysa atla
+                if (reminderHours === 0) {
+                    continue;
+                }
+                
+                // Randevu zamanını hesapla
+                const aptDateTime = new Date(apt.date + 'T' + apt.time + ':00');
+                const reminderTime = new Date(aptDateTime.getTime() - reminderHours * 60 * 60 * 1000);
+                
+                // Hatırlatma zamanı geldi mi? (±10 dakika tolerans)
+                const timeDiff = now.getTime() - reminderTime.getTime();
+                const shouldRemind = timeDiff >= 0 && timeDiff <= 15 * 60 * 1000; // 15 dakika içinde
+                
+                if (!shouldRemind) {
+                    continue;
+                }
+                
+                console.log('[Reminder] Hatırlatma gönderilecek:', aptId, apt.customerName, apt.time);
+                
+                // Personele bildirim gönder
+                let tokensSent = 0;
+                
+                if (apt.staffId || apt.staffName) {
+                    // Personel token'ını bul
+                    let staffTokensSnapshot;
+                    
+                    if (apt.staffId) {
+                        staffTokensSnapshot = await db.collection('push_tokens')
+                            .where('salonId', '==', apt.salonId)
+                            .where('userType', '==', 'staff')
+                            .where('staffId', '==', apt.staffId)
+                            .get();
+                    }
+                    
+                    if ((!staffTokensSnapshot || staffTokensSnapshot.empty) && apt.staffName) {
+                        staffTokensSnapshot = await db.collection('push_tokens')
+                            .where('salonId', '==', apt.salonId)
+                            .where('userType', '==', 'staff')
+                            .where('staffName', '==', apt.staffName)
+                            .get();
+                    }
+                    
+                    if (staffTokensSnapshot && !staffTokensSnapshot.empty) {
+                        for (const tokenDoc of staffTokensSnapshot.docs) {
+                            const token = tokenDoc.data().token;
+                            if (token) {
+                                try {
+                                    const hoursText = reminderHours < 1 ? `${reminderHours * 60} dakika` : `${reminderHours} saat`;
+                                    await messaging.send({
+                                        token: token,
+                                        notification: {
+                                            title: '⏰ Randevu Hatırlatma',
+                                            body: `${apt.customerName} - ${hoursText} sonra!\n${apt.time} - ${apt.service || 'Randevu'}`
+                                        },
+                                        data: {
+                                            type: 'reminder',
+                                            appointmentId: aptId,
+                                            customerName: apt.customerName || '',
+                                            customerPhone: apt.customerPhone || '',
+                                            time: apt.time || '',
+                                            service: apt.service || ''
+                                        },
+                                        webpush: {
+                                            notification: {
+                                                icon: '/icons/icon-192x192.png',
+                                                badge: '/icons/icon-72x72.png',
+                                                vibrate: [200, 100, 200],
+                                                requireInteraction: true,
+                                                actions: [
+                                                    { action: 'whatsapp', title: '📱 WhatsApp' },
+                                                    { action: 'dismiss', title: 'Kapat' }
+                                                ]
+                                            }
+                                        }
+                                    });
+                                    tokensSent++;
+                                } catch (error) {
+                                    console.error('[Reminder] Personel bildirimi hatası:', error.code);
+                                    if (error.code === 'messaging/invalid-registration-token' ||
+                                        error.code === 'messaging/registration-token-not-registered') {
+                                        await deleteInvalidToken(token);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Personel bulunamadıysa salon sahibine gönder
+                if (tokensSent === 0) {
+                    const ownerTokensSnapshot = await db.collection('push_tokens')
+                        .where('salonId', '==', apt.salonId)
+                        .where('userType', '==', 'salon')
                         .get();
                     
-                    for (const tokenDoc of tokensSnapshot.docs) {
+                    for (const tokenDoc of ownerTokensSnapshot.docs) {
                         const token = tokenDoc.data().token;
                         if (token) {
                             try {
+                                const hoursText = reminderHours < 1 ? `${reminderHours * 60} dakika` : `${reminderHours} saat`;
                                 await messaging.send({
                                     token: token,
                                     notification: {
                                         title: '⏰ Randevu Hatırlatma',
-                                        body: `${apt.salonName || 'Randevunuz'} 1 saat sonra! ${apt.time}`
+                                        body: `${apt.customerName} - ${hoursText} sonra!\n${apt.time} - ${apt.service || 'Randevu'}`
+                                    },
+                                    data: {
+                                        type: 'reminder',
+                                        appointmentId: aptId,
+                                        customerName: apt.customerName || '',
+                                        customerPhone: apt.customerPhone || '',
+                                        time: apt.time || '',
+                                        service: apt.service || ''
                                     },
                                     webpush: {
                                         notification: {
                                             icon: '/icons/icon-192x192.png',
-                                            badge: '/icons/icon-72x72.png'
+                                            badge: '/icons/icon-72x72.png',
+                                            vibrate: [200, 100, 200],
+                                            requireInteraction: true
                                         }
                                     }
                                 });
+                                tokensSent++;
                             } catch (error) {
-                                console.error('[Reminder] Bildirim hatası:', error.code);
+                                console.error('[Reminder] Salon bildirimi hatası:', error.code);
+                                if (error.code === 'messaging/invalid-registration-token' ||
+                                    error.code === 'messaging/registration-token-not-registered') {
+                                    await deleteInvalidToken(token);
+                                }
                             }
                         }
                     }
                 }
                 
                 // Hatırlatma gönderildi olarak işaretle
-                await doc.ref.update({ reminderSent: true });
+                if (tokensSent > 0) {
+                    await doc.ref.update({ 
+                        reminderSent: true,
+                        reminderSentAt: admin.firestore.FieldValue.serverTimestamp()
+                    });
+                    sentCount++;
+                }
             }
             
-            console.log('[Reminder] Tamamlandı');
+            console.log('[Reminder] Tamamlandı. Gönderilen:', sentCount);
             return null;
             
         } catch (error) {

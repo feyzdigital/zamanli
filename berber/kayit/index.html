@@ -1351,7 +1351,15 @@
                     staff: d.staff, 
                     services,
                     note: d.note, rating: 5.0, reviewCount: 0, active: false, status: 'pending',
-                    workingHours: APP_CONFIG.workingHours.default, createdAt: new Date().toISOString()
+                    workingHours: APP_CONFIG.workingHours.default, createdAt: new Date().toISOString(),
+                    // Varsayılan gelişmiş ayarlar
+                    advancedSettings: {
+                        autoApprove: false,
+                        minCancelHours: '2',
+                        slotInterval: '30',
+                        maxAdvanceDays: '30',
+                        reminderHours: '1' // Varsayılan 1 saat önce hatırlatma
+                    }
                 };
                 
                 // Konum varsa ekle
