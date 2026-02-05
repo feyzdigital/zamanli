@@ -656,7 +656,7 @@ function renderAllAppointments() {
     list.slice(0, 100).forEach(apt => {
         const salon = AdminState.salons.find(s => s.id === apt.salonId);
         const isToday = apt.date === today;
-        h += '<tr class="' + (isToday ? 'highlight-row' : '') + '"><td>' + (apt.date || '-') + (isToday ? ' <span class="badge badge-success">Bugün</span>' : '') + '</td><td><strong>' + (apt.time || '-') + '</strong></td><td><a href="#" onclick="loadSalonDetails(\'' + apt.salonId + '\');return false">' + esc(salon?.name || '-') + '</a></td><td><div>' + esc(apt.customerName || '-') + '</div><small>' + (apt.customerPhone || '') + '</small></td><td>' + esc(apt.service || apt.serviceName || '-') + '</td><td><span class="status-badge ' + (apt.status || 'pending') + '">' + getStatusText(apt.status) + '</span></td><td><button onclick="showGlobalEditAppointmentModal(\'' + apt.id + '\')" class="btn btn-icon">✏️</button></td></tr>';
+        h += '<tr class="' + (isToday ? 'highlight-row' : '') + '"><td>' + (apt.date || '-') + (isToday ? ' <span class="badge badge-success">Bugün</span>' : '') + '</td><td><strong>' + (apt.time || '-') + '</strong></td><td><a href="#" onclick="loadSalonDetails(\'' + apt.salonId + '\');return false">' + esc(salon?.name || '-') + '</a></td><td><div>' + esc(apt.customerName || '-') + '</div><small>' + (apt.customerPhone || '') + '</small></td><td>' + esc(apt.service || apt.serviceName || '-') + '</td><td><span class="status-badge ' + (apt.status || 'pending') + '">' + getStatusText(apt.status) + '</span></td><td><div class="action-buttons"><button onclick="showGlobalEditAppointmentModal(\'' + apt.id + '\')" class="btn btn-icon">✏️</button><button onclick="deleteGlobalAppointment(\'' + apt.id + '\')" class="btn btn-icon danger" title="Sil">🗑️</button></div></td></tr>';
     });
     return h + '</tbody></table></div>';
 }
@@ -667,11 +667,11 @@ function renderCustomers() {
     h += '<div class="card">';
     if (AdminState.allCustomers.length === 0) h += '<div class="empty-state"><p>Müşteri bulunamadı. Randevulardan ve salon kayıtlarından otomatik toplanır.</p></div>';
     else {
-        h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Salon</th><th>Randevu</th><th>Son Tarih</th><th>Kayıt</th></tr></thead><tbody id="customerTableBody">';
+        h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Salon</th><th>Randevu</th><th>Son Tarih</th><th>Kayıt</th><th>İşlem</th></tr></thead><tbody id="customerTableBody">';
         AdminState.allCustomers.slice(0, 100).forEach(c => { 
             const createdDate = c.createdAt ? (typeof c.createdAt === 'string' ? c.createdAt.split('T')[0] : new Date(c.createdAt).toLocaleDateString('tr-TR')) : '-';
             const lastDate = c.lastAppointment || '-';
-            h += '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + esc(c.salonName || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + lastDate + '</td><td>' + createdDate + '</td></tr>'; 
+            h += '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + esc(c.salonName || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + lastDate + '</td><td>' + createdDate + '</td><td><button onclick="deleteGlobalCustomer(\'' + (c.phone || '') + '\', \'' + (c.salonId || '') + '\')" class="btn btn-icon danger" title="Sil">🗑️</button></td></tr>'; 
         });
         h += '</tbody></table>';
         if (AdminState.allCustomers.length > 100) {
@@ -770,7 +770,22 @@ async function toggleSalonStatus(id, active) {
 
 async function changePackage(id) {
     const pkg = document.getElementById('packageSelect').value;
-    try { await db.collection('salons').doc(id).update({ package: pkg, packageUpdatedAt: new Date().toISOString() }); showToast('Paket değiştirildi: ' + pkg, 'success'); if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    const pkgData = ADMIN_CONFIG.packages[pkg];
+    try {
+        // Paket bilgilerini ve limitleri birlikte güncelle (salona anlık yansısın)
+        const updateData = { 
+            package: pkg, 
+            packageName: pkgData ? pkgData.name : pkg,
+            packageUpdatedAt: new Date().toISOString()
+        };
+        // packageLimits'i de kaydet (salon tarafında real-time okunacak)
+        if (pkgData && pkgData.limits) {
+            updateData.packageLimits = pkgData.limits;
+        }
+        await db.collection('salons').doc(id).update(updateData);
+        showToast('Paket değiştirildi: ' + (pkgData ? pkgData.name : pkg), 'success');
+        if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id);
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
 async function permanentDeleteSalon(id) {
@@ -1026,5 +1041,78 @@ function closeModal(e) { if (!e || e.target.classList.contains('modal-overlay'))
 function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show ' + (type || 'info'); setTimeout(function() { t.className = 'toast'; }, 3000); }
 function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 function getStatusText(status) { const map = { pending: 'Bekliyor', confirmed: 'Onaylandı', completed: 'Tamamlandı', cancelled: 'İptal', noshow: 'Gelmedi' }; return map[status] || status || 'Bekliyor'; }
+
+// ==================== SÜPER ADMİN - GLOBAL SİLME FONKSİYONLARI ====================
+
+// Global randevu silme (tüm randevular listesinden)
+async function deleteGlobalAppointment(id) {
+    if (!confirm('Bu randevuyu kalıcı olarak silmek istediğinize emin misiniz?')) return;
+    try {
+        await db.collection('appointments').doc(id).delete();
+        // Lokal listeden kaldır
+        AdminState.allAppointments = AdminState.allAppointments.filter(a => a.id !== id);
+        calculateStats();
+        showToast('Randevu silindi ✅', 'success');
+        renderApp();
+    } catch (e) {
+        console.error('[Delete] Randevu silme hatası:', e);
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+// Global müşteri silme (tüm müşteriler listesinden)
+async function deleteGlobalCustomer(phone, salonId) {
+    if (!phone) { showToast('Telefon bilgisi bulunamadı', 'error'); return; }
+    if (!confirm('Bu müşteriyi silmek istediğinize emin misiniz?')) return;
+    
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    
+    try {
+        if (salonId) {
+            // Salon'un customers koleksiyonundan sil
+            try {
+                await db.collection('salons').doc(salonId).collection('customers').doc(cleanPhone).delete();
+            } catch (e) { console.log('[Delete] Customer doc silme:', e.message); }
+            
+            // Blacklist'e ekle
+            try {
+                await db.collection('salons').doc(salonId).collection('deletedCustomers').doc(cleanPhone).set({
+                    phone: cleanPhone,
+                    deletedAt: new Date().toISOString(),
+                    deletedBy: 'superadmin'
+                });
+            } catch (e) { console.log('[Delete] Blacklist:', e.message); }
+        }
+        
+        // Lokal listeden kaldır
+        AdminState.allCustomers = AdminState.allCustomers.filter(c => c.phone !== phone && c.phone !== cleanPhone);
+        calculateStats();
+        showToast('Müşteri silindi ✅', 'success');
+        renderApp();
+    } catch (e) {
+        console.error('[Delete] Müşteri silme hatası:', e);
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
+
+// Global randevu güncelleme
+async function updateGlobalAppointment(id) {
+    try {
+        await db.collection('appointments').doc(id).update({
+            customerName: document.getElementById('aptCustomerName').value.trim(),
+            customerPhone: document.getElementById('aptCustomerPhone').value.trim(),
+            date: document.getElementById('aptDate').value,
+            time: document.getElementById('aptTime').value,
+            status: document.getElementById('aptStatus').value,
+            updatedAt: new Date().toISOString(),
+            updatedBy: 'superadmin'
+        });
+        showToast('Randevu güncellendi ✅', 'success');
+        closeModal();
+        await loadAllData();
+    } catch (e) {
+        showToast('Hata: ' + e.message, 'error');
+    }
+}
 
 console.log('[Zamanli Admin] v3.0 - Tam Yetkili Süper Admin Paneli');

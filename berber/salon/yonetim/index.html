@@ -4614,7 +4614,6 @@
                         <select id="staffRole" class="form-input" onchange="toggleStaffRoleOptions()">
                             <option value="staff">👨‍💼 Personel (Berber/Kuaför)</option>
                             <option value="operator">📞 Operatör (Randevu Yönetimi)</option>
-                            <option value="assistant">📋 Asistan (Sadece Görüntüleme)</option>
                         </select>
                         <p class="form-hint" id="staffRoleHint">Personel: Kendi randevularını tam yetki ile yönetebilir</p>
                     </div>
@@ -4729,53 +4728,52 @@
         
         const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
         
-        // Paket Limitleri - Yeni 3'lü sistem
-        // Paket 1: Esnaf/Başlangıç (Ücretsiz) - Freemium giriş
-        // Paket 2: Profesyonel Salon (499₺/ay, yıllık 399₺/ay) - Ana ürün
-        // Paket 3: Zincir & Elit (1.499₺/ay + şube ücreti) - Kurumsal
+        // Paket Limitleri - Güncellenmiş 3'lü sistem
+        // Paket 1: Ücretsiz (Başlangıç) - Freemium giriş
+        // Paket 2: Pro (899₺/ay, yıllık 719₺/ay) - Ana ürün
+        // Paket 3: Business (1.599₺/ay, yıllık 1.279₺/ay) - Kurumsal
         const PACKAGE_LIMITS = {
             free: { 
-                name: 'Esnaf / Başlangıç', 
+                name: 'Ücretsiz', 
                 price: 0,
                 yearlyPrice: 0,
                 maxStaff: 1, 
-                maxAppointments: 999999, // Sınırsız manuel randevu
+                maxAppointments: 999999,
                 features: { 
                     sms: false, 
-                    whatsapp: false, // SMS hatırlatma YOK
+                    whatsapp: true,
                     reports: false, 
                     customerManagement: false,
                     onlinePayment: false,
                     stockTracking: false,
-                    webProfile: true // Web profil sayfası var
-                } 
-            },
-            professional: { 
-                name: 'Profesyonel Salon', 
-                price: 499,
-                yearlyPrice: 399, // Yıllık alımda aylık fiyat
-                maxStaff: 5, 
-                maxAppointments: 999999, 
-                features: { 
-                    sms: true, 
-                    whatsapp: true, // SMS/WhatsApp hatırlatma
-                    reports: true, 
-                    customerManagement: true,
-                    onlinePayment: true, // Kaparo alma
-                    stockTracking: true, // Stok takibi
-                    staffBonus: true, // Personel prim takibi
                     webProfile: true
                 } 
             },
-            enterprise: { 
-                name: 'Zincir & Elit', 
-                price: 1499,
-                yearlyPrice: 1199,
-                branchFee: 499, // Şube başı ek ücret
+            pro: { 
+                name: 'Pro', 
+                price: 899,
+                yearlyPrice: 719,
+                maxStaff: 5, 
+                maxAppointments: 999999, 
+                features: { 
+                    sms: false, 
+                    whatsapp: true,
+                    reports: true, 
+                    customerManagement: true,
+                    onlinePayment: false,
+                    stockTracking: true,
+                    staffBonus: true,
+                    webProfile: true
+                } 
+            },
+            business: { 
+                name: 'Business', 
+                price: 1599,
+                yearlyPrice: 1279,
                 maxStaff: 999, 
                 maxAppointments: 999999, 
                 features: { 
-                    sms: true, 
+                    sms: false, 
                     whatsapp: true, 
                     reports: true, 
                     customerManagement: true,
@@ -4784,30 +4782,40 @@
                     staffBonus: true,
                     webProfile: true,
                     apiAccess: true,
-                    whiteLabel: true, // Kendi alan adı
-                    dedicatedSupport: true, // 7/24 müşteri temsilcisi
-                    biAnalytics: true, // AI Doluluk Analizi
-                    multiBranch: true // Çoklu şube
+                    whiteLabel: true,
+                    dedicatedSupport: true,
+                    biAnalytics: true,
+                    multiBranch: true
                 } 
-            }
+            },
+            // Backward compatibility aliases
+            professional: null,
+            enterprise: null
         };
+        // Backward compat: professional -> pro, enterprise -> business
+        PACKAGE_LIMITS.professional = PACKAGE_LIMITS.pro;
+        PACKAGE_LIMITS.enterprise = PACKAGE_LIMITS.business;
         
         function getPackageLimit() {
             // Önce salon'daki packageLimits'i kontrol et (admin güncellemesi)
             if (salon?.packageLimits) {
+                // packageLimits varsa en güncel bilgiyi oradan al
+                const pkgName = PACKAGE_LIMITS[salon?.package]?.name || 
+                                salon?.packageName || 
+                                'Ücretsiz';
                 return {
-                    name: PACKAGE_LIMITS[salon?.package || 'free']?.name || 'Ücretsiz',
+                    name: pkgName,
                     maxStaff: salon.packageLimits.staff === -1 ? 999 : (salon.packageLimits.staff || 1),
                     maxAppointments: salon.packageLimits.monthlyAppointments === -1 ? 999999 : (salon.packageLimits.monthlyAppointments || 30),
                     features: {
-                        sms: salon.packageLimits.smsNotifications || false,
+                        sms: false, // SMS kaldırıldı
                         whatsapp: salon.packageLimits.whatsappNotifications !== false,
                         reports: salon.packageLimits.reports || false,
                         customerManagement: salon.packageLimits.customerManagement || false
                     }
                 };
             }
-            // Fallback: lokal PACKAGE_LIMITS
+            // Fallback: lokal PACKAGE_LIMITS (backward compat: professional->pro, enterprise->business)
             const pkg = salon?.package || 'free';
             return PACKAGE_LIMITS[pkg] || PACKAGE_LIMITS.free;
         }
@@ -4850,10 +4858,13 @@
             const adminSession = localStorage.getItem('zamanli_admin');
             if (adminSession) {
                 try {
-                    const { pin, expiry } = JSON.parse(adminSession);
-                    // Admin config'den PIN kontrolü
-                    if (pin && new Date(expiry) > new Date()) {
-                        return true;
+                    const data = JSON.parse(adminSession);
+                    const expiry = data.expiry;
+                    // Her iki format da kabul: { verified: true, expiry } veya { pin, expiry }
+                    if (expiry && new Date(expiry) > new Date()) {
+                        if (data.verified === true || data.pin) {
+                            return true;
+                        }
                     }
                 } catch (e) {
                     return false;
@@ -4927,7 +4938,7 @@
                         const session = JSON.parse(savedStaffSession);
                         console.log('[Init] Kayıtlı staff session bulundu:', session);
                         
-                        // Session süresi kontrolü (7 gün)
+                        // Session süresi kontrolü (90 gün - PWA için uzun session)
                         if (session.expires && session.expires > Date.now()) {
                             // URL'de slug varsa kontrol et, yoksa session'dan al
                             const targetSlug = slug || session.salonSlug;
@@ -4945,11 +4956,10 @@
                                     console.log('[Init] Personel dashboard gösteriliyor');
                                     showDashboard();
                                     
-                                    // Role göre kısıtlamaları uygula
+                                    // Role göre kısıtlamaları uygula (asistan modu kaldırıldı)
+                                    if (currentStaffRole === 'assistant') currentStaffRole = 'operator';
                                     if (currentStaffRole === 'operator') {
                                         applyOperatorModeRestrictions();
-                                    } else if (currentStaffRole === 'assistant') {
-                                        applyAssistantModeRestrictions();
                                     } else {
                                         applyStaffModeRestrictions();
                                     }
@@ -4970,12 +4980,12 @@
                 if (staffParam && slug && staffNameParam) {
                     console.log('[Init] URL parametrelerinden personel session oluşturuluyor');
                     
-                    // Yeni session oluştur - localStorage'a kaydet (7 gün)
+                    // Yeni session oluştur - localStorage'a kaydet (90 gün)
                     const newSession = {
                         staffId: decodeURIComponent(staffParam),
                         staffName: decodeURIComponent(staffNameParam),
                         salonSlug: slug,
-                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
+                        expires: Date.now() + (90 * 24 * 60 * 60 * 1000) // 90 gün
                     };
                     localStorage.setItem('staffSession', JSON.stringify(newSession));
                     
@@ -5086,11 +5096,23 @@
             }
             // Personel modu ise kısıtlı görünüm
             else if (isStaffMode) {
-                document.getElementById('headerSalonName').textContent = currentStaffName + ' (Personel)';
-                document.getElementById('headerAvatar').textContent = currentStaffName.charAt(0).toUpperCase();
+                // Asistan modu kaldırıldı - operator veya staff olarak davran
+                if (currentStaffRole === 'assistant') currentStaffRole = 'operator';
                 
-                // Personel modunda tüm kısıtlamaları uygula
-                applyStaffModeRestrictions();
+                if (currentStaffRole === 'operator') {
+                    document.getElementById('headerSalonName').textContent = currentStaffName + ' (Operatör)';
+                    document.getElementById('headerAvatar').textContent = 'O';
+                } else {
+                    document.getElementById('headerSalonName').textContent = currentStaffName + ' (Personel)';
+                    document.getElementById('headerAvatar').textContent = currentStaffName.charAt(0).toUpperCase();
+                }
+                
+                // Role göre kısıtlamaları uygula
+                if (currentStaffRole === 'operator') {
+                    applyOperatorModeRestrictions();
+                } else {
+                    applyStaffModeRestrictions();
+                }
                 
                 // Personel banner'ı göster
                 showStaffBanner();
@@ -5652,10 +5674,11 @@
         function applyOperatorModeRestrictions() {
             console.log('[Operator Mode] Kısıtlamalar uygulanıyor...');
             
-            // Operatör: Tüm randevuları görebilir, düzenleyebilir, manuel ekleyebilir
-            // AMA: Onay/iptal yapamaz, personel/hizmet/saat düzenleyemez
+            // Operatör: Tüm randevuları görebilir, düzenleyebilir, onaylayabilir, iptal edebilir
+            // Manuel randevu ekleyebilir, müşterileri görebilir
+            // AMA: Personel/hizmet/saat/ayarlar düzenleyemez
             
-            // 1. TAMAMEN GİZLENECEK SEKMELER
+            // 1. TAMAMEN GİZLENECEK SEKMELER (sadece admin sekmeler)
             const hiddenTabs = ['staff', 'services', 'hours', 'settings'];
             
             document.querySelectorAll('.tab[data-tab]').forEach(btn => {
@@ -5670,7 +5693,7 @@
                 if (tabContent) tabContent.remove();
             });
             
-            // 2. MOBİL MENÜ
+            // 2. MOBİL MENÜ - Salon ayarlarını gizle
             const menuSalonSettings = document.getElementById('menuSalonSettings');
             if (menuSalonSettings) menuSalonSettings.style.display = 'none';
             
@@ -5684,7 +5707,7 @@
             // 3. HEADER GÜNCELLE
             const headerSalonName = document.getElementById('headerSalonName');
             if (headerSalonName) {
-                headerSalonName.textContent = currentStaffName + ' (Operator)';
+                headerSalonName.textContent = currentStaffName + ' (Operatör)';
             }
             const headerAvatar = document.getElementById('headerAvatar');
             if (headerAvatar) {
@@ -5694,7 +5717,7 @@
             // 4. OPERATÖR MODU BANNER
             showOperatorBanner();
             
-            console.log('[Operator Mode] Kısıtlamalar uygulandı');
+            console.log('[Operator Mode] Kısıtlamalar uygulandı - Tüm randevu yetkileri aktif');
         }
         
         function showOperatorBanner() {
@@ -5705,8 +5728,8 @@
             banner.className = 'staff-mode-banner';
             banner.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
             banner.innerHTML = `
-                <span><strong>OPERATOR MODU</strong> - Randevulari goruntuleyebilir ve duzenleyebilirsiniz</span>
-                <button onclick="logoutStaff()" class="btn btn-sm btn-outline" style="margin-left: auto; background: transparent; border-color: white; color: white;">Cikis</button>
+                <span><strong>OPERATÖR MODU</strong> - Randevuları görüntüleyebilir, düzenleyebilir ve yönetebilirsiniz</span>
+                <button onclick="logoutStaff()" class="btn btn-sm btn-outline" style="margin-left: auto; background: transparent; border-color: white; color: white;">Çıkış</button>
             `;
             document.querySelector('.dashboard').insertBefore(banner, document.querySelector('.dashboard').firstChild);
         }
@@ -6270,7 +6293,7 @@
                 type: 'owner',
                 slug: salonData.slug,
                 salonId: salonId,
-                expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün
+                expires: Date.now() + (90 * 24 * 60 * 60 * 1000) // 90 gün (PWA için uzun session)
             };
             localStorage.setItem('salonSession', JSON.stringify(session));
             
@@ -6286,17 +6309,19 @@
         
         // Personel olarak giriş yap
         function loginAsStaff(matchedStaff, salonId, salonData) {
-            // Rol belirleme - varsayılan "staff"
-            const staffRole = matchedStaff.staffRole || matchedStaff.role || 'staff';
+            // Rol belirleme - varsayılan "staff", assistant -> operator'e map edilir
+            let staffRole = matchedStaff.staffRole || matchedStaff.role || 'staff';
+            // Asistan modu kaldırıldı - eski asistan'lar operatör olarak giriş yapar
+            if (staffRole === 'assistant') staffRole = 'operator';
             
             const staffSession = {
                 type: 'staff',
                 staffId: matchedStaff.id || matchedStaff.name,
                 staffName: matchedStaff.name,
-                staffRole: staffRole, // staff, operator, assistant
+                staffRole: staffRole, // staff, operator
                 salonId: salonId,
                 salonSlug: salonData.slug,
-                expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün
+                expires: Date.now() + (90 * 24 * 60 * 60 * 1000) // 90 gün (PWA için uzun session)
             };
             localStorage.setItem('staffSession', JSON.stringify(staffSession));
             localStorage.removeItem('salonSession'); // Eski owner session'ı temizle
@@ -6310,11 +6335,9 @@
             salon = { id: salonId, ...salonData };
             showDashboard();
             
-            // Role göre kısıtlamaları uygula
+            // Role göre kısıtlamaları uygula (asistan modu kaldırıldı)
             if (staffRole === 'operator') {
                 applyOperatorModeRestrictions();
-            } else if (staffRole === 'assistant') {
-                applyAssistantModeRestrictions();
             } else {
                 applyStaffModeRestrictions();
             }
@@ -7741,14 +7764,14 @@ ${salon.name}`;
             
             // Önerilen paketi belirle
             let suggestedPkg, suggestedName, suggestedPrice;
-            if (currentPkg === 'starter') {
+            if (currentPkg === 'starter' || currentPkg === 'free') {
                 suggestedPkg = 'pro';
-                suggestedName = 'Profesyonel';
-                suggestedPrice = '499 ₺/ay';
+                suggestedName = 'Pro';
+                suggestedPrice = '899 ₺/ay';
             } else {
-                suggestedPkg = 'premium';
-                suggestedName = 'Premium';
-                suggestedPrice = '799 ₺/ay';
+                suggestedPkg = 'business';
+                suggestedName = 'Business';
+                suggestedPrice = '1.599 ₺/ay';
             }
             
             document.getElementById('currentPackageName').textContent = limit.name;

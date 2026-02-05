@@ -96,6 +96,9 @@ const ZamanliPWA = {
         if (this.isStandalone) {
             document.documentElement.classList.add('pwa-standalone');
             document.body.classList.add('pwa-standalone');
+            
+            // PWA standalone modda otomatik yönetim paneline yönlendir
+            this.autoRedirectToPanel();
         }
         
         // Display mode değişikliğini dinle
@@ -103,6 +106,41 @@ const ZamanliPWA = {
             this.isStandalone = e.matches;
             document.documentElement.classList.toggle('pwa-standalone', e.matches);
         });
+    },
+    
+    // PWA'da otomatik yönetim paneline yönlendirme
+    autoRedirectToPanel() {
+        // Zaten yönetim panelindeyse veya randevu sayfasındaysa yönlendirme yapma
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/yonetim') || currentPath.includes('/admin')) {
+            return;
+        }
+        
+        // Salon sahibi session'ı kontrol et
+        try {
+            const salonSession = localStorage.getItem('salonSession');
+            if (salonSession) {
+                const session = JSON.parse(salonSession);
+                if (session.expires > Date.now() && session.slug) {
+                    console.log('[PWA] Salon sahibi session bulundu, yönetim paneline yönlendiriliyor:', session.slug);
+                    window.location.href = '/berber/salon/yonetim/?slug=' + session.slug;
+                    return;
+                }
+            }
+            
+            // Personel session'ı kontrol et
+            const staffSession = localStorage.getItem('staffSession');
+            if (staffSession) {
+                const session = JSON.parse(staffSession);
+                if (session.expires > Date.now() && session.salonSlug) {
+                    console.log('[PWA] Personel session bulundu, yönetim paneline yönlendiriliyor:', session.salonSlug);
+                    window.location.href = '/berber/salon/yonetim/?slug=' + session.salonSlug;
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log('[PWA] Session kontrol hatası:', e);
+        }
     },
     
     // ==================== INSTALL PROMPT ====================

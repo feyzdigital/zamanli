@@ -44,18 +44,6 @@ const ROLES = {
         ],
         description: 'Salon personeli - Sınırlı erişim'
     },
-    assistant: {
-        name: 'Asistan',
-        level: 10,
-        icon: '📋',
-        permissions: [
-            'view_dashboard', 'view_appointments',
-            'confirm_appointment',
-            'view_customers',
-            'view_services'
-        ],
-        description: 'Resepsiyonist/Asistan - Salt okunur + randevu onaylama'
-    },
     customer: {
         name: 'Müşteri',
         level: 1,
@@ -284,14 +272,14 @@ const APP_CONFIG = {
         },
         pro: { 
             name: 'Pro', 
-            price: 499, 
-            yearlyPrice: 399,  // %20 indirimli (499 * 0.8)
+            price: 899, 
+            yearlyPrice: 719,  // %20 indirimli (899 * 0.8)
             color: 'primary',
             badge: 'Popüler',
             limits: { 
                 monthlyAppointments: -1,  // Sınırsız
                 staff: 5, 
-                smsNotifications: true, 
+                smsNotifications: false, 
                 whatsappNotifications: true, 
                 emailNotifications: true, 
                 customerManagement: true,
@@ -309,7 +297,7 @@ const APP_CONFIG = {
             features: [
                 'Sınırsız randevu',
                 '5 personele kadar',
-                'SMS + E-posta + WhatsApp bildirimleri',
+                'WhatsApp + E-posta bildirimleri',
                 'Müşteri yönetimi ve notlar',
                 'Detaylı raporlar ve grafikler',
                 'Personel performans takibi',
@@ -319,14 +307,14 @@ const APP_CONFIG = {
         },
         business: { 
             name: 'Business', 
-            price: 999, 
-            yearlyPrice: 799,  // %20 indirimli (999 * 0.8)
+            price: 1599, 
+            yearlyPrice: 1279,  // %20 indirimli (1599 * 0.8)
             color: 'gold',
             badge: 'En Kapsamlı',
             limits: { 
                 monthlyAppointments: -1, 
                 staff: -1,  // Sınırsız
-                smsNotifications: true, 
+                smsNotifications: false, 
                 whatsappNotifications: true, 
                 emailNotifications: true, 
                 customerManagement: true,

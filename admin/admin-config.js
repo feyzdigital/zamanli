@@ -65,13 +65,13 @@ const ADMIN_CONFIG = {
         pro: { 
             name: 'Pro', 
             color: 'primary', 
-            price: 499,
-            yearlyPrice: 399,
+            price: 899,
+            yearlyPrice: 719,
             badge: 'Popüler',
             limits: { 
                 monthlyAppointments: -1,
                 staff: 5,
-                smsNotifications: true,
+                smsNotifications: false,
                 whatsappNotifications: true,
                 emailNotifications: true,
                 customerManagement: true,
@@ -84,18 +84,18 @@ const ADMIN_CONFIG = {
                 prioritySupport: false,
                 apiAccess: false
             },
-            features: ['Sınırsız randevu', '5 personel', 'SMS + E-posta', 'Müşteri yönetimi', 'Detaylı raporlar', 'Özel marka']
+            features: ['Sınırsız randevu', '5 personel', 'WhatsApp + E-posta', 'Müşteri yönetimi', 'Detaylı raporlar', 'Özel marka']
         },
         business: { 
             name: 'Business', 
             color: 'gold', 
-            price: 999,
-            yearlyPrice: 799,
+            price: 1599,
+            yearlyPrice: 1279,
             badge: 'En Kapsamlı',
             limits: { 
                 monthlyAppointments: -1,
                 staff: -1,
-                smsNotifications: true,
+                smsNotifications: false,
                 whatsappNotifications: true,
                 emailNotifications: true,
                 customerManagement: true,
