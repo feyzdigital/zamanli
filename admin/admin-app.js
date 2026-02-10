@@ -957,20 +957,93 @@ async function updateGlobalAppointment(aptId) {
 }
 
 async function createSalon() {
-    const name = document.getElementById('newName').value.trim(); if (!name) { showToast('Salon adı gerekli', 'error'); return; }
+    const name = document.getElementById('newName').value.trim();
+    if (!name) { showToast('Salon adı gerekli', 'error'); return; }
+    
     const category = document.getElementById('newCategory').value;
     const ownerName = document.getElementById('newOwner').value.trim();
     const phone = document.getElementById('newPhone').value.replace(/\D/g, '').slice(-10);
     const email = document.getElementById('newEmail').value.trim();
+    const city = document.getElementById('newCity').value.trim();
+    const district = document.getElementById('newDistrict').value.trim();
+    const address = document.getElementById('newAddress').value.trim();
+    const selectedPackage = document.getElementById('newPackage').value;
+    const customPin = document.getElementById('newPin').value.trim();
+    
+    // Çalışma saatleri
+    const workingHours = {};
+    const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    days.forEach(day => {
+        const active = document.getElementById('wh_' + day + '_active').checked;
+        const open = document.getElementById('wh_' + day + '_open').value;
+        const close = document.getElementById('wh_' + day + '_close').value;
+        workingHours[day] = { open, close, active };
+    });
+    
+    // Validasyonlar
+    if (!phone || phone.length < 10) { showToast('Geçerli telefon numarası girin', 'error'); return; }
+    if (customPin && customPin.length < 4) { showToast('PIN en az 4 haneli olmalı', 'error'); return; }
+    
     const slug = name.toLowerCase().replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+    
     try {
         const exists = await db.collection('salons').where('slug', '==', slug).get();
-        if (!exists.empty) { showToast('Bu isimde salon var', 'error'); return; }
-        const pin = Math.floor(1000 + Math.random() * 9000).toString();
+        if (!exists.empty) { showToast('Bu isimde salon zaten var', 'error'); return; }
+        
+        const pin = customPin || Math.floor(1000 + Math.random() * 9000).toString();
         const salonUrl = 'https://zamanli.com/berber/salon/?slug=' + slug;
-        await db.collection('salons').add({ name, slug, category, ownerName, phone, email, package: 'free', pin, active: true, status: 'approved', qrCodeUrl: generateQRCodeUrl(salonUrl, 256), services: DEFAULT_SERVICES[category] || DEFAULT_SERVICES.berber, staff: [], createdAt: new Date().toISOString(), createdBy: 'admin' });
-        showToast('Oluşturuldu! PIN: ' + pin, 'success'); closeModal();
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+        
+        // Paket bilgileri
+        const packageInfo = {
+            free: { name: 'Ücretsiz', price: 0 },
+            pro: { name: 'Pro', price: 899 },
+            business: { name: 'Business', price: 1599 }
+        };
+        const pkgInfo = packageInfo[selectedPackage] || packageInfo.free;
+        
+        const salonData = {
+            name,
+            slug,
+            category,
+            ownerName,
+            phone,
+            email: email || '',
+            ownerEmail: email || '',
+            city: city || '',
+            district: district || '',
+            address: address || '',
+            package: selectedPackage,
+            packageName: pkgInfo.name,
+            packagePrice: pkgInfo.price,
+            pin,
+            active: true,
+            status: 'approved',
+            rating: 5.0,
+            reviewCount: 0,
+            qrCodeUrl: generateQRCodeUrl(salonUrl, 256),
+            services: DEFAULT_SERVICES[category] || DEFAULT_SERVICES.berber,
+            staff: [],
+            workingHours: workingHours,
+            advancedSettings: {
+                autoApprove: false,
+                minCancelHours: '2',
+                slotInterval: '30',
+                maxAdvanceDays: '30',
+                reminderHours: '1'
+            },
+            createdAt: new Date().toISOString(),
+            createdBy: 'admin'
+        };
+        
+        const docRef = await db.collection('salons').add(salonData);
+        showToast('Salon oluşturuldu! PIN: ' + pin + ' | ID: ' + docRef.id, 'success');
+        closeModal();
+        await loadSalons();
+        renderApp();
+    } catch (e) {
+        console.error('[Admin] Salon oluşturma hatası:', e);
+        showToast('Hata: ' + e.message, 'error');
+    }
 }
 
 async function saveSalonEdit(id) {
@@ -987,7 +1060,62 @@ async function changePin(id) {
 
 // ==================== MODALS ====================
 function showCreateSalonModal() {
-    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Yeni Salon</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Salon Adı *</label><input type="text" id="newName" class="form-input"></div><div class="form-group"><label class="form-label">Kategori</label><select id="newCategory" class="form-select"><option value="berber">💈 Berber</option><option value="kuafor">💇‍♀️ Kuaför</option><option value="beauty">💆 Güzellik</option></select></div><div class="form-group"><label class="form-label">Yetkili</label><input type="text" id="newOwner" class="form-input"></div><div class="form-group"><label class="form-label">Telefon</label><input type="tel" id="newPhone" class="form-input"></div><div class="form-group"><label class="form-label">E-posta</label><input type="email" id="newEmail" class="form-input"></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="createSalon()" class="btn btn-primary">Oluştur</button></div></div></div>';
+    const defaultHours = {
+        mon: { open: '09:00', close: '20:00', active: true },
+        tue: { open: '09:00', close: '20:00', active: true },
+        wed: { open: '09:00', close: '20:00', active: true },
+        thu: { open: '09:00', close: '20:00', active: true },
+        fri: { open: '09:00', close: '20:00', active: true },
+        sat: { open: '09:00', close: '18:00', active: true },
+        sun: { open: '10:00', close: '16:00', active: false }
+    };
+    const dayNames = { mon: 'Pazartesi', tue: 'Salı', wed: 'Çarşamba', thu: 'Perşembe', fri: 'Cuma', sat: 'Cumartesi', sun: 'Pazar' };
+    
+    let whRows = '';
+    Object.entries(defaultHours).forEach(([day, h]) => {
+        whRows += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+            '<label style="width:90px;font-size:13px;">' + dayNames[day] + '</label>' +
+            '<input type="checkbox" id="wh_' + day + '_active" ' + (h.active ? 'checked' : '') + '>' +
+            '<input type="time" id="wh_' + day + '_open" value="' + h.open + '" class="form-input" style="width:100px;padding:4px 6px;font-size:13px;">' +
+            '<span>-</span>' +
+            '<input type="time" id="wh_' + day + '_close" value="' + h.close + '" class="form-input" style="width:100px;padding:4px 6px;font-size:13px;">' +
+            '</div>';
+    });
+    
+    document.getElementById('modal').innerHTML = 
+        '<div class="modal-overlay" onclick="closeModal(event)">' +
+        '<div class="modal" onclick="event.stopPropagation()" style="max-width:600px;max-height:90vh;overflow-y:auto;">' +
+        '<div class="modal-header"><h2>Yeni Salon Oluştur</h2><button class="modal-close" onclick="closeModal()">×</button></div>' +
+        '<div class="modal-body">' +
+        
+        '<h3 style="margin:0 0 12px;font-size:15px;color:#6366f1;">Temel Bilgiler</h3>' +
+        '<div class="form-group"><label class="form-label">Salon Adı *</label><input type="text" id="newName" class="form-input" placeholder="Örn: Elite Barber"></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+        '<div class="form-group"><label class="form-label">Kategori</label><select id="newCategory" class="form-select"><option value="berber">💈 Berber</option><option value="kuafor">💇‍♀️ Kuaför</option><option value="beauty">💆 Güzellik</option></select></div>' +
+        '<div class="form-group"><label class="form-label">Paket</label><select id="newPackage" class="form-select"><option value="free">Ücretsiz (0₺)</option><option value="pro">Pro (899₺/ay)</option><option value="business">Business (1599₺/ay)</option></select></div>' +
+        '</div>' +
+        
+        '<h3 style="margin:16px 0 12px;font-size:15px;color:#6366f1;">Yetkili Bilgileri</h3>' +
+        '<div class="form-group"><label class="form-label">Yetkili Adı</label><input type="text" id="newOwner" class="form-input" placeholder="Ad Soyad"></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+        '<div class="form-group"><label class="form-label">Telefon *</label><input type="tel" id="newPhone" class="form-input" placeholder="05XX XXX XX XX"></div>' +
+        '<div class="form-group"><label class="form-label">E-posta</label><input type="email" id="newEmail" class="form-input" placeholder="ornek@email.com"></div>' +
+        '</div>' +
+        '<div class="form-group"><label class="form-label">PIN (boş bırakılırsa otomatik oluşturulur)</label><input type="text" id="newPin" class="form-input" placeholder="4-6 haneli PIN" maxlength="6"></div>' +
+        
+        '<h3 style="margin:16px 0 12px;font-size:15px;color:#6366f1;">Konum Bilgileri</h3>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+        '<div class="form-group"><label class="form-label">İl</label><input type="text" id="newCity" class="form-input" placeholder="Örn: İstanbul"></div>' +
+        '<div class="form-group"><label class="form-label">İlçe</label><input type="text" id="newDistrict" class="form-input" placeholder="Örn: Kadıköy"></div>' +
+        '</div>' +
+        '<div class="form-group"><label class="form-label">Adres</label><textarea id="newAddress" class="form-input" rows="2" placeholder="Açık adres..."></textarea></div>' +
+        
+        '<h3 style="margin:16px 0 12px;font-size:15px;color:#6366f1;">Çalışma Saatleri</h3>' +
+        '<div style="background:#f8fafc;border-radius:8px;padding:12px;">' + whRows + '</div>' +
+        
+        '</div>' +
+        '<div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="createSalon()" class="btn btn-primary">Salon Oluştur</button></div>' +
+        '</div></div>';
 }
 
 function showEditSalonModal(id) {

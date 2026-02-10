@@ -1159,6 +1159,13 @@ a:hover { color: var(--link-hover); }
 .bg-page { background: var(--bg-page); }
 .bg-surface { background: var(--white); }
 
+/* ===== GLOBAL MOBILE-FIRST ===== */
+/* Yatay scroll onleme */
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
     .hero .container { grid-template-columns: 1fr; text-align: center; }
@@ -1175,7 +1182,7 @@ a:hover { color: var(--link-hover); }
 @media (max-width: 768px) {
     .header .container { height: 60px; }
     .desktop-nav { display: none; }
-    .mobile-menu-btn { display: block; }
+    .mobile-menu-btn { display: block; min-width: 44px; min-height: 44px; }
     .hero { padding: 2rem 0 4rem; }
     .hero h1 { font-size: 2.5rem; }
     .hero-actions { flex-direction: column; }
@@ -1187,10 +1194,94 @@ a:hover { color: var(--link-hover); }
     .salon-cta-content h2 { font-size: 2rem; }
     .footer-content { flex-direction: column; gap: 1.5rem; text-align: center; }
     .footer-links { flex-wrap: wrap; justify-content: center; }
+    .footer-legal { flex-direction: column; gap: 0.75rem; }
     .pwa-banner { flex-direction: column; text-align: center; padding: 1rem; }
     .pwa-banner-content { flex-direction: column; }
     .pwa-banner-actions { width: 100%; }
     .pwa-btn { flex: 1; }
+    
+    /* Touch target minimum 44px - tüm interaktif elemanlar */
+    .btn, button, [role="button"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    .btn-sm {
+        min-height: 44px;
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+    }
+    .nav-link, .mobile-nav a {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    .filter-btn, .filter-chip {
+        min-height: 44px;
+        padding: 0.625rem 1rem;
+    }
+    .slot, .time-slot, .date-item {
+        min-height: 44px;
+        min-width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .mobile-menu-close {
+        width: 44px;
+        height: 44px;
+    }
+    
+    /* Form input'lari mobilde buyuk */
+    input, select, textarea {
+        font-size: 16px !important; /* iOS zoom onleme */
+        min-height: 44px;
+    }
+    
+    /* Takvim hücreleri mobilde daha büyük */
+    .calendar-cell, .week-cell {
+        min-height: 44px;
+        padding: 0.5rem;
+    }
+}
+
+/* ===== TABLET / KUCUK EKRANLAR ===== */
+@media (max-width: 480px) {
+    .container { padding: 0 0.75rem; }
+    .hero h1 { font-size: 2rem; }
+    .hero-desc { font-size: 0.95rem; }
+    .section-title { font-size: 1.5rem; }
+    .section-desc { font-size: 0.9rem; }
+    
+    /* Kartlar tam genişlik */
+    .salon-card, .feature-card, .category-card, .package-card, .pricing-card {
+        width: 100%;
+    }
+    
+    /* Footer linkler dikey */
+    .footer-links { gap: 0.75rem; }
+    .footer-legal a { font-size: 0.8rem; }
+    
+    /* Modal tam ekran */
+    .login-modal, .modal-content {
+        max-width: 100%;
+        margin: 0.5rem;
+        border-radius: var(--radius);
+    }
+}
+
+/* ===== COK KUCUK EKRANLAR (eski telefonlar) ===== */
+@media (max-width: 360px) {
+    .container { padding: 0 0.5rem; }
+    .hero h1 { font-size: 1.75rem; }
+    .hero-desc { font-size: 0.9rem; }
+    .btn { padding: 0.75rem 1rem; font-size: 0.9rem; }
+    
+    /* Paket kartlari küçük ekranlarda */
+    .package-grid { gap: 0.5rem; }
+    .package-card { padding: 0.75rem; }
+    
+    /* Booking form küçük ekranlarda */
+    .booking-form { padding: 0.75rem; }
 }
 
 /* ===== LOADING ===== */

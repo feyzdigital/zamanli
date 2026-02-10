@@ -6,8 +6,8 @@
  * - Package Limiter (paket limitleri)
  * - Auth Helpers (PIN hashleme)
  * - Email Notifications (EmailJS)
- * - WhatsApp Automation (Twilio)
- * - Payment Integration (Stripe)
+ * - WhatsApp URL Helper (Ücretsiz link sistemi)
+ * - Payment Integration (iyzico)
  */
 
 const functions = require('firebase-functions');
@@ -23,9 +23,7 @@ const messaging = admin.messaging();
 const packageLimiter = require('./package-limiter');
 const authHelpers = require('./auth-helpers');
 const emailNotifications = require('./email-notifications');
-const whatsappAutomation = require('./whatsapp-automation');
 const whatsappUrlHelper = require('./whatsapp-url-helper');
-const paymentStripe = require('./payment-stripe');
 const paymentIyzico = require('./payment-iyzico');
 
 // === Package Limiter Functions ===
@@ -42,25 +40,13 @@ exports.changePinAuth = authHelpers.changePinAuth;
 // === Email Notification Functions ===
 exports.sendAppointmentConfirmationEmail = emailNotifications.sendAppointmentConfirmationEmail;
 exports.sendAppointmentCancellationEmail = emailNotifications.sendAppointmentCancellationEmail;
-exports.sendAppointmentReminders = emailNotifications.sendAppointmentReminders;
+exports.sendAppointmentReminderEmails = emailNotifications.sendAppointmentReminders;
 exports.sendNewSalonApprovalEmail = emailNotifications.sendNewSalonApprovalEmail;
 
-// === WhatsApp Automation Functions ===
-exports.sendAppointmentConfirmationWhatsApp = whatsappAutomation.sendAppointmentConfirmationWhatsApp;
-exports.sendAppointmentCancellationWhatsApp = whatsappAutomation.sendAppointmentCancellationWhatsApp;
-exports.sendAppointmentRemindersWhatsApp = whatsappAutomation.sendAppointmentRemindersWhatsApp;
-exports.sendManualWhatsApp = whatsappAutomation.sendManualWhatsApp;
-
-// === WhatsApp URL Helper Functions (Geçici Sistem) ===
+// === WhatsApp URL Helper Functions (Ücretsiz Link Sistemi) ===
 exports.createWhatsAppUrl = whatsappUrlHelper.createWhatsAppUrl;
 exports.getWhatsAppTemplate = whatsappUrlHelper.getWhatsAppTemplate;
 exports.createWhatsAppUrlOnConfirm = whatsappUrlHelper.createWhatsAppUrlOnConfirm;
-
-// === Payment (Stripe) Functions ===
-exports.createCheckoutSession = paymentStripe.createCheckoutSession;
-exports.stripeWebhook = paymentStripe.stripeWebhook;
-exports.checkSubscriptions = paymentStripe.checkSubscriptions;
-exports.getInvoiceHistory = paymentStripe.getInvoiceHistory;
 
 // === Payment (iyzico) Functions ===
 exports.createIyzicoCheckout = paymentIyzico.createIyzicoCheckout;
@@ -180,6 +166,8 @@ exports.onNewAppointment = functions
                     date: appointment.date || '',
                     time: appointment.time || '',
                     click_action: clickUrl,
+                    url: clickUrl, // Service Worker click handler için
+                    link: clickUrl, // Background message handler için
                     playSound: 'true' // Özel ses için flag
                 },
                 webpush: {
@@ -268,8 +256,8 @@ exports.onNewAppointment = functions
             
             console.log('[Push] Sonuç:', successCount, '/', tokens.length, 'başarılı');
             
-            // Bildirim logunu kaydet
-            await db.collection('notification_logs').add({
+            // Bildirim logunu kaydet (fire-and-forget - gecikme yaratmasin)
+            db.collection('notification_logs').add({
                 type: 'new_appointment',
                 appointmentId: appointmentId,
                 salonId: appointment.salonId,
@@ -277,7 +265,7 @@ exports.onNewAppointment = functions
                 successCount: successCount,
                 results: results,
                 createdAt: admin.firestore.FieldValue.serverTimestamp()
-            });
+            }).catch(e => console.error('[Push] Log kaydetme hatası:', e));
             
             return { success: true, sent: successCount, total: tokens.length };
             

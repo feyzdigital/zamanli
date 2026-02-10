@@ -151,7 +151,7 @@
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
     <!-- Header -->
@@ -571,7 +571,7 @@
                         if (pinValid) {
                             localStorage.setItem('salonSession', JSON.stringify({
                                 type: 'owner', slug: slug, salonId: salonId,
-                                phone: phone10, expires: Date.now() + (30 * 24 * 60 * 60 * 1000)
+                                phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
                             }));
                             window.location.href = '/berber/salon/yonetim/?slug=' + slug;
                             return;
@@ -590,7 +590,7 @@
                             // Sahip personel - tam yetki
                             localStorage.setItem('salonSession', JSON.stringify({
                                 type: 'owner', slug: slug, salonId: salonId,
-                                phone: phone10, expires: Date.now() + (30 * 24 * 60 * 60 * 1000)
+                                phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
                             }));
                             window.location.href = '/berber/salon/yonetim/?slug=' + slug;
                         } else {
@@ -598,7 +598,7 @@
                             localStorage.setItem('staffSession', JSON.stringify({
                                 type: 'staff', staffId: matchedStaff.id || matchedStaff.name,
                                 staffName: matchedStaff.name, salonId: salonId, salonSlug: slug,
-                                expires: Date.now() + (30 * 24 * 60 * 60 * 1000)
+                                expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
                             }));
                             window.location.href = '/berber/salon/yonetim/?slug=' + slug + '&staff=' + encodeURIComponent(matchedStaff.id || matchedStaff.name) + '&staffName=' + encodeURIComponent(matchedStaff.name);
                         }

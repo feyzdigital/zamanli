@@ -4985,7 +4985,7 @@
                         staffId: decodeURIComponent(staffParam),
                         staffName: decodeURIComponent(staffNameParam),
                         salonSlug: slug,
-                        expires: Date.now() + (90 * 24 * 60 * 60 * 1000) // 90 gün
+                        expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün (PWA)
                     };
                     localStorage.setItem('staffSession', JSON.stringify(newSession));
                     
@@ -6353,7 +6353,7 @@
                 type: 'owner',
                 slug: salonData.slug,
                 salonId: salonId,
-                expires: Date.now() + (90 * 24 * 60 * 60 * 1000) // 90 gün (PWA için uzun session)
+                expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün (PWA)
             };
             localStorage.setItem('salonSession', JSON.stringify(session));
             
@@ -6381,7 +6381,7 @@
                 staffRole: staffRole, // staff, operator
                 salonId: salonId,
                 salonSlug: salonData.slug,
-                expires: Date.now() + (90 * 24 * 60 * 60 * 1000) // 90 gün (PWA için uzun session)
+                expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün (PWA)
             };
             localStorage.setItem('staffSession', JSON.stringify(staffSession));
             localStorage.removeItem('salonSession'); // Eski owner session'ı temizle
@@ -12096,26 +12096,11 @@ ${salon.name}`;
                 // 1. Ses çal
                 this.playSound();
                 
-                // 2. Tarayıcı bildirimi (izin varsa)
-                if (this.enabled && Notification.permission === 'granted') {
-                    try {
-                        const n = new Notification('🎉 Yeni Randevu!', {
-                            body: apt.customerName + ' - ' + apt.service + '\n' + apt.date + ' ' + apt.time,
-                            icon: '/icons/icon-192x192.png',
-                            badge: '/icons/icon-72x72.png',
-                            tag: 'apt-' + apt.id,
-                            requireInteraction: true,
-                            silent: false
-                        });
-                        
-                        n.onclick = function() {
-                            window.focus();
-                            n.close();
-                        };
-                    } catch (e) {
-                        console.log('[Notify] Bildirim oluşturulamadı:', e);
-                    }
-                }
+                // 2. Tarayıcı bildirimi DEVRE DIŞI - FCM (Cloud Function) zaten gönderiyor
+                // Duplikat bildirim önleme: Sadece ses + popup + liste güncellemesi yapılır
+                // Arka plandayken: Service Worker FCM bildirimini gösterir
+                // Ön plandayken: onMessage handler ses + popup gösterir
+                console.log('[Notify] Sayfa içi bildirim (ses + popup):', apt.id);
                 
                 // 3. Sayfa içi popup
                 this.showPopup(apt);
@@ -12264,16 +12249,16 @@ ${salon.name}`;
                                     localStorage.setItem(seenKey, JSON.stringify(seenFCM));
                                 }
                                 
-                                // Uygulama açıkken gelen bildirimi göster
-                                if (payload.notification) {
-                                    new Notification(payload.notification.title, {
-                                        body: payload.notification.body,
-                                        icon: '/icons/icon-192x192.png',
-                                        badge: '/icons/icon-72x72.png'
-                                    });
+                                // Uygulama açıkken: Tarayıcı bildirimi OLUŞTURMA (FCM zaten hallediyor)
+                                // Sadece ses + popup + liste güncelle
+                                console.log('[Notify] Foreground FCM alındı, ses + popup gösteriliyor');
+                                
+                                // Ses çal
+                                if (typeof NotificationManager !== 'undefined') {
+                                    NotificationManager.playSound();
                                 }
                                 
-                                // Popup da göster
+                                // Popup göster
                                 if (payload.data && payload.data.type === 'new_appointment') {
                                     this.showPopup({
                                         customerName: payload.data.customerName,

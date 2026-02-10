@@ -10,7 +10,7 @@
       gtag('config', 'G-9TBV0530VS');
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Salon - Zamanli</title>
     
     <!-- PWA Install Prompt - En Erken Yakala -->
@@ -2331,6 +2331,12 @@
                 </div>
             </div>
             <div class="footer-bottom">
+                <div class="footer-legal">
+                    <a href="/kvkk/">KVKK</a>
+                    <a href="/gizlilik/">Gizlilik Politikası</a>
+                    <a href="/kullanim-kosullari/">Kullanım Koşulları</a>
+                    <a href="/mesafeli-satis/">Mesafeli Satış Sözleşmesi</a>
+                </div>
                 <p>&copy; 2026 Zamanli. Tüm hakları saklıdır.</p>
                 <p class="footer-credit"><a href="https://feyzdigital.com" target="_blank">Feyz Digital</a> tarafından geliştirildi.</p>
             </div>
@@ -3326,26 +3332,22 @@ Görüşmek üzere!`;
                 });
             }
             
-            // Push notification gönder (berbere)
-            if (typeof ZamanliPush !== 'undefined' && salon.id) {
-                const formattedDateShort = formatDateFromStr(apt.date);
-                ZamanliPush.sendNotificationToSalon(
-                    salon.id,
-                    '🔔 Yeni Randevu Talebi!',
-                    `${apt.customerName} - ${formattedDateShort} ${apt.time} - ${apt.service}`,
-                    {
-                        type: 'new_appointment',
-                        appointmentId: apt.id || '',
-                        customerName: apt.customerName,
-                        date: apt.date,
-                        time: apt.time,
-                        service: apt.service
-                    }
-                ).then(result => {
-                    console.log('[Push] Notification sent to salon:', result);
-                }).catch(e => {
-                    console.error('[Push] Error sending to salon:', e);
-                });
+            // Push notification - Cloud Function (onNewAppointment) otomatik çalışacak
+            // Firestore'a kayıt yapıldığında trigger tetiklenir
+            console.log('[Push] Randevu kaydedildi - Cloud Function bildirim gönderecek');
+            
+            // Müşteri push token kaydı (randevu durumu değişikliği bildirimleri için)
+            if (typeof ZamanliPush !== 'undefined') {
+                try {
+                    const customerPhone = (apt.customerPhone || '').replace(/\D/g, '');
+                    ZamanliPush.registerCustomerForPush(null, customerPhone).then(() => {
+                        console.log('[Push] Müşteri push token kaydedildi');
+                    }).catch(e => {
+                        console.log('[Push] Müşteri token kaydı atlandı:', e.message);
+                    });
+                } catch(e) {
+                    console.log('[Push] Müşteri token kaydı atlandı');
+                }
             }
         }
         

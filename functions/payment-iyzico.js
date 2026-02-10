@@ -122,17 +122,25 @@ exports.createIyzicoCheckout = functions
             const conversationId = `zamanli_${salonId}_${Date.now()}`;
             
             // Buyer (Alıcı) bilgileri
+            // TC Kimlik ve IP adresi salon verisinden veya request context'inden alınır
+            const buyerIdentity = salon.identityNumber || salon.tcKimlik || '00000000000';
+            const buyerIp = context.rawRequest?.ip || context.rawRequest?.headers?.['x-forwarded-for'] || '0.0.0.0';
+            
+            if (buyerIdentity === '00000000000') {
+                console.warn('[iyzico] TC Kimlik numarası eksik - salon ayarlarından girilmeli');
+            }
+            
             const buyer = {
                 id: salonId,
-                name: salon.name || 'Salon',
-                surname: 'Sahibi',
+                name: salon.ownerName || salon.name || 'Salon',
+                surname: salon.ownerSurname || 'Sahibi',
                 gsmNumber: salon.phone || '+905551234567',
                 email: salon.ownerEmail || 'info@zamanli.com',
-                identityNumber: '11111111111', // Test için - production'da gerçek TC no alınmalı
+                identityNumber: buyerIdentity,
                 lastLoginDate: new Date().toISOString().split('T')[0] + ' 00:00:00',
-                registrationDate: salon.createdAt?.toDate().toISOString().split('T')[0] + ' 00:00:00' || '2024-01-01 00:00:00',
+                registrationDate: salon.createdAt?.toDate()?.toISOString()?.split('T')[0] + ' 00:00:00' || '2024-01-01 00:00:00',
                 registrationAddress: salon.address || 'İstanbul, Türkiye',
-                ip: '85.34.78.112', // Request IP - production'da gerçek IP alınmalı
+                ip: buyerIp,
                 city: salon.city || 'İstanbul',
                 country: 'Türkiye',
                 zipCode: salon.zipCode || '34000'

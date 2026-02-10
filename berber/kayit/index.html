@@ -595,8 +595,8 @@
                         <div class="package-icon">⭐</div>
                         <div class="package-name">Pro</div>
                         <div class="package-desc">5 personel • Sınırsız randevu</div>
-                        <div class="package-price">499 ₺ <span>/ ay</span></div>
-                        <div class="package-yearly">Yıllık: 399 ₺/ay (%20 indirim)</div>
+                        <div class="package-price">899 ₺ <span>/ ay</span></div>
+                        <div class="package-yearly">Yıllık: 719 ₺/ay (%20 indirim)</div>
                     </div>
                     <div class="package-card business" data-package="business" onclick="selectPackage('business')">
                         <div class="package-badge" style="background: linear-gradient(135deg, #C5A065, #D4AF37);">En Kapsamlı</div>
@@ -604,8 +604,8 @@
                         <div class="package-icon">👑</div>
                         <div class="package-name">Business</div>
                         <div class="package-desc">Sınırsız personel • Tüm özellikler</div>
-                        <div class="package-price">999 ₺ <span>/ ay</span></div>
-                        <div class="package-yearly">Yıllık: 799 ₺/ay (%20 indirim)</div>
+                        <div class="package-price">1.599 ₺ <span>/ ay</span></div>
+                        <div class="package-yearly">Yıllık: 1.279 ₺/ay (%20 indirim)</div>
                     </div>
                 </div>
                 <a href="/fiyatlandirma/" target="_blank" style="font-size: 0.85rem; color: var(--primary); display: inline-block; margin-top: 0.75rem;">📋 Paket özelliklerini karşılaştır</a>
@@ -724,8 +724,8 @@
         
         const PACKAGES = {
             free: { name: 'Ücretsiz', maxStaff: 1, price: 0, setup: 0 },
-            pro: { name: 'Pro', maxStaff: 5, price: 499, setup: 0 },
-            business: { name: 'Business', maxStaff: 999, price: 999, setup: 0 }
+            pro: { name: 'Pro', maxStaff: 5, price: 899, setup: 0 },
+            business: { name: 'Business', maxStaff: 999, price: 1599, setup: 0 }
         };
         
         // Kategoriye göre hizmetler
@@ -1342,6 +1342,7 @@
                     mobilePhone: d.mobilePhone,
                     landlinePhone: d.landlinePhone,
                     email: d.email,
+                    ownerEmail: d.email, // Firestore rules uyumu icin
                     city: d.city, district: d.district, address: d.address, pin: d.pin,
                     category: selectedCategory, // Seçilen kategori
                     package: d.package,

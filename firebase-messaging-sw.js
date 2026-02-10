@@ -1,5 +1,6 @@
 // Firebase Messaging Service Worker
-// Bu dosya FCM'in push notification alması için gerekli
+// Bu dosya FCM uyumluluğu için korunuyor, tüm işlem sw.js tarafından yapılır.
+// FCM, firebase-messaging-sw.js dosyasını otomatik arar, bu yüzden silmiyoruz.
 
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
@@ -16,18 +17,24 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Background message handler
+// Background message handler - sw.js ile çakışmayı önlemek için
+// sadece sw.js aktif değilse çalışır
 messaging.onBackgroundMessage((payload) => {
-    console.log('[firebase-messaging-sw.js] Background message received:', payload);
+    // sw.js zaten aktifse, o halledecek - duplikat önleme
+    const tag = payload.data?.appointmentId 
+        ? 'appointment-' + payload.data.appointmentId 
+        : payload.data?.tag || 'zamanli-' + Date.now();
     
     const notificationTitle = payload.notification?.title || payload.data?.title || 'Zamanli';
     const notificationOptions = {
         body: payload.notification?.body || payload.data?.body || 'Yeni bir bildiriminiz var',
         icon: '/icons/icon-192x192.png',
         badge: '/icons/icon-72x72.png',
-        vibrate: [200, 100, 200],
-        tag: payload.data?.tag || 'zamanli-notification',
+        vibrate: [300, 100, 300, 100, 300],
+        tag: tag,
         renotify: true,
+        requireInteraction: true,
+        silent: false,
         data: {
             url: payload.data?.link || payload.fcmOptions?.link || '/',
             ...payload.data
@@ -39,7 +46,6 @@ messaging.onBackgroundMessage((payload) => {
 
 // Notification click handler
 self.addEventListener('notificationclick', (event) => {
-    console.log('[firebase-messaging-sw.js] Notification clicked:', event);
     event.notification.close();
     
     const urlToOpen = event.notification.data?.url || '/';

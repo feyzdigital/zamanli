@@ -199,38 +199,14 @@ const ZamanliPush = {
     },
     
     // ==================== SALONA BİLDİRİM GÖNDERME ====================
+    // NOT: Asıl FCM gönderimi Cloud Function (onNewAppointment) tarafından yapılır.
+    // Bu fonksiyon sadece loglama amaçlıdır - duplikat bildirim göndermez.
     async sendNotificationToSalon(salonId, title, body, data = {}) {
         try {
-            if (typeof firebase !== 'undefined' && firebase.firestore) {
-                const db = firebase.firestore();
-                
-                // Salon'un push token'larını bul
-                const tokensSnapshot = await db.collection('push_tokens')
-                    .where('userType', '==', 'salon')
-                    .where('salonId', '==', salonId)
-                    .get();
-                
-                if (tokensSnapshot.empty) {
-                    console.log('[Push] No tokens found for salon:', salonId);
-                    return { success: false, error: 'no_tokens' };
-                }
-                
-                // Bildirimi notifications koleksiyonuna kaydet
-                // Cloud Function bu koleksiyonu dinleyip FCM gönderecek
-                const notificationDoc = await db.collection('notifications').add({
-                    targetType: 'salon',
-                    targetId: salonId,
-                    title: title,
-                    body: body,
-                    data: data,
-                    tokens: tokensSnapshot.docs.map(doc => doc.data().token),
-                    status: 'pending',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                console.log('[Push] Notification queued:', notificationDoc.id);
-                return { success: true, notificationId: notificationDoc.id };
-            }
+            console.log('[Push] Salon bildirimi tetiklendi (Cloud Function halledecek):', salonId, title);
+            // Cloud Function (onNewAppointment) Firestore trigger ile otomatik çalışacak
+            // Burada ekstra bir Firestore yazımı yapılmıyor - duplikat önleme
+            return { success: true, method: 'cloud_function_trigger' };
         } catch (error) {
             console.error('[Push] Send to salon error:', error);
             return { success: false, error: error.message };

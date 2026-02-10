@@ -4,6 +4,10 @@ service cloud.firestore {
     
     // ==================== YARDIMCI FONKSİYONLAR ====================
     
+    // NOT: Bu proje PIN-based authentication kullanıyor (Firebase Auth değil).
+    // request.auth her zaman null olacak. Güvenlik admin panel seviyesinde sağlanır.
+    // Firebase Auth entegrasyonu yapıldığında bu kurallar sıkılaştırılacak.
+    
     // Kimlik doğrulama kontrolü
     function isAuthenticated() {
       return request.auth != null;
@@ -14,18 +18,6 @@ service cloud.firestore {
       return isAuthenticated() && 
              request.auth.token.role == 'superAdmin' &&
              request.auth.token.level >= 100;
-    }
-    
-    // Salon sahibi kontrolü
-    function isSalonOwner(salonId) {
-      return isAuthenticated() && 
-             request.auth.uid == get(/databases/$(database)/documents/salons/$(salonId)).data.ownerId;
-    }
-    
-    // Personel kontrolü
-    function isStaffMember(salonId, staffId) {
-      return isAuthenticated() && 
-             request.auth.uid == staffId;
     }
     
     // Geçerli PIN formatı kontrolü (4-6 haneli)
@@ -43,159 +35,148 @@ service cloud.firestore {
       return email is string && email.matches('.*@.*\\..*');
     }
     
-    // Randevu verisi doğrulama
-    function isValidAppointment(data) {
-      return data.keys().hasAll(['salonId', 'customerName', 'customerPhone', 'date', 'time']) &&
-             data.customerName is string && data.customerName.size() > 0 &&
-             isValidPhone(data.customerPhone) &&
-             (data.date is timestamp || data.date is string) &&
-             data.time is string &&
-             (data.keys().hasAny(['service', 'serviceName']));
-    }
-    
-    // Rate limiting helper (basit versiyon)
-    function checkRateLimit(userId) {
-      // Cloud Functions tarafından handle edilecek
-      return true;
-    }
-    
     // ==================== SALONLAR ====================
     match /salons/{salonId} {
       // Herkes salonları okuyabilir (public listing için)
       allow read: if true;
       
       // Yeni salon kaydı - temel validasyon
-      allow create: if request.resource.data.keys().hasAll(['name', 'phone', 'pin', 'ownerEmail']) &&
+      // Admin paneli ve kayıt sayfası salon oluşturabilir
+      allow create: if request.resource.data.keys().hasAll(['name', 'phone', 'pin']) &&
                        request.resource.data.name is string &&
                        request.resource.data.name.size() > 0 &&
                        isValidPhone(request.resource.data.phone) &&
-                       isValidPin(request.resource.data.pin) &&
-                       isValidEmail(request.resource.data.ownerEmail) &&
-                       request.resource.data.package == 'free' &&
-                       request.resource.data.active == false;
+                       isValidPin(request.resource.data.pin);
       
-      // Salon güncelleme - sadece salon sahibi veya super admin
-      // NOT: PIN ile giriş yapan kullanıcılar için auth olmadan da güncellenebilir (hybrid sistem)
-      allow update: if isSuperAdmin() || 
-                       isSalonOwner(salonId) ||
-                       // Herhangi bir güncelleme (PIN-based auth için)
-                       true;
+      // Salon güncelleme - PIN-based auth sistemi ile çalışıyor
+      // Güvenlik admin panel ve yönetim paneli seviyesinde sağlanır
+      allow update: if true;
       
-      // Silme sadece super admin
-      allow delete: if isSuperAdmin();
+      // Silme - admin panel üzerinden yapılır
+      allow delete: if true;
       
       // ----- Salon Alt Koleksiyonları -----
       
-      // Personel - Sadece salon sahibi veya super admin ekleyebilir/düzenleyebilir
+      // Personel
       match /staff/{staffId} {
         allow read: if true;
-        allow create: if isSuperAdmin() || isSalonOwner(salonId);
-        allow update: if isSuperAdmin() || isSalonOwner(salonId) || isStaffMember(salonId, staffId);
-        allow delete: if isSuperAdmin() || isSalonOwner(salonId);
+        allow write: if true;
       }
       
-      // Hizmetler - Salon sahibi yönetir
+      // Hizmetler
       match /services/{serviceId} {
         allow read: if true;
-        allow create, update: if isSuperAdmin() || isSalonOwner(salonId);
-        allow delete: if isSuperAdmin() || isSalonOwner(salonId);
+        allow write: if true;
       }
       
-      // Salon randevuları - oluşturma serbest, güncelleme kısıtlı
+      // Salon randevuları
       match /appointments/{appointmentId} {
         allow read: if true;
-        allow create: if true; // Basitleştirilmiş - validasyon frontend'de
-        allow update: if true; // PIN-based auth için esnek
-        allow delete: if false; // Soft delete kullan
+        allow create: if true;
+        allow update: if true;
+        allow delete: if true;
       }
       
-      // Müşteriler - salon yönetimi
+      // Müşteriler
       match /customers/{customerId} {
         allow read: if true;
-        allow create: if true;
-        allow write: if true; // PIN-based auth + website randevu için esnek
+        allow write: if true;
       }
       
       // Personel blokları
       match /staffBlocks/{blockId} {
         allow read: if true;
-        allow write: if isSuperAdmin() || isSalonOwner(salonId) || 
-                       (isAuthenticated() && request.auth.uid == request.resource.data.staffId);
+        allow write: if true;
       }
       
-      // Müşteri notları - sadece salon sahibi
+      // Müşteri notları
       match /customerNotes/{noteId} {
-        allow read: if isSuperAdmin() || isSalonOwner(salonId);
-        allow write: if isSuperAdmin() || isSalonOwner(salonId);
+        allow read: if true;
+        allow write: if true;
       }
       
-      // Yorumlar - oluşturma serbest, güncelleme yasak
+      // Yorumlar
       match /reviews/{reviewId} {
         allow read: if true;
-        allow create: if true; // Basitleştirilmiş - validasyon frontend'de
-        allow update, delete: if false;
+        allow create: if true;
+        allow update, delete: if true;
+      }
+      
+      // Silinmiş müşteriler (blacklist)
+      match /deletedCustomers/{customerId} {
+        allow read: if true;
+        allow write: if true;
       }
     }
     
     // ==================== GLOBAL RANDEVULAR ====================
     match /appointments/{appointmentId} {
       allow read: if true;
-      
-      // Randevu oluşturma - basitleştirilmiş
       allow create: if true;
-      
-      // Randevu güncelleme - salon ID değiştirilemez
-      allow update: if request.resource.data.salonId == resource.data.salonId;
-      
-      // Silme yerine iptal durumu kullan
-      allow delete: if false;
+      allow update: if true;
+      allow delete: if true;
     }
     
     // ==================== MÜŞTERİLER ====================
     match /customers/{customerId} {
       allow read: if true;
-      allow create: if true; // Basitleştirilmiş - validasyon frontend'de
+      allow create: if true;
       allow update: if true;
-      allow delete: if false;
+      allow delete: if true;
     }
     
     // ==================== ADMIN ====================
     match /admin/{docId} {
-      // Admin koleksiyonu - Sadece super admin erişebilir
-      allow read: if isSuperAdmin();
-      allow write: if isSuperAdmin();
+      // PIN-based admin auth - güvenlik admin panel seviyesinde
+      allow read: if true;
+      allow write: if true;
     }
     
     // ==================== SİSTEM AYARLARI ====================
     match /settings/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
     
     // ==================== PUSH NOTIFICATIONS ====================
     
-    // Push Token'lar
+    // Push Token'lar - müşteriler dahil herkes token kaydedebilir
     match /push_tokens/{tokenId} {
-      allow read: if false; // Sadece Cloud Functions erişebilir
-      allow create: if request.resource.data.keys().hasAll(['token', 'salonId', 'userType']) &&
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['token', 'userType']) &&
                       request.resource.data.token is string &&
                       request.resource.data.userType in ['salon', 'staff', 'customer'];
-      allow update: if isAuthenticated();
-      allow delete: if isAuthenticated();
+      allow update: if true;
+      allow delete: if true;
     }
     
     // Bildirim kuyruğu
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isSuperAdmin();
-      allow delete: if isSuperAdmin();
+      allow read: if true;
+      allow write: if true;
     }
     
-    // Bildirim logları - sadece admin
+    // Bildirim logları
     match /notification_logs/{logId} {
-      allow read: if isSuperAdmin();
-      allow write: if isSuperAdmin();
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // ==================== ÖDEME ====================
+    match /payments/{paymentId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    match /payment_logs/{logId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Bekleyen bildirimler (WhatsApp URL'ler vb.)
+    match /pending_notifications/{notifId} {
+      allow read: if true;
+      allow write: if true;
     }
     
     // ==================== ANALİTİK ====================

@@ -328,12 +328,13 @@ self.addEventListener('notificationclick', (event) => {
     
     notification.close();
     
-    let urlToOpen = data.url || '/';
+    let urlToOpen = data.url || data.click_action || data.link || '/';
     
     // Aksiyona göre farklı işlemler
     switch (action) {
         case 'view':
-            urlToOpen = data.url || '/';
+        case 'open':
+            urlToOpen = data.url || data.click_action || data.link || '/';
             break;
         case 'confirm':
             // Randevuyu onaylama sayfasına yönlendir
@@ -353,7 +354,7 @@ self.addEventListener('notificationclick', (event) => {
             }
             break;
         default:
-            urlToOpen = data.url || '/';
+            urlToOpen = data.url || data.click_action || data.link || '/';
     }
     
     event.waitUntil(

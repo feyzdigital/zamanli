@@ -1296,6 +1296,12 @@
                 </div>
             </div>
             <div class="footer-bottom">
+                <div class="footer-legal">
+                    <a href="/kvkk/">KVKK</a>
+                    <a href="/gizlilik/">Gizlilik Politikası</a>
+                    <a href="/kullanim-kosullari/">Kullanım Koşulları</a>
+                    <a href="/mesafeli-satis/">Mesafeli Satış Sözleşmesi</a>
+                </div>
                 <p>&copy; 2026 Zamanli. Tüm hakları saklıdır.</p>
                 <p class="footer-credit"><a href="https://feyzdigital.com" target="_blank">Feyz Digital</a> tarafından geliştirildi.</p>
             </div>
@@ -2094,7 +2100,7 @@
                         if (pinValid) {
                             localStorage.setItem('salonSession', JSON.stringify({
                                 type: 'owner', slug: slug, salonId: salonId,
-                                phone: phone10, expires: Date.now() + (30 * 24 * 60 * 60 * 1000)
+                                phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
                             }));
                             window.location.href = '/berber/salon/yonetim/?slug=' + slug;
                             return;
@@ -2112,14 +2118,14 @@
                         if (matchedStaff.isOwner) {
                             localStorage.setItem('salonSession', JSON.stringify({
                                 type: 'owner', slug: slug, salonId: salonId,
-                                phone: phone10, expires: Date.now() + (30 * 24 * 60 * 60 * 1000)
+                                phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
                             }));
                             window.location.href = '/berber/salon/yonetim/?slug=' + slug;
                         } else {
                             localStorage.setItem('staffSession', JSON.stringify({
                                 type: 'staff', staffId: matchedStaff.id || matchedStaff.name,
                                 staffName: matchedStaff.name, salonId: salonId, salonSlug: slug,
-                                expires: Date.now() + (30 * 24 * 60 * 60 * 1000)
+                                expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
                             }));
                             window.location.href = '/berber/salon/yonetim/?slug=' + slug + '&staff=' + encodeURIComponent(matchedStaff.id || matchedStaff.name) + '&staffName=' + encodeURIComponent(matchedStaff.name);
                         }
