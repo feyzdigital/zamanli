@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zamanli - Cache Temizleme</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #10B981; margin-top: 0; }
+        .btn {
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .btn:hover { background: #059669; }
+        .btn-danger { background: #EF4444; }
+        .btn-danger:hover { background: #DC2626; }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            background: #F0FDF4;
+            border-left: 4px solid #10B981;
+        }
+        .error {
+            background: #FEF2F2;
+            border-left-color: #EF4444;
+            color: #991B1B;
+        }
+        code {
+            background: #F3F4F6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .step {
+            background: #F9FAFB;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 3px solid #10B981;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔄 Zamanli Cache Temizleme</h1>
+        
+        <div id="status" class="status">
+            <strong>Durum:</strong> Hazır
+        </div>
+
+        <h2>Otomatik Temizleme</h2>
+        <p>Aşağıdaki butonlar tüm cache'leri temizleyecek:</p>
+        
+        <button class="btn" onclick="unregisterServiceWorker()">1. Service Worker'ı Kaldır</button>
+        <button class="btn" onclick="clearAllCaches()">2. Tüm Cache'leri Temizle</button>
+        <button class="btn" onclick="clearLocalStorage()">3. LocalStorage Temizle</button>
+        <button class="btn btn-danger" onclick="doFullReset()">🔥 HEPSİNİ TEMİZLE</button>
+
+        <h2>Manuel Temizleme</h2>
+        <div class="step">
+            <strong>Adım 1:</strong> Chrome DevTools'u açın (<code>F12</code>)
+        </div>
+        <div class="step">
+            <strong>Adım 2:</strong> Application sekmesine gidin
+        </div>
+        <div class="step">
+            <strong>Adım 3:</strong> Sol menüden "Service Workers" seçin
+        </div>
+        <div class="step">
+            <strong>Adım 4:</strong> "Unregister" butonuna tıklayın
+        </div>
+        <div class="step">
+            <strong>Adım 5:</strong> "Storage" → "Clear site data" tıklayın
+        </div>
+        <div class="step">
+            <strong>Adım 6:</strong> Sayfayı yenileyin (<code>Ctrl + Shift + R</code>)
+        </div>
+
+        <h2>Test Linkleri</h2>
+        <p>
+            <a href="https://zamanli.com/" target="_blank">Ana Sayfa</a> | 
+            <a href="https://zamanli.com/kvkk/" target="_blank">KVKK</a> | 
+            <a href="https://zamanli.com/gizlilik/" target="_blank">Gizlilik</a> | 
+            <a href="https://zamanli.com/kullanim-kosullari/" target="_blank">Kullanım Koşulları</a> | 
+            <a href="https://zamanli.com/mesafeli-satis/" target="_blank">Mesafeli Satış</a>
+        </p>
+    </div>
+
+    <script>
+        function updateStatus(message, isError = false) {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = '<strong>Durum:</strong> ' + message;
+            statusEl.className = 'status' + (isError ? ' error' : '');
+        }
+
+        async function unregisterServiceWorker() {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    await registration.unregister();
+                    console.log('Service Worker unregistered:', registration);
+                }
+                updateStatus('✅ Service Worker kaldırıldı! Sayfayı yenileyin.');
+            } catch (error) {
+                updateStatus('❌ Hata: ' + error.message, true);
+            }
+        }
+
+        async function clearAllCaches() {
+            try {
+                const cacheNames = await caches.keys();
+                for (let name of cacheNames) {
+                    await caches.delete(name);
+                    console.log('Cache deleted:', name);
+                }
+                updateStatus('✅ Tüm cache\'ler temizlendi! (' + cacheNames.length + ' adet)');
+            } catch (error) {
+                updateStatus('❌ Hata: ' + error.message, true);
+            }
+        }
+
+        function clearLocalStorage() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                updateStatus('✅ LocalStorage ve SessionStorage temizlendi!');
+            } catch (error) {
+                updateStatus('❌ Hata: ' + error.message, true);
+            }
+        }
+
+        async function doFullReset() {
+            if (!confirm('TÜM VERİLER SİLİNECEK! Devam etmek istediğinizden emin misiniz?')) {
+                return;
+            }
+
+            updateStatus('🔄 Temizleniyor...');
+
+            try {
+                // 1. Service Worker
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    await registration.unregister();
+                }
+
+                // 2. Caches
+                const cacheNames = await caches.keys();
+                for (let name of cacheNames) {
+                    await caches.delete(name);
+                }
+
+                // 3. Storage
+                localStorage.clear();
+                sessionStorage.clear();
+
+                // 4. IndexedDB
+                const dbs = await indexedDB.databases();
+                for (let db of dbs) {
+                    indexedDB.deleteDatabase(db.name);
+                }
+
+                updateStatus('✅ TÜM VERİLER TEMİZLENDİ! 5 saniye içinde sayfa yenilenecek...');
+
+                setTimeout(() => {
+                    window.location.href = 'https://zamanli.com/?nocache=' + Date.now();
+                }, 5000);
+
+            } catch (error) {
+                updateStatus('❌ Hata: ' + error.message, true);
+            }
+        }
+
+        // Sayfa yüklendiğinde mevcut durumu göster
+        window.addEventListener('load', async () => {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            const cacheNames = await caches.keys();
+            
+            console.log('Service Workers:', registrations.length);
+            console.log('Caches:', cacheNames);
+            
+            updateStatus(`Mevcut: ${registrations.length} Service Worker, ${cacheNames.length} Cache`);
+        });
+    </script>
+</body>
+</html>

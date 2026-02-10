@@ -21,11 +21,20 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "!/@(kvkk|gizlilik|kullanim-kosullari|mesafeli-satis){,/**}",
         "destination": "/index.html"
       }
     ],
     "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
       {
         "source": "/sw.js",
         "headers": [

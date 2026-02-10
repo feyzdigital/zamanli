@@ -24,7 +24,9 @@ const packageLimiter = require('./package-limiter');
 const authHelpers = require('./auth-helpers');
 const emailNotifications = require('./email-notifications');
 const whatsappAutomation = require('./whatsapp-automation');
+const whatsappUrlHelper = require('./whatsapp-url-helper');
 const paymentStripe = require('./payment-stripe');
+const paymentIyzico = require('./payment-iyzico');
 
 // === Package Limiter Functions ===
 exports.checkAppointmentLimit = packageLimiter.checkAppointmentLimit;
@@ -49,11 +51,22 @@ exports.sendAppointmentCancellationWhatsApp = whatsappAutomation.sendAppointment
 exports.sendAppointmentRemindersWhatsApp = whatsappAutomation.sendAppointmentRemindersWhatsApp;
 exports.sendManualWhatsApp = whatsappAutomation.sendManualWhatsApp;
 
+// === WhatsApp URL Helper Functions (Geçici Sistem) ===
+exports.createWhatsAppUrl = whatsappUrlHelper.createWhatsAppUrl;
+exports.getWhatsAppTemplate = whatsappUrlHelper.getWhatsAppTemplate;
+exports.createWhatsAppUrlOnConfirm = whatsappUrlHelper.createWhatsAppUrlOnConfirm;
+
 // === Payment (Stripe) Functions ===
 exports.createCheckoutSession = paymentStripe.createCheckoutSession;
 exports.stripeWebhook = paymentStripe.stripeWebhook;
 exports.checkSubscriptions = paymentStripe.checkSubscriptions;
 exports.getInvoiceHistory = paymentStripe.getInvoiceHistory;
+
+// === Payment (iyzico) Functions ===
+exports.createIyzicoCheckout = paymentIyzico.createIyzicoCheckout;
+exports.iyzicoCallback = paymentIyzico.iyzicoCallback;
+exports.getIyzicoPayments = paymentIyzico.getIyzicoPayments;
+exports.checkIyzicoSubscriptions = paymentIyzico.checkIyzicoSubscriptions;
 
 /**
  * Yeni randevu oluşturulduğunda SADECE ilgili personele bildirim gönder
