@@ -8,7 +8,9 @@
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "test": "mocha test/**/*.test.js --timeout 5000",
+    "test:watch": "mocha test/**/*.test.js --watch"
   },
   "engines": {
     "node": "20"
@@ -16,11 +18,17 @@
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^11.11.0",
-    "firebase-functions": "^4.5.0"
+    "firebase-functions": "^4.5.0",
+    "bcryptjs": "^2.4.3",
+    "@emailjs/nodejs": "^4.0.3",
+    "twilio": "^5.0.0",
+    "stripe": "^14.17.0"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
-    "firebase-functions-test": "^3.1.0"
+    "firebase-functions-test": "^3.1.0",
+    "mocha": "^10.3.0",
+    "chai": "^5.0.3"
   },
   "private": true
 }

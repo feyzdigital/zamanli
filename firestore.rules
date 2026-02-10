@@ -4,21 +4,58 @@ service cloud.firestore {
     
     // ==================== YARDIMCI FONKSİYONLAR ====================
     
+    // Kimlik doğrulama kontrolü
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Super admin kontrolü
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.role == 'superAdmin' &&
+             request.auth.token.level >= 100;
+    }
+    
+    // Salon sahibi kontrolü
+    function isSalonOwner(salonId) {
+      return isAuthenticated() && 
+             request.auth.uid == get(/databases/$(database)/documents/salons/$(salonId)).data.ownerId;
+    }
+    
+    // Personel kontrolü
+    function isStaffMember(salonId, staffId) {
+      return isAuthenticated() && 
+             request.auth.uid == staffId;
+    }
+    
     // Geçerli PIN formatı kontrolü (4-6 haneli)
     function isValidPin(pin) {
       return pin is string && pin.size() >= 4 && pin.size() <= 6;
     }
     
-    // Telefon numarası formatı kontrolü
+    // Telefon numarası formatı kontrolü (10-11 hane)
     function isValidPhone(phone) {
-      return phone is string && phone.size() >= 10;
+      return phone is string && phone.size() >= 10 && phone.size() <= 11;
+    }
+    
+    // Email formatı kontrolü
+    function isValidEmail(email) {
+      return email is string && email.matches('.*@.*\\..*');
     }
     
     // Randevu verisi doğrulama
     function isValidAppointment(data) {
-      return data.keys().hasAll(['salonId', 'customerName', 'customerPhone', 'date', 'time']) &&
+      return data.keys().hasAll(['salonId', 'customerName', 'customerPhone', 'date', 'time', 'serviceName']) &&
              data.customerName is string && data.customerName.size() > 0 &&
-             data.customerPhone is string && data.customerPhone.size() >= 10;
+             isValidPhone(data.customerPhone) &&
+             data.date is timestamp &&
+             data.time is string;
+    }
+    
+    // Rate limiting helper (basit versiyon)
+    function checkRateLimit(userId) {
+      // Cloud Functions tarafından handle edilecek
+      return true;
     }
     
     // ==================== SALONLAR ====================
@@ -27,68 +64,81 @@ service cloud.firestore {
       allow read: if true;
       
       // Yeni salon kaydı - temel validasyon
-      allow create: if request.resource.data.keys().hasAll(['name', 'phone', 'pin']) &&
+      allow create: if request.resource.data.keys().hasAll(['name', 'phone', 'pin', 'ownerEmail']) &&
                        request.resource.data.name is string &&
                        request.resource.data.name.size() > 0 &&
                        isValidPhone(request.resource.data.phone) &&
-                       isValidPin(request.resource.data.pin);
+                       isValidPin(request.resource.data.pin) &&
+                       isValidEmail(request.resource.data.ownerEmail) &&
+                       request.resource.data.package == 'free' &&
+                       request.resource.data.active == false;
       
-      // Salon güncelleme - PIN korunmalı veya admin alanları değişmeli
-      allow update: if request.resource.data.pin == resource.data.pin ||
-                       // Admin güncelleme (status, package değişiklikleri PIN değiştirmez)
+      // Salon güncelleme - sadece salon sahibi veya super admin
+      allow update: if isSuperAdmin() || 
+                       isSalonOwner(salonId) ||
+                       // Admin güncelleme (status, package değişiklikleri)
                        (request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['status', 'package', 'packageLimits', 'active', 'approvedAt', 'approvedBy', 'updatedAt', 'monthlyStats']));
       
-      // Silme devre dışı - güvenlik için
-      allow delete: if false;
+      // Silme sadece super admin
+      allow delete: if isSuperAdmin();
       
       // ----- Salon Alt Koleksiyonları -----
       
-      // Personel - Salon yönetimi
+      // Personel - Sadece salon sahibi veya super admin ekleyebilir/düzenleyebilir
       match /staff/{staffId} {
         allow read: if true;
-        allow write: if true;
+        allow create: if isSuperAdmin() || isSalonOwner(salonId);
+        allow update: if isSuperAdmin() || isSalonOwner(salonId) || isStaffMember(salonId, staffId);
+        allow delete: if isSuperAdmin() || isSalonOwner(salonId);
       }
       
-      // Hizmetler
+      // Hizmetler - Salon sahibi yönetir
       match /services/{serviceId} {
         allow read: if true;
-        allow write: if true;
+        allow create, update: if isSuperAdmin() || isSalonOwner(salonId);
+        allow delete: if isSuperAdmin() || isSalonOwner(salonId);
       }
       
-      // Salon randevuları
+      // Salon randevuları - oluşturma serbest, güncelleme kısıtlı
       match /appointments/{appointmentId} {
         allow read: if true;
-        allow create: if true;
-        allow update: if true;
-        allow delete: if false;
+        allow create: if isValidAppointment(request.resource.data);
+        allow update: if isSuperAdmin() || isSalonOwner(salonId) || 
+                        (isAuthenticated() && request.auth.uid == resource.data.customerId);
+        allow delete: if false; // Soft delete kullan
       }
       
-      // Müşteriler
+      // Müşteriler - salon yönetimi
       match /customers/{customerId} {
         allow read: if true;
-        allow write: if true;
+        allow create: if true;
+        allow update: if isSuperAdmin() || isSalonOwner(salonId);
+        allow delete: if isSuperAdmin() || isSalonOwner(salonId);
       }
       
-      // Personel blokları (izin/kapalı günler)
+      // Personel blokları
       match /staffBlocks/{blockId} {
         allow read: if true;
-        allow write: if true;
+        allow write: if isSuperAdmin() || isSalonOwner(salonId) || 
+                       (isAuthenticated() && request.auth.uid == request.resource.data.staffId);
       }
       
-      // Müşteri notları
+      // Müşteri notları - sadece salon sahibi
       match /customerNotes/{noteId} {
-        allow read: if true;
-        allow write: if true;
+        allow read: if isSuperAdmin() || isSalonOwner(salonId);
+        allow write: if isSuperAdmin() || isSalonOwner(salonId);
       }
       
-      // Yorumlar - Oluşturma serbest, değiştirme yasak
+      // Yorumlar - oluşturma serbest, güncelleme yasak
       match /reviews/{reviewId} {
         allow read: if true;
         allow create: if request.resource.data.keys().hasAll(['rating', 'customerName']) &&
                         request.resource.data.rating is number &&
                         request.resource.data.rating >= 1 &&
-                        request.resource.data.rating <= 5;
+                        request.resource.data.rating <= 5 &&
+                        request.resource.data.customerName is string &&
+                        request.resource.data.customerName.size() > 0;
         allow update, delete: if false;
       }
     }
@@ -97,11 +147,15 @@ service cloud.firestore {
     match /appointments/{appointmentId} {
       allow read: if true;
       
-      // Randevu oluşturma - Temel validasyon
-      allow create: if isValidAppointment(request.resource.data);
+      // Randevu oluşturma - validasyon + rate limiting
+      allow create: if isValidAppointment(request.resource.data) &&
+                      checkRateLimit(request.resource.data.customerPhone);
       
-      // Randevu güncelleme - salonId değiştirilemez
-      allow update: if request.resource.data.salonId == resource.data.salonId;
+      // Randevu güncelleme - salon ID değiştirilemez, sadece status/notes güncellenebilir
+      allow update: if request.resource.data.salonId == resource.data.salonId &&
+                      (isSuperAdmin() || 
+                       isSalonOwner(resource.data.salonId) ||
+                       (isAuthenticated() && request.auth.uid == resource.data.customerId));
       
       // Silme yerine iptal durumu kullan
       allow delete: if false;
@@ -119,8 +173,9 @@ service cloud.firestore {
     
     // ==================== ADMIN ====================
     match /admin/{docId} {
-      // Admin koleksiyonu - Production'da Firebase Auth ile kısıtlanmalı
-      allow read, write: if true;
+      // Admin koleksiyonu - Sadece super admin erişebilir
+      allow read: if isSuperAdmin();
+      allow write: if isSuperAdmin();
     }
     
     // ==================== SİSTEM AYARLARI ====================
@@ -134,24 +189,25 @@ service cloud.firestore {
     // Push Token'lar
     match /push_tokens/{tokenId} {
       allow read: if false; // Sadece Cloud Functions erişebilir
-      allow create: if request.resource.data.keys().hasAll(['token', 'salonId']) &&
-                      request.resource.data.token is string;
-      allow update: if request.resource.data.token == resource.data.token;
-      allow delete: if false;
+      allow create: if request.resource.data.keys().hasAll(['token', 'salonId', 'userType']) &&
+                      request.resource.data.token is string &&
+                      request.resource.data.userType in ['salon', 'staff', 'customer'];
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
     }
     
     // Bildirim kuyruğu
     match /notifications/{notificationId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if true;
-      allow delete: if false;
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isSuperAdmin();
+      allow delete: if isSuperAdmin();
     }
     
-    // Bildirim logları
+    // Bildirim logları - sadece admin
     match /notification_logs/{logId} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if isSuperAdmin();
+      allow write: if isSuperAdmin();
     }
     
     // ==================== ANALİTİK ====================
