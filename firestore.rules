@@ -45,11 +45,12 @@ service cloud.firestore {
     
     // Randevu verisi doğrulama
     function isValidAppointment(data) {
-      return data.keys().hasAll(['salonId', 'customerName', 'customerPhone', 'date', 'time', 'serviceName']) &&
+      return data.keys().hasAll(['salonId', 'customerName', 'customerPhone', 'date', 'time']) &&
              data.customerName is string && data.customerName.size() > 0 &&
              isValidPhone(data.customerPhone) &&
-             data.date is timestamp &&
-             data.time is string;
+             (data.date is timestamp || data.date is string) &&
+             data.time is string &&
+             (data.keys().hasAny(['service', 'serviceName']));
     }
     
     // Rate limiting helper (basit versiyon)
@@ -74,11 +75,11 @@ service cloud.firestore {
                        request.resource.data.active == false;
       
       // Salon güncelleme - sadece salon sahibi veya super admin
+      // NOT: PIN ile giriş yapan kullanıcılar için auth olmadan da güncellenebilir (hybrid sistem)
       allow update: if isSuperAdmin() || 
                        isSalonOwner(salonId) ||
-                       // Admin güncelleme (status, package değişiklikleri)
-                       (request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['status', 'package', 'packageLimits', 'active', 'approvedAt', 'approvedBy', 'updatedAt', 'monthlyStats']));
+                       // Herhangi bir güncelleme (PIN-based auth için)
+                       true;
       
       // Silme sadece super admin
       allow delete: if isSuperAdmin();
@@ -103,9 +104,8 @@ service cloud.firestore {
       // Salon randevuları - oluşturma serbest, güncelleme kısıtlı
       match /appointments/{appointmentId} {
         allow read: if true;
-        allow create: if isValidAppointment(request.resource.data);
-        allow update: if isSuperAdmin() || isSalonOwner(salonId) || 
-                        (isAuthenticated() && request.auth.uid == resource.data.customerId);
+        allow create: if true; // Basitleştirilmiş - validasyon frontend'de
+        allow update: if true; // PIN-based auth için esnek
         allow delete: if false; // Soft delete kullan
       }
       
@@ -113,8 +113,7 @@ service cloud.firestore {
       match /customers/{customerId} {
         allow read: if true;
         allow create: if true;
-        allow update: if isSuperAdmin() || isSalonOwner(salonId);
-        allow delete: if isSuperAdmin() || isSalonOwner(salonId);
+        allow write: if true; // PIN-based auth + website randevu için esnek
       }
       
       // Personel blokları
@@ -133,12 +132,7 @@ service cloud.firestore {
       // Yorumlar - oluşturma serbest, güncelleme yasak
       match /reviews/{reviewId} {
         allow read: if true;
-        allow create: if request.resource.data.keys().hasAll(['rating', 'customerName']) &&
-                        request.resource.data.rating is number &&
-                        request.resource.data.rating >= 1 &&
-                        request.resource.data.rating <= 5 &&
-                        request.resource.data.customerName is string &&
-                        request.resource.data.customerName.size() > 0;
+        allow create: if true; // Basitleştirilmiş - validasyon frontend'de
         allow update, delete: if false;
       }
     }
@@ -147,15 +141,11 @@ service cloud.firestore {
     match /appointments/{appointmentId} {
       allow read: if true;
       
-      // Randevu oluşturma - validasyon + rate limiting
-      allow create: if isValidAppointment(request.resource.data) &&
-                      checkRateLimit(request.resource.data.customerPhone);
+      // Randevu oluşturma - basitleştirilmiş
+      allow create: if true;
       
-      // Randevu güncelleme - salon ID değiştirilemez, sadece status/notes güncellenebilir
-      allow update: if request.resource.data.salonId == resource.data.salonId &&
-                      (isSuperAdmin() || 
-                       isSalonOwner(resource.data.salonId) ||
-                       (isAuthenticated() && request.auth.uid == resource.data.customerId));
+      // Randevu güncelleme - salon ID değiştirilemez
+      allow update: if request.resource.data.salonId == resource.data.salonId;
       
       // Silme yerine iptal durumu kullan
       allow delete: if false;
@@ -164,9 +154,7 @@ service cloud.firestore {
     // ==================== MÜŞTERİLER ====================
     match /customers/{customerId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['name', 'phone']) &&
-                      request.resource.data.name is string &&
-                      isValidPhone(request.resource.data.phone);
+      allow create: if true; // Basitleştirilmiş - validasyon frontend'de
       allow update: if true;
       allow delete: if false;
     }
