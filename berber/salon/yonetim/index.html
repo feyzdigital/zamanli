@@ -6208,7 +6208,7 @@
             window.location.href = '/berber/';
         }
         
-        // Handle Login - Otomatik rol tanıma
+        // Handle Login - Cloud Function ile güvenli auth
         async function handleLogin(e) {
             e.preventDefault();
             
@@ -6226,64 +6226,124 @@
                 return;
             }
             
+            // Loading göster
+            const loginBtn = document.querySelector('#loginScreen button[type="submit"]');
+            const originalBtnText = loginBtn.textContent;
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ Giriş yapılıyor...';
+            
             try {
                 console.log('[Login] Giriş denemesi, telefon:', inputPhone);
                 
-                // Tüm aktif salonları getir
+                // Önce client-side kontrol (backward compatibility için)
                 const allSalonsSnapshot = await db.collection('salons')
                     .where('active', '==', true)
                     .get();
+                
+                let salonFound = null;
+                let isOwner = false;
+                let staffData = null;
                 
                 // Her salonda kontrol et
                 for (const doc of allSalonsSnapshot.docs) {
                     const salonData = doc.data();
                     const salonId = doc.id;
                     
-                    // 1. ÖNCE SALON SAHİBİ KONTROLÜ - Salon telefonu ile eşleşiyor mu?
+                    // 1. Salon sahibi kontrolü
                     const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
                     if (salonPhone === inputPhone) {
-                        // Salon PIN kontrolü
-                        let pinValid = salonData.pin === pin;
+                        salonFound = { id: salonId, data: salonData };
+                        isOwner = true;
                         
                         // Owner staff PIN kontrolü
-                        if (!pinValid && salonData.staff) {
+                        if (salonData.staff) {
                             const owner = salonData.staff.find(s => s.isOwner === true);
-                            if (owner && owner.pin === pin) pinValid = true;
+                            if (owner) staffData = owner;
                         }
-                        
-                        if (pinValid) {
-                            // SALON SAHİBİ GİRİŞİ
-                            loginAsOwner(salonId, salonData);
-                            return;
-                        }
+                        break;
                     }
                     
-                    // 2. PERSONEL KONTROLÜ - Personel telefonu ve PIN ile eşleşiyor mu?
+                    // 2. Personel kontrolü
                     const staffArray = salonData.staff || [];
                     const matchedStaff = staffArray.find(s => {
                         const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                        return staffPhone === inputPhone && s.pin === pin;
+                        return staffPhone === inputPhone;
                     });
                     
                     if (matchedStaff) {
-                        // PERSONEL GİRİŞİ (isOwner olsa bile personel olarak gir, ama tam yetki ver)
-                        if (matchedStaff.isOwner) {
-                            // Sahip personel olarak giriş yapıyorsa, salon sahibi yetkisi ver
-                            loginAsOwner(salonId, salonData);
-                        } else {
-                            // Normal personel girişi
-                            loginAsStaff(matchedStaff, salonId, salonData);
-                        }
-                        return;
+                        salonFound = { id: salonId, data: salonData };
+                        isOwner = matchedStaff.isOwner || false;
+                        staffData = matchedStaff;
+                        break;
                     }
                 }
                 
-                // Hiçbir eşleşme bulunamadı
-                showLoginError('Telefon numarası veya PIN hatalı');
+                if (!salonFound) {
+                    showLoginError('Telefon numarası veya PIN hatalı');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = originalBtnText;
+                    return;
+                }
+                
+                // PIN doğrulaması - Önce hashed kontrol, sonra düz metin
+                const salonPinHash = salonFound.data.pin;
+                let pinValid = false;
+                
+                // Eğer PIN hashed ise ($2a$ ile başlıyor)
+                if (salonPinHash && salonPinHash.startsWith('$2a$')) {
+                    console.log('[Login] Hashed PIN tespit edildi, Cloud Function kullanılıyor');
+                    
+                    try {
+                        // Cloud Function ile doğrula
+                        const verifyPin = firebase.functions().httpsCallable('verifyPinAuth');
+                        const result = await verifyPin({
+                            salonId: salonFound.id,
+                            pin: pin,
+                            userType: isOwner ? 'salon' : 'staff',
+                            staffId: staffData ? (staffData.id || staffData.name) : null
+                        });
+                        
+                        if (result.data && result.data.success) {
+                            pinValid = true;
+                            console.log('[Login] ✅ Cloud Function PIN doğrulaması başarılı');
+                        }
+                    } catch (cloudError) {
+                        console.error('[Login] Cloud Function hatası:', cloudError);
+                        // Fallback: düz metin kontrolü
+                    }
+                } else {
+                    // Düz metin PIN kontrolü (eski salonlar için)
+                    console.log('[Login] Düz metin PIN kontrolü');
+                    if (isOwner) {
+                        pinValid = salonPinHash === pin;
+                        // Owner staff PIN kontrolü
+                        if (!pinValid && staffData && staffData.pin) {
+                            pinValid = staffData.pin === pin;
+                        }
+                    } else if (staffData) {
+                        pinValid = staffData.pin === pin;
+                    }
+                }
+                
+                if (pinValid) {
+                    // GİRİŞ BAŞARILI
+                    if (isOwner) {
+                        loginAsOwner(salonFound.id, salonFound.data);
+                    } else if (staffData) {
+                        loginAsStaff(staffData, salonFound.id, salonFound.data);
+                    }
+                    return;
+                } else {
+                    showLoginError('Telefon numarası veya PIN hatalı');
+                }
                 
             } catch (error) {
-                console.error('Login error:', error);
+                console.error('[Login] Hata:', error);
                 showLoginError('Bir hata oluştu. Lütfen tekrar deneyin.');
+            } finally {
+                // Loading kaldır
+                loginBtn.disabled = false;
+                loginBtn.textContent = originalBtnText;
             }
         }
         

@@ -1,9 +1,13 @@
 /**
  * ZAMANLI - Firebase Cloud Functions
- * Push Notification Sistemi
  * 
- * Bu fonksiyonlar yeni randevu geldiğinde salon sahibine
- * push notification gönderir.
+ * Modüller:
+ * - Push Notifications (mevcut)
+ * - Package Limiter (paket limitleri)
+ * - Auth Helpers (PIN hashleme)
+ * - Email Notifications (EmailJS)
+ * - WhatsApp Automation (Twilio)
+ * - Payment Integration (Stripe)
  */
 
 const functions = require('firebase-functions');
@@ -14,6 +18,42 @@ admin.initializeApp();
 
 const db = admin.firestore();
 const messaging = admin.messaging();
+
+// === Modül Import'ları ===
+const packageLimiter = require('./package-limiter');
+const authHelpers = require('./auth-helpers');
+const emailNotifications = require('./email-notifications');
+const whatsappAutomation = require('./whatsapp-automation');
+const paymentStripe = require('./payment-stripe');
+
+// === Package Limiter Functions ===
+exports.checkAppointmentLimit = packageLimiter.checkAppointmentLimit;
+exports.checkStaffLimit = packageLimiter.checkStaffLimit;
+exports.resetMonthlyStats = packageLimiter.resetMonthlyStats;
+
+// === Auth Helper Functions ===
+exports.hashSalonPin = authHelpers.hashSalonPin;
+exports.hashStaffPin = authHelpers.hashStaffPin;
+exports.verifyPinAuth = authHelpers.verifyPinAuth;
+exports.changePinAuth = authHelpers.changePinAuth;
+
+// === Email Notification Functions ===
+exports.sendAppointmentConfirmationEmail = emailNotifications.sendAppointmentConfirmationEmail;
+exports.sendAppointmentCancellationEmail = emailNotifications.sendAppointmentCancellationEmail;
+exports.sendAppointmentReminders = emailNotifications.sendAppointmentReminders;
+exports.sendNewSalonApprovalEmail = emailNotifications.sendNewSalonApprovalEmail;
+
+// === WhatsApp Automation Functions ===
+exports.sendAppointmentConfirmationWhatsApp = whatsappAutomation.sendAppointmentConfirmationWhatsApp;
+exports.sendAppointmentCancellationWhatsApp = whatsappAutomation.sendAppointmentCancellationWhatsApp;
+exports.sendAppointmentRemindersWhatsApp = whatsappAutomation.sendAppointmentRemindersWhatsApp;
+exports.sendManualWhatsApp = whatsappAutomation.sendManualWhatsApp;
+
+// === Payment (Stripe) Functions ===
+exports.createCheckoutSession = paymentStripe.createCheckoutSession;
+exports.stripeWebhook = paymentStripe.stripeWebhook;
+exports.checkSubscriptions = paymentStripe.checkSubscriptions;
+exports.getInvoiceHistory = paymentStripe.getInvoiceHistory;
 
 /**
  * Yeni randevu oluşturulduğunda SADECE ilgili personele bildirim gönder
