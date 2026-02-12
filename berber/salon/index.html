@@ -2260,11 +2260,7 @@
         </div>
     </div>
     
-    <!-- Lightbox for Gallery -->
-    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
-        <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-        <img id="lightboxImg" src="" alt="">
-    </div>
+    <!-- Lightbox: lightboxOverlay elementi sayfa sonunda -->
     
     <!-- Yorum Yapma Modalı -->
     <div id="reviewModal" class="review-modal">
@@ -2344,7 +2340,9 @@
     </footer>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="/config.js"></script>
@@ -2401,105 +2399,95 @@
             errorEl.textContent = '';
             
             try {
-                let foundSalon = null;
-                let foundSalonId = null;
-                let isStaffLogin = false;
-                let staffInfo = null;
+                let matchedSalonId = null;
+                let matchedSlug = null;
+                let matchedType = null;
+                let matchedStaffInfo = null;
                 
-                // TÜM SALONLARI ÇEK (personel araması için de gerekli)
+                // Telefon numarasına göre salon/personel bul
                 const allSalons = await db.collection('salons').get();
                 
-                // 1. ÖNCE PERSONEL KONTROLÜ YAP (staff array'inde telefon + PIN eşleşmesi)
+                // 1. PERSONEL TELEFON EŞLEŞMESİ
                 for (const doc of allSalons.docs) {
                     const salonData = doc.data();
                     const staff = salonData.staff || [];
                     
-                    // Personel telefonunu ve PIN'ini kontrol et
                     const foundStaff = staff.find(s => {
                         const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                        return staffPhone === phone10 && s.pin === pin;
+                        return staffPhone === phone10;
                     });
                     
                     if (foundStaff) {
-                        // Personel bulundu ve PIN doğru
-                        isStaffLogin = true;
-                        staffInfo = foundStaff;
-                        foundSalon = salonData;
-                        foundSalonId = doc.id;
-                        console.log('[Login] Personel girişi başarılı:', foundStaff.name);
+                        matchedSalonId = doc.id;
+                        matchedSlug = salonData.slug || doc.id;
+                        matchedType = foundStaff.isOwner ? 'owner' : 'staff';
+                        matchedStaffInfo = foundStaff;
                         break;
                     }
                 }
                 
-                // 2. PERSONEL BULUNAMADIYSA SALON SAHİBİ KONTROLÜ
-                if (!foundSalon) {
+                // 2. SALON SAHİBİ TELEFON EŞLEŞMESİ
+                if (!matchedSalonId) {
                     for (const doc of allSalons.docs) {
                         const salonData = doc.data();
                         const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
                         const salonMobile = (salonData.mobilePhone || '').replace(/\D/g, '').slice(-10);
                         
-                        // Telefon eşleşiyor mu?
                         if (salonPhone === phone10 || salonMobile === phone10) {
-                            // PIN kontrolü - salon PIN veya owner staff PIN
-                            let pinValid = salonData.pin === pin;
-                            
-                            // Staff içinde owner varsa onun PIN'ini de kontrol et
-                            if (!pinValid && salonData.staff) {
-                                const owner = salonData.staff.find(s => s.isOwner === true);
-                                if (owner && owner.pin === pin) {
-                                    pinValid = true;
-                                }
-                            }
-                            
-                            if (pinValid) {
-                                foundSalon = salonData;
-                                foundSalonId = doc.id;
-                                console.log('[Login] Salon sahibi girişi başarılı:', salonData.name);
-                                break;
-                            } else {
-                                // Telefon doğru ama PIN yanlış
-                                throw new Error('PIN kodu hatalı');
-                            }
+                            matchedSalonId = doc.id;
+                            matchedSlug = salonData.slug || doc.id;
+                            matchedType = 'owner';
+                            break;
                         }
                     }
                 }
                 
-                // 3. HİÇBİRİ BULUNAMADIYSA HATA
-                if (!foundSalon) {
+                if (!matchedSalonId) {
                     throw new Error('Bu telefon ile kayıtlı salon veya personel bulunamadı');
                 }
                 
-                const slug = foundSalon.slug || foundSalonId;
+                // PIN doğrulama: Cloud Function (server-side bcrypt)
+                const verifyPinFn = firebase.functions().httpsCallable('verifyPinAuth');
+                const result = await verifyPinFn({
+                    salonId: matchedSalonId,
+                    pin: pin,
+                    phone: phone10,
+                    userType: matchedType === 'owner' ? 'owner' : 'staff',
+                    staffId: matchedStaffInfo ? (matchedStaffInfo.id || matchedStaffInfo.name) : null
+                });
                 
-                // Personel girişi ise staff bilgisini URL'e ekle
-                if (isStaffLogin && staffInfo) {
-                    // Personel session'ı kaydet
-                    sessionStorage.setItem('staffSession', JSON.stringify({
-                        staffId: staffInfo.id || staffInfo.name,
-                        staffName: staffInfo.name,
-                        salonId: foundSalonId,
-                        salonSlug: slug
-                    }));
-                    console.log('[Login] Personel session kaydedildi');
+                if (result.data.success) {
+                    // Firebase Auth Custom Token ile oturum aç
+                    if (result.data.customToken) {
+                        try { await firebase.auth().signInWithCustomToken(result.data.customToken); } catch (e) { console.warn('[Login] Custom token hatası:', e); }
+                    }
                     
-                    const staffId = staffInfo.id || staffInfo.name;
-                    window.location.href = `/berber/salon/yonetim/?slug=${slug}&staff=${encodeURIComponent(staffId)}&staffName=${encodeURIComponent(staffInfo.name)}`;
-                } else {
-                    // Salon sahibi session'ı kaydet
-                    const session = {
-                        slug: slug,
-                        salonId: foundSalonId,
-                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                    };
-                    localStorage.setItem('salonSession', JSON.stringify(session));
-                    console.log('[Login] Salon session kaydedildi:', session);
-                    
-                    window.location.href = `/berber/salon/yonetim/?slug=${slug}`;
+                    if (matchedType === 'staff' && matchedStaffInfo && !matchedStaffInfo.isOwner) {
+                        localStorage.setItem('staffSession', JSON.stringify({
+                            staffId: matchedStaffInfo.id || matchedStaffInfo.name,
+                            staffName: matchedStaffInfo.name,
+                            salonId: matchedSalonId,
+                            salonSlug: matchedSlug
+                        }));
+                        const staffId = matchedStaffInfo.id || matchedStaffInfo.name;
+                        window.location.href = `/berber/salon/yonetim/?slug=${matchedSlug}&staff=${encodeURIComponent(staffId)}&staffName=${encodeURIComponent(matchedStaffInfo.name)}`;
+                    } else {
+                        localStorage.setItem('salonSession', JSON.stringify({
+                            slug: matchedSlug,
+                            salonId: matchedSalonId,
+                            type: 'owner',
+                            expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
+                        }));
+                        window.location.href = `/berber/salon/yonetim/?slug=${matchedSlug}`;
+                    }
+                    return;
                 }
+                
+                throw new Error('PIN kodu hatalı');
                 
             } catch (error) {
                 console.error('[Login] Hata:', error);
-                errorEl.textContent = error.message;
+                errorEl.textContent = error.message || 'Bir hata oluştu';
                 btn.disabled = false;
                 btn.textContent = 'Giriş Yap';
             }
@@ -2507,7 +2495,7 @@
         
         async function init() {
             if (typeof firebase === 'undefined') { setTimeout(init, 100); return; }
-            firebase.initializeApp(FIREBASE_CONFIG);
+            if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
             db = firebase.firestore();
             
             // URL parametresinden slug'ı al
@@ -2748,12 +2736,12 @@
             
             // Booking selects - Önce personel seçilmeli
             const staffSelect = document.getElementById('staffSelect');
-            const activeStaff = salon.staffList.filter(s => s.active !== false);
-            console.log('[Booking] Aktif personel listesi:', activeStaff);
+            // Operatör rolündeki personeli public booking'den çıkar
+            const activeStaff = salon.staffList.filter(s => s.active !== false && s.role !== 'operator' && s.staffRole !== 'operator');
+            console.log('[Booking] Aktif personel listesi (operatörler hariç):', activeStaff);
             
             staffSelect.innerHTML = '<option value="">Personel seçin...</option>' + 
                 activeStaff.map(s => {
-                    // id yoksa name'i id olarak kullan
                     const staffId = s.id || s.name;
                     return `<option value="${staffId}">${s.name}</option>`;
                 }).join('');
@@ -2768,45 +2756,88 @@
             // Show content
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('mainContent').style.display = 'grid';
+            
+            // "Yönetim Paneline Dön" butonu - oturum varsa göster
+            try {
+                const salonSession = JSON.parse(localStorage.getItem('salonSession') || '{}');
+                const staffSession = JSON.parse(localStorage.getItem('staffSession') || '{}');
+                if ((salonSession.salonId && salonSession.expires > Date.now()) ||
+                    (staffSession.salonId && staffSession.expires > Date.now())) {
+                    const adminSlug = salonSession.slug || staffSession.salonSlug || salon?.slug;
+                    if (adminSlug) {
+                        const adminBtn = document.createElement('a');
+                        adminBtn.href = '/berber/salon/yonetim/?slug=' + adminSlug;
+                        adminBtn.className = 'admin-return-btn';
+                        adminBtn.innerHTML = '⚙️ Yönetim Paneli';
+                        adminBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;padding:12px 20px;border-radius:50px;text-decoration:none;font-weight:600;font-size:0.9rem;box-shadow:0 4px 15px rgba(99,102,241,0.4);transition:transform 0.2s;';
+                        adminBtn.onmouseover = function() { this.style.transform = 'scale(1.05)'; };
+                        adminBtn.onmouseout = function() { this.style.transform = 'scale(1)'; };
+                        document.body.appendChild(adminBtn);
+                    }
+                }
+            } catch (e) {}
         }
         
-        // Yorumları yükle
+        // Yorumları yükle (Zamanli + Google)
         async function loadReviews() {
             try {
+                // 1. Zamanli yorumları (öncelikli - üstte)
                 const snap = await db.collection('salons').doc(salon.id).collection('reviews')
                     .orderBy('createdAt', 'desc')
                     .limit(10)
                     .get();
                 
-                if (snap.empty) {
+                const zamanliReviews = snap.docs.map(d => ({ id: d.id, ...d.data(), source: 'zamanli' }));
+                
+                // 2. Google yorumları (cache'den)
+                let googleReviews = [];
+                try {
+                    const cacheSnap = await db.collection('salons').doc(salon.id).collection('googleReviewsCache').doc('latest').get();
+                    if (cacheSnap.exists) {
+                        const cacheData = cacheSnap.data();
+                        googleReviews = (cacheData.reviews || []).map(r => ({ ...r, source: 'google' }));
+                    }
+                } catch (gErr) {
+                    console.warn('Google yorumları yüklenemedi:', gErr);
+                }
+                
+                const allReviews = [...zamanliReviews, ...googleReviews]; // Zamanli üstte
+                
+                if (allReviews.length === 0) {
                     document.getElementById('reviewsList').innerHTML = '<p class="no-reviews">Henüz değerlendirme yok</p>';
                     return;
                 }
                 
-                const reviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Ortalama puan (sadece Zamanli)
+                if (zamanliReviews.length > 0) {
+                    const avgRating = zamanliReviews.reduce((sum, r) => sum + (r.rating || 5), 0) / zamanliReviews.length;
+                    document.getElementById('avgRating').textContent = `${avgRating.toFixed(1)} / 5`;
+                }
                 
-                // Ortalama puan
-                const avgRating = reviews.reduce((sum, r) => sum + (r.rating || 5), 0) / reviews.length;
-                document.getElementById('avgRating').textContent = `${avgRating.toFixed(1)} / 5`;
-                
-                const reviewsHtml = reviews.map(r => {
-                    const initials = (r.customerName || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                    const stars = '⭐'.repeat(r.rating || 5);
-                    const date = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('tr-TR') : '';
+                const reviewsHtml = allReviews.map(r => {
+                    const initials = (r.customerName || r.author_name || 'A').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                    const rating = r.rating || 5;
+                    const stars = '⭐'.repeat(Math.min(5, Math.round(rating)));
+                    const date = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('tr-TR') : (r.relative_time_description || '');
+                    const name = r.customerName || r.author_name || 'Anonim';
+                    const comment = r.comment || r.text || '';
+                    const sourceLabel = r.source === 'google' 
+                        ? '<span style="display:inline-flex;align-items:center;gap:2px;font-size:0.65rem;background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:4px;margin-left:6px;">🔍 Google</span>'
+                        : '<span style="display:inline-flex;align-items:center;gap:2px;font-size:0.65rem;background:#ede9fe;color:#6366f1;padding:2px 6px;border-radius:4px;margin-left:6px;">✨ Zamanli</span>';
                     
                     return `
                         <div class="review-card">
                             <div class="review-header">
                                 <div class="review-user">
-                                    <div class="review-avatar">${initials}</div>
+                                    <div class="review-avatar">${r.source === 'google' && r.profile_photo_url ? `<img src="${r.profile_photo_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initials}</div>
                                     <div>
-                                        <div class="review-name">${escapeHtml(r.customerName || 'Anonim')}</div>
-                                        <div class="review-date">${date}</div>
+                                        <div class="review-name">${escapeHtml(name)}${sourceLabel}</div>
+                                        <div class="review-date">${escapeHtml(date)}</div>
                                     </div>
                                 </div>
                                 <div class="review-stars">${stars}</div>
                             </div>
-                            ${r.comment ? `<p class="review-text">${escapeHtml(r.comment)}</p>` : ''}
+                            ${comment ? `<p class="review-text">${escapeHtml(comment)}</p>` : ''}
                             ${r.serviceName ? `<p class="review-service">✂️ ${escapeHtml(r.serviceName)}</p>` : ''}
                         </div>
                     `;
@@ -2841,15 +2872,7 @@
             }
         }
         
-        // Lightbox
-        function openLightbox(imgSrc) {
-            document.getElementById('lightboxImg').src = imgSrc;
-            document.getElementById('lightbox').classList.add('active');
-        }
-        
-        function closeLightbox() {
-            document.getElementById('lightbox').classList.remove('active');
-        }
+        // Lightbox (System A kaldırıldı - System B sayfanın altında aktif)
         
         // Google Takvime Ekle
         function addToGoogleCalendar(e) {
@@ -3573,7 +3596,7 @@ Onayınızı bekliyorum. Teşekkürler!`;
                     rating: reviewRating,
                     comment: comment,
                     verified: true,
-                    createdAt: new Date().toISOString()
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 
                 await db.collection('salons').doc(salon.id).collection('reviews').add(review);

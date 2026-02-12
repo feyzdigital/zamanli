@@ -91,56 +91,56 @@ const APP_CONFIG = {
         slotInterval: 15,               // Randevu slot aralığı (dakika)
         cancelDeadlineMinutes: 90,      // İptal son tarihi - randevudan kaç dakika önce
         reminderBeforeMinutes: 120,     // Hatırlatma zamanı - randevudan kaç dakika önce
-        maxGalleryImages: 5,            // Maksimum galeri görseli
+        maxGalleryImages: 10,           // Maksimum galeri görseli
         defaultRating: 5.0              // Varsayılan puan
     },
     
     // Kategori Metinleri - Dinamik UI için
     categoryText: {
         berber: {
-            singular: 'Berber',
-            plural: 'Berberler',
-            accusative: 'Berberi',          // -i hali
-            locative: 'Berberde',           // -de hali
-            owner: 'Berber Sahibi',
+            singular: 'Berber Salonu',
+            plural: 'Berber Salonları',
+            accusative: 'Berber Salonunu',
+            locative: 'Berber Salonunda',
+            owner: 'Salon Sahibi',
             description: 'Erkek saç kesimi ve sakal bakımı',
-            searchPlaceholder: 'Berber adı veya konum ara...',
-            heroTitle: 'En İyi Berberi Bul',
-            heroSubtitle: 'Yakınındaki berberleri keşfet, anında randevu al',
-            emptyState: 'Henüz kayıtlı berber yok',
-            resultText: 'berber bulundu',
+            searchPlaceholder: 'Berber salonu adı veya konum ara...',
+            heroTitle: 'En İyi Berber Salonunu Bul',
+            heroSubtitle: 'Yakınındaki berber salonlarını keşfet, anında randevu al',
+            emptyState: 'Henüz kayıtlı berber salonu yok',
+            resultText: 'berber salonu bulundu',
             icon: '💈',
             color: '#10B981',
             gradient: 'linear-gradient(135deg, #10B981, #059669)'
         },
         kuafor: {
-            singular: 'Kuaför',
-            plural: 'Kuaförler',
-            accusative: 'Kuaförü',
-            locative: 'Kuaförde',
-            owner: 'Kuaför Sahibi',
+            singular: 'Kuaför Salonu',
+            plural: 'Kuaför Salonları',
+            accusative: 'Kuaför Salonunu',
+            locative: 'Kuaför Salonunda',
+            owner: 'Salon Sahibi',
             description: 'Kadın saç bakımı, kesim ve şekillendirme',
-            searchPlaceholder: 'Kuaför adı veya konum ara...',
-            heroTitle: 'Kuaförünü Bul',
-            heroSubtitle: 'Profesyonel kuaförler, kolay randevu',
-            emptyState: 'Henüz kayıtlı kuaför yok',
-            resultText: 'kuaför bulundu',
+            searchPlaceholder: 'Kuaför salonu adı veya konum ara...',
+            heroTitle: 'Kuaför Salonunu Bul',
+            heroSubtitle: 'Profesyonel kuaför salonları, kolay randevu',
+            emptyState: 'Henüz kayıtlı kuaför salonu yok',
+            resultText: 'kuaför salonu bulundu',
             icon: '💇‍♀️',
             color: '#ec4899',
             gradient: 'linear-gradient(135deg, #ec4899, #db2777)'
         },
         beauty: {
-            singular: 'Güzellik Merkezi',
-            plural: 'Güzellik Merkezleri',
-            accusative: 'Güzellik Merkezini',
-            locative: 'Güzellik Merkezinde',
-            owner: 'İşletme Sahibi',
+            singular: 'Güzellik Salonu',
+            plural: 'Güzellik Salonları',
+            accusative: 'Güzellik Salonunu',
+            locative: 'Güzellik Salonunda',
+            owner: 'Salon Sahibi',
             description: 'Cilt bakımı, makyaj, spa ve wellness',
-            searchPlaceholder: 'Güzellik merkezi ara...',
-            heroTitle: 'Güzellik Merkezini Bul',
+            searchPlaceholder: 'Güzellik salonu ara...',
+            heroTitle: 'Güzellik Salonunu Bul',
             heroSubtitle: 'Profesyonel bakım ve spa hizmetleri',
-            emptyState: 'Henüz kayıtlı güzellik merkezi yok',
-            resultText: 'güzellik merkezi bulundu',
+            emptyState: 'Henüz kayıtlı güzellik salonu yok',
+            resultText: 'güzellik salonu bulundu',
             icon: '💆',
             color: '#14b8a6',
             gradient: 'linear-gradient(135deg, #14b8a6, #0d9488)'
@@ -186,8 +186,8 @@ const APP_CONFIG = {
     
     // Medya Ayarları
     media: {
-        maxGalleryImages: 5,
-        maxLogoSize: 2 * 1024 * 1024,      // 2MB
+        maxGalleryImages: 10,
+        maxLogoSize: 5 * 1024 * 1024,      // 5MB
         maxImageSize: 5 * 1024 * 1024,     // 5MB
         allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
     },
@@ -324,7 +324,7 @@ const APP_CONFIG = {
                 reportsAdvanced: true,
                 reportsExport: true,
                 customBranding: true,
-                onlinePayment: true,
+                onlinePayment: false,   // Feature flag: şimdilik kapalı, gelecekte true yapılabilir
                 multiLocation: true, 
                 prioritySupport: true,
                 apiAccess: true
@@ -335,7 +335,6 @@ const APP_CONFIG = {
                 'Tüm Pro özellikleri',
                 'Çoklu şube yönetimi',
                 'Rapor dışa aktarma (Excel/PDF)',
-                'Online ödeme entegrasyonu',
                 'API erişimi',
                 'Öncelikli destek',
                 '7/24 teknik destek'

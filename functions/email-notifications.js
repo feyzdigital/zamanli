@@ -79,7 +79,7 @@ exports.sendAppointmentConfirmationEmail = functions
                     to_email: after.customerEmail || salon.ownerEmail,
                     customer_name: after.customerName,
                     salon_name: salon.name,
-                    date: new Date(after.date.toDate()).toLocaleDateString('tr-TR'),
+                    date: new Date(after.date?.toDate ? after.date.toDate() : after.date).toLocaleDateString('tr-TR'),
                     time: after.time,
                     service_name: after.serviceName,
                     staff_name: after.staffName || 'Herhangi bir personel',
@@ -142,7 +142,7 @@ exports.sendAppointmentCancellationEmail = functions
                     to_email: after.customerEmail || salon.ownerEmail,
                     customer_name: after.customerName,
                     salon_name: salon.name,
-                    date: new Date(after.date.toDate()).toLocaleDateString('tr-TR'),
+                    date: new Date(after.date?.toDate ? after.date.toDate() : after.date).toLocaleDateString('tr-TR'),
                     time: after.time,
                     service_name: after.serviceName,
                     cancel_reason: after.cancelReason || 'Belirtilmedi',
@@ -224,7 +224,8 @@ exports.sendAppointmentReminders = functions
                 }
                 
                 // Randevuya kalan süreyi hesapla
-                const timeDiff = appointment.date.toDate().getTime() - now.toDate().getTime();
+                const appointmentDate = appointment.date?.toDate ? appointment.date.toDate() : new Date(appointment.date);
+                const timeDiff = appointmentDate.getTime() - now.toDate().getTime();
                 const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
                 const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
                 
@@ -232,7 +233,7 @@ exports.sendAppointmentReminders = functions
                     to_email: appointment.customerEmail || salon.ownerEmail,
                     customer_name: appointment.customerName,
                     salon_name: salon.name,
-                    date: new Date(appointment.date.toDate()).toLocaleDateString('tr-TR'),
+                    date: new Date(appointmentDate).toLocaleDateString('tr-TR'),
                     time: appointment.time,
                     service_name: appointment.serviceName,
                     staff_name: appointment.staffName || 'Herhangi bir personel',

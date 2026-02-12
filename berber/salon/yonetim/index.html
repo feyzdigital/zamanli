@@ -3674,6 +3674,10 @@
                 <a href="#" data-menu-tab="settings" id="menuSalonSettings" onclick="showHiddenTabs('settings'); return false;">
                     <span class="menu-icon">⚙️</span> Salon Ayarları
                 </a>
+                <!-- Profilim - Sadece salon sahibi görecek -->
+                <a href="#" id="menuMyProfile" onclick="openOwnerProfileModal(); closeMobileMenu(); return false;">
+                    <span class="menu-icon">👤</span> Profilim
+                </a>
                 <!-- Ayarlarım - Personel için -->
                 <a href="#" id="menuMySettings" onclick="openStaffSettingsModal(); closeMobileMenu(); return false;" style="display:none;">
                     <span class="menu-icon">👤</span> Ayarlarım
@@ -3930,10 +3934,16 @@
                 <div class="reports-container">
                     <div class="reports-header">
                         <h3>📊 Raporlar</h3>
-                        <div class="report-period-selector">
-                            <button class="period-btn active" data-period="week" onclick="changeReportPeriod('week')">Bu Hafta</button>
-                            <button class="period-btn" data-period="month" onclick="changeReportPeriod('month')">Bu Ay</button>
-                            <button class="period-btn" data-period="year" onclick="changeReportPeriod('year')">Bu Yıl</button>
+                        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                            <div class="report-period-selector">
+                                <button class="period-btn active" data-period="week" onclick="changeReportPeriod('week')">Bu Hafta</button>
+                                <button class="period-btn" data-period="month" onclick="changeReportPeriod('month')">Bu Ay</button>
+                                <button class="period-btn" data-period="year" onclick="changeReportPeriod('year')">Bu Yıl</button>
+                            </div>
+                            <div id="exportButtons" style="display:flex;gap:0.25rem;">
+                                <button onclick="exportAppointmentsCSV()" class="btn btn-outline btn-sm" title="Randevuları CSV olarak indir" id="btnExportCSV">📥 CSV</button>
+                                <button onclick="exportReportPDF()" class="btn btn-outline btn-sm" title="Rapor PDF olarak indir" id="btnExportPDF">📄 PDF</button>
+                            </div>
                         </div>
                     </div>
                     
@@ -4119,11 +4129,11 @@
                                 </button>
                             </div>
                         </div>
-                        <p class="form-hint">📐 <strong>Boyut:</strong> 200x200 piksel (kare) • <strong>Max:</strong> 2MB • <strong>Format:</strong> JPG, PNG</p>
+                        <p class="form-hint">📐 <strong>Boyut:</strong> 200x200 piksel (kare) • <strong>Max:</strong> 5MB • <strong>Format:</strong> JPG, PNG, WebP</p>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Galeri (max 5 görsel)</label>
+                        <label class="form-label">Galeri (max 10 görsel)</label>
                         <div id="galleryGrid" class="gallery-upload-grid">
                             <!-- Galeri görselleri -->
                         </div>
@@ -4700,7 +4710,10 @@
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
     <script src="/config.js"></script>
     
@@ -4876,11 +4889,18 @@
         // Süper admin olarak salona giriş
         let isSuperAdminMode = false;
         
+        // Rol enum sabitleri (STAFF_ROLES - config.js'deki ROLES ile çakışmamak için)
+        const STAFF_ROLES = Object.freeze({
+            OWNER: 'owner',
+            OPERATOR: 'operator',
+            STAFF: 'staff'
+        });
+        
         // Personel modu kontrolü
         let isStaffMode = false;
         let currentStaffId = null;
         let currentStaffName = null;
-        let currentStaffRole = null; // staff, operator, assistant
+        let currentStaffRole = null; // STAFF_ROLES.STAFF, STAFF_ROLES.OPERATOR
         
         async function init() {
             console.log('[Init] Başlatılıyor...');
@@ -5124,7 +5144,7 @@
             // Mobil menü bilgilerini güncelle
             updateMobileMenuInfo();
             
-            document.getElementById('viewSalonBtn').href = `/berber/salon/?slug=${salon.slug}`;
+            document.getElementById('viewSalonBtn').href = `/berber/salon/?slug=${salon.slug}&view=public`;
             
             // Load data
             loadAppointments();
@@ -5149,7 +5169,83 @@
                 loadReports();
                 loadAdvancedSettings(); // Gelişmiş ayarları yükle
                 loadCustomers(); // Müşterileri yükle
+                renderPackageLimitBar(); // Free paket limit göstergesi
             }, 500);
+        }
+        
+        // ========== FREE PAKET LİMİT PROGRESS BAR ==========
+        function renderPackageLimitBar() {
+            // Mevcut progress bar varsa kaldır
+            const existing = document.getElementById('packageLimitBar');
+            if (existing) existing.remove();
+            
+            if (!salon) return;
+            
+            const pkg = (salon.package || 'free').toLowerCase();
+            
+            // Sadece Free pakette göster
+            if (pkg !== 'free') return;
+            
+            const maxAppointments = 30; // Free paket limiti
+            
+            // Bu aydaki randevu sayısını hesapla
+            const thisMonth = new Date().toISOString().slice(0, 7);
+            const monthlyCount = (appointments || []).filter(a => {
+                return a.date && a.date.startsWith(thisMonth) && a.status !== 'cancelled';
+            }).length;
+            
+            // Ya da monthlyStats verisi varsa onu kullan
+            const appointmentCount = salon.monthlyStats?.appointmentCount || monthlyCount;
+            
+            const percentage = Math.min(100, Math.round((appointmentCount / maxAppointments) * 100));
+            const isLimitReached = appointmentCount >= maxAppointments;
+            const barColor = isLimitReached ? '#ef4444' : (percentage > 80 ? '#f59e0b' : '#10B981');
+            
+            const barHtml = `
+                <div id="packageLimitBar" style="background:white;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;border:1px solid ${isLimitReached ? '#fecaca' : '#e2e8f0'};box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                        <span style="font-weight:600;font-size:0.85rem;color:#334155;">
+                            📊 Aylık Randevu Kullanımı (Ücretsiz Paket)
+                        </span>
+                        <span style="font-weight:700;font-size:0.85rem;color:${barColor};">
+                            ${appointmentCount}/${maxAppointments}
+                        </span>
+                    </div>
+                    <div style="background:#f1f5f9;border-radius:999px;height:10px;overflow:hidden;">
+                        <div style="background:${barColor};height:100%;width:${percentage}%;border-radius:999px;transition:width 0.5s ease;"></div>
+                    </div>
+                    ${isLimitReached ? `
+                        <div style="margin-top:0.75rem;padding:0.75rem;background:#fef2f2;border-radius:8px;border:1px solid #fecaca;">
+                            <p style="font-size:0.8rem;color:#991b1b;margin:0 0 0.5rem 0;font-weight:600;">
+                                Aylık randevu limitiniz doldu!
+                            </p>
+                            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                <a href="https://wa.me/905433838587?text=Merhaba, Pro pakete geçmek istiyorum" target="_blank" 
+                                   style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.4rem 0.75rem;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:0.8rem;font-weight:600;">
+                                    💬 WhatsApp ile İletişim
+                                </a>
+                                <a href="/fiyatlandirma/" target="_blank"
+                                   style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.4rem 0.75rem;background:#6366f1;color:white;border-radius:6px;text-decoration:none;font-size:0.8rem;font-weight:600;">
+                                    🚀 Pro Pakete Geç
+                                </a>
+                            </div>
+                        </div>
+                    ` : percentage > 80 ? `
+                        <p style="font-size:0.75rem;color:#92400e;margin-top:0.5rem;">
+                            ⚠️ Limitinize yaklaşıyorsunuz. <a href="/fiyatlandirma/" target="_blank" style="color:#6366f1;font-weight:600;">Pro pakete geçerek</a> sınırsız randevu alabilirsiniz.
+                        </p>
+                    ` : ''}
+                </div>
+            `;
+            
+            // Dashboard'un başına ekle
+            const dashboard = document.getElementById('dashboard');
+            const firstCard = dashboard.querySelector('.tab-content, .dashboard-grid, .card');
+            if (firstCard) {
+                firstCard.insertAdjacentHTML('beforebegin', barHtml);
+            } else {
+                dashboard.insertAdjacentHTML('afterbegin', barHtml);
+            }
         }
         
         // ===== MOBİL MENÜ FONKSİYONLARI =====
@@ -5171,7 +5267,7 @@
             
             document.getElementById('mobileMenuSalonName').textContent = salonName;
             document.getElementById('mobileMenuAvatar').textContent = avatar;
-            document.getElementById('mobileViewSalonBtn').href = `/berber/salon/?slug=${salon?.slug || ''}`;
+            document.getElementById('mobileViewSalonBtn').href = `/berber/salon/?slug=${salon?.slug || ''}&view=public`;
         }
         
         function switchTabMobile(tabName) {
@@ -5586,6 +5682,10 @@
                 menuMySettings.style.display = 'flex';
             }
             
+            // Profilim menüsünü gizle (sadece owner görebilir)
+            const menuMyProfile = document.getElementById('menuMyProfile');
+            if (menuMyProfile) menuMyProfile.style.display = 'none';
+            
             // Diğer gizli menü öğeleri
             document.querySelectorAll('.mobile-menu-nav a[data-menu-tab]').forEach(link => {
                 const tabName = link.getAttribute('data-menu-tab');
@@ -5677,6 +5777,7 @@
             // Operatör: Tüm randevuları görebilir, düzenleyebilir, onaylayabilir, iptal edebilir
             // Manuel randevu ekleyebilir, müşterileri görebilir
             // AMA: Personel/hizmet/saat/ayarlar düzenleyemez
+            // AMA: Fiyat/ciro/gelir hiçbir yerde GÖRÜNMEZ
             
             // 1. TAMAMEN GİZLENECEK SEKMELER (sadece admin sekmeler)
             const hiddenTabs = ['staff', 'services', 'hours', 'settings'];
@@ -5693,9 +5794,11 @@
                 if (tabContent) tabContent.remove();
             });
             
-            // 2. MOBİL MENÜ - Salon ayarlarını gizle
+            // 2. MOBİL MENÜ - Salon ayarlarını ve Profilim'i gizle
             const menuSalonSettings = document.getElementById('menuSalonSettings');
             if (menuSalonSettings) menuSalonSettings.style.display = 'none';
+            const menuMyProfile = document.getElementById('menuMyProfile');
+            if (menuMyProfile) menuMyProfile.style.display = 'none';
             
             document.querySelectorAll('.mobile-menu-nav a[data-menu-tab]').forEach(link => {
                 const tabName = link.getAttribute('data-menu-tab');
@@ -5717,7 +5820,49 @@
             // 4. OPERATÖR MODU BANNER
             showOperatorBanner();
             
-            console.log('[Operator Mode] Kısıtlamalar uygulandı - Tüm randevu yetkileri aktif');
+            // 5. FİNANSAL VERİLERİ GİZLE (fiyat, ciro, gelir)
+            setTimeout(() => {
+                // Üst bar gelir mini stat
+                const revenueMini = document.getElementById('statRevenueMini');
+                if (revenueMini) revenueMini.closest('.mini-stat').style.display = 'none';
+                
+                // Dashboard gelir kartı
+                const statRevenue = document.getElementById('statRevenue');
+                if (statRevenue) statRevenue.closest('.stat-card, .mini-stat')?.style?.setProperty('display', 'none');
+                
+                // Rapor gelir kartı
+                const reportRevenue = document.getElementById('reportTotalRevenue');
+                if (reportRevenue) reportRevenue.closest('.report-card')?.style?.setProperty('display', 'none');
+                
+                // Tüm ₺ işareti içeren elementleri raporlarda gizle
+                document.querySelectorAll('#tab-reports .report-card').forEach(card => {
+                    const text = card.textContent || '';
+                    if (text.includes('Gelir') || text.includes('Ciro') || text.includes('Ücret') || text.includes('₺')) {
+                        card.style.display = 'none';
+                    }
+                });
+                
+                // Randevu listesinde fiyat sütununu gizle
+                document.querySelectorAll('.appointment-price, .service-price, [data-field="price"], [data-field="servicePrice"]').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }, 500);
+            
+            // 6. FİNANSAL ALANLARI SÜREKLİ GİZLE (MutationObserver)
+            const financialObserver = new MutationObserver(() => {
+                // Gelir/ciro elementlerini sürekli gizle (yeni veriler yüklendiğinde)
+                const revenueMini = document.getElementById('statRevenueMini');
+                if (revenueMini && revenueMini.closest('.mini-stat')) revenueMini.closest('.mini-stat').style.display = 'none';
+                
+                const statRevenue = document.getElementById('statRevenue');
+                if (statRevenue && statRevenue.closest('.stat-card, .mini-stat')) {
+                    const parent = statRevenue.closest('.stat-card') || statRevenue.closest('.mini-stat');
+                    if (parent) parent.style.display = 'none';
+                }
+            });
+            financialObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
+            
+            console.log('[Operator Mode] Kısıtlamalar uygulandı - Finansal veriler gizli, randevu yetkileri aktif');
         }
         
         function showOperatorBanner() {
@@ -5873,6 +6018,138 @@
                 indicator.title = 'Personel Modu';
                 indicator.style.cssText = 'margin-left: 0.5rem; font-size: 0.9rem; opacity: 0.7;';
                 header.appendChild(indicator);
+            }
+        }
+        
+        // ========== OWNER PROFİL MODAL ==========
+        async function openOwnerProfileModal() {
+            const userId = localStorage.getItem('zamanli_user_uid');
+            let profileData = {};
+            
+            // Mevcut profil verilerini çek (varsa)
+            try {
+                if (userId) {
+                    const userDoc = await db.collection('users').doc(userId).get();
+                    if (userDoc.exists) profileData = userDoc.data();
+                }
+            } catch (e) {
+                console.warn('[Profile] Profil çekilemedi:', e);
+            }
+            
+            // Salon verisinden fallback
+            if (!profileData.name && salon) {
+                profileData.name = salon.ownerName || salon.name || '';
+                profileData.phone = salon.phone || '';
+                profileData.email = salon.ownerEmail || salon.email || '';
+            }
+            
+            const modal = document.getElementById('modal');
+            modal.innerHTML = `
+                <div class="modal-overlay active" onclick="closeModal()" style="display:flex;">
+                    <div class="modal" onclick="event.stopPropagation()" style="max-width:500px;width:95%;margin:auto;">
+                        <div class="modal-header">
+                            <h3 class="modal-title">👤 Profilim</h3>
+                            <button onclick="closeModal()" class="modal-close">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label class="form-label">Ad Soyad</label>
+                                <input type="text" id="profileName" class="form-input" value="${profileData.name || ''}" placeholder="Adınız Soyadınız">
+                            </div>
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label class="form-label">Telefon</label>
+                                <input type="tel" id="profilePhone" class="form-input" value="${profileData.phone || ''}" placeholder="05XX XXX XX XX">
+                            </div>
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label class="form-label">E-posta</label>
+                                <input type="email" id="profileEmail" class="form-input" value="${profileData.email || ''}" placeholder="mail@ornek.com">
+                            </div>
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label class="form-label">Profil Görseli (opsiyonel, max 2MB)</label>
+                                <input type="file" id="profileImage" accept="image/*" class="form-input">
+                                ${profileData.photoURL ? `<img src="${profileData.photoURL}" style="width:64px;height:64px;border-radius:50%;margin-top:0.5rem;object-fit:cover;">` : ''}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button onclick="closeModal()" class="btn btn-outline">İptal</button>
+                            <button onclick="saveMyProfile()" class="btn btn-primary">Kaydet</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'block';
+        }
+        
+        async function saveMyProfile() {
+            const name = document.getElementById('profileName').value.trim();
+            const phone = document.getElementById('profilePhone').value.replace(/\D/g, '');
+            const email = document.getElementById('profileEmail').value.trim();
+            
+            if (!name) { showToast('Ad soyad gerekli', 'error'); return; }
+            
+            const userId = localStorage.getItem('zamanli_user_uid');
+            
+            try {
+                // users/{uid} doc'una kaydet (userId varsa)
+                if (userId) {
+                    await db.collection('users').doc(userId).set({
+                        name: name,
+                        phone: phone,
+                        email: email,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
+                
+                // Salon verisini de güncelle (ownerName, ownerEmail)
+                if (salon && salon.id) {
+                    await db.collection('salons').doc(salon.id).update({
+                        ownerName: name,
+                        ownerEmail: email,
+                        ownerPhone: phone
+                    });
+                }
+                
+                // Profil görseli yükleme (Firebase Storage)
+                const imageInput = document.getElementById('profileImage');
+                if (imageInput && imageInput.files.length > 0) {
+                    const file = imageInput.files[0];
+                    if (file.size > 2 * 1024 * 1024) {
+                        showToast('Profil görseli max 2MB olmalı', 'error');
+                        return;
+                    }
+                    
+                    if (!userId) {
+                        showToast('Profil kaydedildi ama görsel için yeniden giriş gerekli', 'warning');
+                        closeModal();
+                        return;
+                    }
+                    
+                    try {
+                        const storage = firebase.storage();
+                        const ext = file.name.split('.').pop() || 'jpg';
+                        const ref = storage.ref(`users/${userId}/profile/avatar.${ext}`);
+                        await ref.put(file);
+                        const photoURL = await ref.getDownloadURL();
+                        
+                        await db.collection('users').doc(userId).update({ photoURL });
+                        
+                        // Salon'a da kaydet
+                        if (salon && salon.id) {
+                            await db.collection('salons').doc(salon.id).update({ ownerPhotoURL: photoURL });
+                        }
+                    } catch (uploadErr) {
+                        console.warn('[Profile] Görsel yükleme hatası:', uploadErr);
+                        showToast('Profil kaydedildi ama görsel yüklenemedi', 'warning');
+                        closeModal();
+                        return;
+                    }
+                }
+                
+                closeModal();
+                showToast('Profil başarıyla kaydedildi!', 'success');
+            } catch (error) {
+                console.error('[Profile] Kaydetme hatası:', error);
+                showToast('Profil kaydedilemedi: ' + error.message, 'error');
             }
         }
         
@@ -6285,57 +6562,51 @@
                     return;
                 }
                 
-                // PIN doğrulaması - Önce hashed kontrol, sonra düz metin
-                const salonPinHash = salonFound.data.pin;
-                let pinValid = false;
-                
-                // Eğer PIN hashed ise ($2a$ ile başlıyor)
-                if (salonPinHash && salonPinHash.startsWith('$2a$')) {
-                    console.log('[Login] Hashed PIN tespit edildi, Cloud Function kullanılıyor');
+                // PIN doğrulaması - Her zaman Cloud Function (server-side bcrypt + rate-limit)
+                // Düz metin PIN'ler Cloud Function'da lazy migrate edilir
+                try {
+                    const verifyPinFn = firebase.functions().httpsCallable('verifyPinAuth');
+                    const result = await verifyPinFn({
+                        salonId: salonFound.id,
+                        pin: pin,
+                        phone: inputPhone,
+                        userType: isOwner ? 'owner' : 'staff',
+                        staffId: staffData ? (staffData.id || staffData.name) : null
+                    });
                     
-                    try {
-                        // Cloud Function ile doğrula
-                        const verifyPin = firebase.functions().httpsCallable('verifyPinAuth');
-                        const result = await verifyPin({
-                            salonId: salonFound.id,
-                            pin: pin,
-                            userType: isOwner ? 'salon' : 'staff',
-                            staffId: staffData ? (staffData.id || staffData.name) : null
-                        });
+                    if (result.data && result.data.success) {
+                        console.log('[Login] PIN doğrulaması başarılı');
                         
-                        if (result.data && result.data.success) {
-                            pinValid = true;
-                            console.log('[Login] ✅ Cloud Function PIN doğrulaması başarılı');
+                        // Firebase Auth Custom Token ile oturum aç
+                        if (result.data.customToken) {
+                            try {
+                                const userCred = await firebase.auth().signInWithCustomToken(result.data.customToken);
+                                console.log('[Login] Firebase Auth oturumu açıldı');
+                                // UID kaydet (profil için)
+                                if (result.data.userData && result.data.userData.uid) {
+                                    localStorage.setItem('zamanli_user_uid', result.data.userData.uid);
+                                } else if (userCred.user) {
+                                    localStorage.setItem('zamanli_user_uid', userCred.user.uid);
+                                }
+                            } catch (authErr) {
+                                console.warn('[Login] Custom token signIn hatası (devam ediliyor):', authErr);
+                            }
                         }
-                    } catch (cloudError) {
-                        console.error('[Login] Cloud Function hatası:', cloudError);
-                        // Fallback: düz metin kontrolü
-                    }
-                } else {
-                    // Düz metin PIN kontrolü (eski salonlar için)
-                    console.log('[Login] Düz metin PIN kontrolü');
-                    if (isOwner) {
-                        pinValid = salonPinHash === pin;
-                        // Owner staff PIN kontrolü
-                        if (!pinValid && staffData && staffData.pin) {
-                            pinValid = staffData.pin === pin;
+                        
+                        if (isOwner) {
+                            loginAsOwner(salonFound.id, salonFound.data);
+                        } else if (staffData) {
+                            loginAsStaff(staffData, salonFound.id, salonFound.data);
                         }
-                    } else if (staffData) {
-                        pinValid = staffData.pin === pin;
+                        return;
                     }
+                } catch (pinError) {
+                    console.error('[Login] PIN doğrulama hatası:', pinError);
+                    showLoginError(pinError.message || 'Telefon numarası veya PIN hatalı');
+                    return;
                 }
                 
-                if (pinValid) {
-                    // GİRİŞ BAŞARILI
-                    if (isOwner) {
-                        loginAsOwner(salonFound.id, salonFound.data);
-                    } else if (staffData) {
-                        loginAsStaff(staffData, salonFound.id, salonFound.data);
-                    }
-                    return;
-                } else {
-                    showLoginError('Telefon numarası veya PIN hatalı');
-                }
+                showLoginError('Telefon numarası veya PIN hatalı');
                 
             } catch (error) {
                 console.error('[Login] Hata:', error);
@@ -8307,23 +8578,44 @@ Panel: ${window.location.href}`);
             const file = event.target.files[0];
             if (!file) return;
             
-            if (file.size > 2 * 1024 * 1024) {
-                showToast('Logo maksimum 2MB olmalı', 'error');
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Logo maksimum 5MB olmalı', 'error');
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                showToast('Sadece resim dosyaları kabul edilir', 'error');
                 return;
             }
             
             showToast('Logo yükleniyor...', '');
             
             try {
-                const base64 = await fileToBase64(file);
-                await db.collection('salons').doc(salon.id).update({ logo: base64 });
-                salon.logo = base64;
-                document.getElementById('logoPreview').innerHTML = `<img src="${base64}" alt="Logo">`;
+                // Firebase Storage'a yükle
+                const storage = firebase.storage();
+                const ext = file.name.split('.').pop();
+                const ref = storage.ref(`salons/${salon.id}/logo/logo.${ext}`);
+                await ref.put(file);
+                const logoURL = await ref.getDownloadURL();
+                
+                await db.collection('salons').doc(salon.id).update({ logo: logoURL, logoStorage: true });
+                salon.logo = logoURL;
+                document.getElementById('logoPreview').innerHTML = `<img src="${logoURL}" alt="Logo">`;
                 document.getElementById('removeLogoBtn').style.display = 'inline-flex';
                 showToast('Logo kaydedildi', 'success');
             } catch (error) {
                 console.error('Logo upload error:', error);
-                showToast('Logo yüklenirken hata oluştu', 'error');
+                // Fallback: base64
+                try {
+                    const base64 = await fileToBase64(file);
+                    await db.collection('salons').doc(salon.id).update({ logo: base64 });
+                    salon.logo = base64;
+                    document.getElementById('logoPreview').innerHTML = `<img src="${base64}" alt="Logo">`;
+                    document.getElementById('removeLogoBtn').style.display = 'inline-flex';
+                    showToast('Logo kaydedildi (fallback)', 'success');
+                } catch (fbError) {
+                    showToast('Logo yüklenirken hata oluştu', 'error');
+                }
             }
         }
         
@@ -8353,29 +8645,55 @@ Panel: ${window.location.href}`);
                 </div>
             `).join('');
             
-            // 5'ten az varsa ekleme butonunu göster
-            document.getElementById('addGalleryBtn').style.display = gallery.length >= 5 ? 'none' : 'inline-flex';
+            // Gallery counter + limit
+            const countEl = document.createElement('p');
+            countEl.style.cssText = 'font-size:0.75rem;color:var(--slate-500);margin-top:0.25rem;';
+            countEl.textContent = `${gallery.length}/10 görsel yüklendi`;
+            container.parentElement?.querySelector('.gallery-count')?.remove();
+            countEl.className = 'gallery-count';
+            container.after(countEl);
+            
+            // 10'dan az varsa ekleme butonunu göster
+            document.getElementById('addGalleryBtn').style.display = gallery.length >= 10 ? 'none' : 'inline-flex';
         }
         
         async function uploadGalleryImages(event) {
             const files = Array.from(event.target.files);
             const gallery = salon.gallery || [];
             
-            if (gallery.length + files.length > 5) {
-                showToast('Maksimum 5 görsel ekleyebilirsiniz', 'error');
+            if (gallery.length + files.length > 10) {
+                showToast(`Maksimum 10 görsel ekleyebilirsiniz (${gallery.length}/10 dolu)`, 'error');
                 return;
             }
             
             showToast('Görseller yükleniyor...', '');
             
             try {
+                const storage = firebase.storage();
+                
                 for (const file of files) {
                     if (file.size > 5 * 1024 * 1024) {
                         showToast(`${file.name} çok büyük (max 5MB)`, 'error');
                         continue;
                     }
-                    const base64 = await fileToBase64(file);
-                    gallery.push(base64);
+                    if (!file.type.startsWith('image/')) {
+                        showToast(`${file.name} resim dosyası değil`, 'error');
+                        continue;
+                    }
+                    
+                    // Firebase Storage'a yükle
+                    try {
+                        const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+                        const ref = storage.ref(`salons/${salon.id}/gallery/${fileName}`);
+                        await ref.put(file);
+                        const url = await ref.getDownloadURL();
+                        gallery.push(url);
+                    } catch (storageErr) {
+                        // Fallback: base64
+                        console.warn('Storage fallback:', storageErr);
+                        const base64 = await fileToBase64(file);
+                        gallery.push(base64);
+                    }
                 }
                 
                 await db.collection('salons').doc(salon.id).update({ gallery });
@@ -8655,64 +8973,7 @@ Panel: ${window.location.href}`);
             }, 100);
         }
         
-        // Manuel müşteri ekleme modal fonksiyonları
-        function openAddCustomerModal() {
-            const modal = document.getElementById('addCustomerModal');
-            modal.classList.add('active');
-            document.getElementById('newCustomerName').value = '';
-            document.getElementById('newCustomerPhone').value = '';
-            document.getElementById('newCustomerEmail').value = '';
-            document.getElementById('newCustomerNote').value = '';
-        }
-        
-        function closeAddCustomerModal() {
-            const modal = document.getElementById('addCustomerModal');
-            modal.classList.remove('active');
-        }
-        
-        async function saveNewCustomer(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('newCustomerName').value.trim();
-            const phone = document.getElementById('newCustomerPhone').value.replace(/\D/g, '').slice(-10);
-            const email = document.getElementById('newCustomerEmail').value.trim();
-            const note = document.getElementById('newCustomerNote').value.trim();
-            
-            if (!name || !phone || phone.length !== 10) {
-                showToast('Ad ve geçerli telefon numarası gerekli', 'error');
-                return;
-            }
-            
-            // Telefon numarasının mevcut olup olmadığını kontrol et
-            const existingCustomer = allCustomers.find(c => c.phone === phone);
-            if (existingCustomer) {
-                showToast('Bu telefon numarası zaten kayıtlı: ' + existingCustomer.name, 'error');
-                return;
-            }
-            
-            try {
-                const customerData = {
-                    name: name,
-                    phone: phone,
-                    email: email || null,
-                    note: note || null,
-                    createdAt: new Date().toISOString(),
-                    createdBy: isStaffMode ? currentStaffName : 'Salon Sahibi'
-                };
-                
-                await db.collection('salons').doc(salon.id).collection('customers').add(customerData);
-                
-                showToast('Müşteri başarıyla eklendi', 'success');
-                closeAddCustomerModal();
-                
-                // Listeyi yenile
-                await loadCustomers();
-                
-            } catch (error) {
-                console.error('Error adding customer:', error);
-                showToast('Müşteri eklenirken hata oluştu', 'error');
-            }
-        }
+        // Manuel müşteri ekleme modal fonksiyonları - tanım sayfa sonunda (duplicate önleme)
         
         async function deleteManualCustomer(customerId) {
             if (!confirm('Bu müşteriyi silmek istediğinize emin misiniz?')) return;
@@ -10614,6 +10875,159 @@ END:VEVENT
         // ========== RAPORLAR FONKSİYONLARI ==========
         let currentReportPeriod = 'week';
         
+        // ========== EXPORT FONKSİYONLARI ==========
+        function exportAppointmentsCSV() {
+            const pkg = (salon?.package || 'free').toLowerCase();
+            if (pkg === 'free') {
+                showToast('CSV export Pro pakette kullanılabilir. Paket yükseltmek için Fiyatlandırma sayfasını ziyaret edin.', 'warning');
+                return;
+            }
+            
+            try {
+                const thisMonth = new Date().toISOString().slice(0, 7);
+                const data = (appointments || []).filter(a => a.date && a.date >= (new Date(Date.now() - 365 * 24 * 3600 * 1000)).toISOString().split('T')[0]);
+                
+                if (data.length === 0) { showToast('Dışa aktarılacak randevu yok', 'warning'); return; }
+                
+                // CSV Header
+                const headers = ['Tarih', 'Saat', 'Müşteri', 'Telefon', 'Hizmet', 'Personel', 'Durum', 'Fiyat'];
+                const statusMap = { pending: 'Bekliyor', confirmed: 'Onaylı', completed: 'Tamamlandı', cancelled: 'İptal' };
+                
+                const rows = data.map(a => [
+                    a.date || '',
+                    a.time || '',
+                    (a.customerName || '').replace(/,/g, ' '),
+                    (a.customerPhone || '').replace(/,/g, ' '),
+                    (a.serviceName || '').replace(/,/g, ' '),
+                    (a.staffName || '').replace(/,/g, ' '),
+                    statusMap[a.status] || a.status || '',
+                    a.servicePrice || 0
+                ]);
+                
+                // BOM + CSV
+                const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `zamanli_randevular_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                URL.revokeObjectURL(url);
+                
+                showToast('CSV dosyası indiriliyor...', 'success');
+            } catch (e) {
+                showToast('Export hatası: ' + e.message, 'error');
+            }
+        }
+        
+        function exportCustomersCSV() {
+            const pkg = (salon?.package || 'free').toLowerCase();
+            if (pkg === 'free') {
+                showToast('CSV export Pro pakette kullanılabilir', 'warning');
+                return;
+            }
+            
+            try {
+                const customers = allCustomers || [];
+                if (customers.length === 0) { showToast('Dışa aktarılacak müşteri yok', 'warning'); return; }
+                
+                const headers = ['İsim', 'Telefon', 'Randevu Sayısı', 'Son Randevu'];
+                const rows = customers.map(c => [
+                    (c.name || 'İsimsiz').replace(/,/g, ' '),
+                    c.phone || '',
+                    c.appointmentCount || 0,
+                    c.lastAppointment || ''
+                ]);
+                
+                const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `zamanli_musteriler_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                URL.revokeObjectURL(url);
+                
+                showToast('Müşteri CSV indiriliyor...', 'success');
+            } catch (e) {
+                showToast('Export hatası: ' + e.message, 'error');
+            }
+        }
+        
+        function exportReportPDF() {
+            const pkg = (salon?.package || 'free').toLowerCase();
+            if (pkg === 'free') {
+                showToast('PDF export Business pakette kullanılabilir', 'warning');
+                return;
+            }
+            if (pkg === 'pro') {
+                showToast('PDF export Business pakette kullanılabilir. CSV export kullanabilirsiniz.', 'warning');
+                return;
+            }
+            
+            try {
+                // HTML to print
+                const reportsContainer = document.querySelector('.reports-container');
+                if (!reportsContainer) { showToast('Rapor alanı bulunamadı', 'error'); return; }
+                
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Zamanli - ${salon?.name || 'Salon'} Rapor</title>
+                        <style>
+                            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; color: #334155; }
+                            h1 { font-size: 1.5rem; color: #1e293b; border-bottom: 2px solid #6366f1; padding-bottom: 0.5rem; }
+                            .report-summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+                            .report-card { padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+                            .report-card-value { font-size: 1.5rem; font-weight: 700; }
+                            .report-card-label { font-size: 0.85rem; color: #64748b; }
+                            table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+                            th, td { padding: 0.5rem; border: 1px solid #e2e8f0; text-align: left; font-size: 0.85rem; }
+                            th { background: #f1f5f9; font-weight: 600; }
+                            .no-print { display: none; }
+                            @media print { .no-print { display: none; } }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>📊 ${salon?.name || 'Salon'} - Rapor (${currentReportPeriod === 'week' ? 'Haftalık' : currentReportPeriod === 'month' ? 'Aylık' : 'Yıllık'})</h1>
+                        <p style="color:#64748b;">Oluşturulma: ${new Date().toLocaleString('tr-TR')}</p>
+                        ${reportsContainer.innerHTML}
+                        <script>setTimeout(() => window.print(), 500);<\/script>
+                    </body>
+                    </html>
+                `);
+                printWindow.document.close();
+                
+                showToast('PDF hazırlanıyor...', 'success');
+            } catch (e) {
+                showToast('PDF export hatası: ' + e.message, 'error');
+            }
+        }
+        
+        // Export butonlarını paket bazlı etkinleştir/devre dışı bırak
+        function updateExportButtons() {
+            const pkg = (salon?.package || 'free').toLowerCase();
+            const csvBtn = document.getElementById('btnExportCSV');
+            const pdfBtn = document.getElementById('btnExportPDF');
+            
+            if (csvBtn) {
+                if (pkg === 'free') {
+                    csvBtn.style.opacity = '0.5';
+                    csvBtn.title = 'Pro pakete geçerek CSV export kullanabilirsiniz';
+                }
+            }
+            if (pdfBtn) {
+                if (pkg !== 'business') {
+                    pdfBtn.style.opacity = '0.5';
+                    pdfBtn.title = 'Business pakete geçerek PDF export kullanabilirsiniz';
+                }
+            }
+        }
+        
         function changeReportPeriod(period) {
             currentReportPeriod = period;
             
@@ -10684,17 +11098,26 @@ END:VEVENT
             document.getElementById('reportTotalAppointments').textContent = total;
             document.getElementById('reportCompletedAppointments').textContent = completed + confirmed;
             document.getElementById('reportCancelledAppointments').textContent = cancelled;
-            document.getElementById('reportTotalRevenue').textContent = actualPaidAmount.toLocaleString('tr-TR') + ' ₺';
+            // Operatör: finansal verileri gizle
+            if (currentStaffRole === STAFF_ROLES.OPERATOR) {
+                document.getElementById('reportTotalRevenue').textContent = '—';
+                renderDetailedStats({
+                    total, completed, confirmed, pending, cancelled,
+                    totalServiceValue: 0, actualPaidAmount: 0, pendingPayment: 0,
+                    avgValue: 0, cancelRate, completionRate,
+                    hideFinancial: true
+                });
+            } else {
+                document.getElementById('reportTotalRevenue').textContent = actualPaidAmount.toLocaleString('tr-TR') + ' ₺';
+                renderDetailedStats({
+                    total, completed, confirmed, pending, cancelled,
+                    totalServiceValue, actualPaidAmount, pendingPayment,
+                    avgValue, cancelRate, completionRate
+                });
+            }
             
-            // Detaylı istatistikler
-            renderDetailedStats({
-                total, completed, confirmed, pending, cancelled,
-                totalServiceValue, actualPaidAmount, pendingPayment,
-                avgValue, cancelRate, completionRate
-            });
-            
-            // Chart.js Finans Dashboard'u güncelle
-            if (typeof FinanceDashboard !== 'undefined') {
+            // Chart.js Finans Dashboard'u güncelle (operatör için gizle)
+            if (typeof FinanceDashboard !== 'undefined' && currentStaffRole !== STAFF_ROLES.OPERATOR) {
                 FinanceDashboard.currentPeriod = currentReportPeriod;
                 FinanceDashboard.appointments = appointments;
                 FinanceDashboard.render();
@@ -11346,15 +11769,22 @@ ${salon.name}`;
         }
         
         async function saveNewCustomer(event) {
-            event.preventDefault();
+            if (event) event.preventDefault();
             
             const name = document.getElementById('newCustomerName').value.trim();
-            const phone = document.getElementById('newCustomerPhone').value.replace(/\D/g, '');
+            const phone = document.getElementById('newCustomerPhone').value.replace(/\D/g, '').slice(-10);
             const email = document.getElementById('newCustomerEmail').value.trim();
             const note = document.getElementById('newCustomerNote').value.trim();
             
-            if (!name || !phone) {
-                showToast('Ad ve telefon zorunludur', 'error');
+            if (!name || !phone || phone.length !== 10) {
+                showToast('Ad ve geçerli telefon numarası (10 hane) gerekli', 'error');
+                return;
+            }
+            
+            // Duplicate kontrolü
+            const existingCustomer = allCustomers.find(c => c.phone === phone);
+            if (existingCustomer) {
+                showToast('Bu telefon zaten kayıtlı: ' + existingCustomer.name, 'warning');
                 return;
             }
             
@@ -12218,10 +12648,11 @@ ${salon.name}`;
                                 lastActive: firebase.firestore.FieldValue.serverTimestamp()
                             };
                             
-                            // Personel ise staffId ekle
+                            // Personel ise staffId ve rol ekle
                             if (isStaffMode && currentStaffId) {
                                 tokenData.staffId = currentStaffId;
                                 tokenData.staffName = currentStaffName;
+                                tokenData.staffRole = currentStaffRole || STAFF_ROLES.STAFF;
                             }
                             
                             await db.collection('push_tokens').doc(tokenHash).set(tokenData, { merge: true });
@@ -12525,5 +12956,19 @@ ${salon.name}`;
     
     <!-- Personel Ayarları Modal -->
     <div id="staffSettingsModal" style="display: none;"></div>
+    
+    <!-- Genel Modal Container (Owner Profile vb.) -->
+    <div id="modal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;"></div>
+    
+    <script>
+        // closeModal - genel modal kapatma fonksiyonu
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            if (modal) {
+                modal.innerHTML = '';
+                modal.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>

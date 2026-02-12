@@ -116,6 +116,13 @@ const ZamanliPWA = {
             return;
         }
         
+        // "view=public" parametresi varsa yönlendirme yapma (Salonu Görüntüle butonu)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('view') === 'public') {
+            console.log('[PWA] view=public parametresi tespit edildi, yönlendirme atlanıyor');
+            return;
+        }
+        
         // Salon sahibi session'ı kontrol et
         try {
             const salonSession = localStorage.getItem('salonSession');

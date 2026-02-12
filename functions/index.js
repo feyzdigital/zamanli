@@ -36,6 +36,9 @@ exports.hashSalonPin = authHelpers.hashSalonPin;
 exports.hashStaffPin = authHelpers.hashStaffPin;
 exports.verifyPinAuth = authHelpers.verifyPinAuth;
 exports.changePinAuth = authHelpers.changePinAuth;
+exports.verifyAdminAuth = authHelpers.verifyAdminAuth;
+exports.changeAdminPin = authHelpers.changeAdminPin;
+exports.migrateSalonPins = authHelpers.migrateSalonPins;
 
 // === Email Notification Functions ===
 exports.sendAppointmentConfirmationEmail = emailNotifications.sendAppointmentConfirmationEmail;
@@ -77,10 +80,30 @@ exports.onNewAppointment = functions
         try {
             // Salon bilgilerini al (slug için)
             let salonSlug = appointment.salonSlug || '';
+            let salonData = null;
             if (!salonSlug) {
                 const salonDoc = await db.collection('salons').doc(appointment.salonId).get();
                 if (salonDoc.exists) {
-                    salonSlug = salonDoc.data().slug || '';
+                    salonData = salonDoc.data();
+                    salonSlug = salonData.slug || '';
+                }
+            }
+            
+            // Operatör kontrolü: Randevu operatöre atanmışsa reddet
+            if (salonData && appointment.staffId) {
+                const staffList = salonData.staff || [];
+                const assignedStaff = staffList.find(s => 
+                    (s.id || s.name) === appointment.staffId || s.name === appointment.staffName
+                );
+                if (assignedStaff && (assignedStaff.role === 'operator' || assignedStaff.staffRole === 'operator')) {
+                    console.log('[Push] Operatör personele randevu atanamaz:', appointment.staffId);
+                    // Randevuyu iptal et
+                    await snapshot.ref.update({ 
+                        status: 'cancelled', 
+                        cancelReason: 'Operatör personele randevu oluşturulamaz',
+                        cancelledAt: new Date().toISOString()
+                    });
+                    return null;
                 }
             }
             
@@ -110,10 +133,15 @@ exports.onNewAppointment = functions
                         .get();
                 }
                 
-                // Personel tokenları ekle
+                // Personel tokenları ekle (operatör hariç)
                 if (staffTokensSnapshot && !staffTokensSnapshot.empty) {
                     staffTokensSnapshot.forEach(doc => {
                         const data = doc.data();
+                        // Operatör rolündeki personele bildirim GÖNDERİLMEZ
+                        if (data.staffRole === 'operator') {
+                            console.log('[Push] Operatör atlandı:', data.staffName);
+                            return;
+                        }
                         if (data.token && !tokenSet.has(data.token)) {
                             tokenSet.add(data.token);
                             tokens.push({ token: data.token, type: 'staff', staffName: data.staffName });
@@ -666,17 +694,109 @@ exports.cleanupOldTokens = functions
             
             console.log('[Cleanup] Silinecek eski token sayısı:', oldTokensSnapshot.size);
             
-            const batch = db.batch();
+            let batch = db.batch();
+            let batchCount = 0;
             oldTokensSnapshot.forEach(doc => {
                 batch.delete(doc.ref);
+                batchCount++;
+                if (batchCount >= 400) {
+                    batch.commit();
+                    batch = db.batch();
+                    batchCount = 0;
+                }
             });
             
-            await batch.commit();
+            if (batchCount > 0) {
+                await batch.commit();
+            }
             console.log('[Cleanup] Temizlik tamamlandı');
             
             return null;
         } catch (error) {
             console.error('[Cleanup] Hata:', error);
             return null;
+        }
+    });
+
+/**
+ * Google Reviews Fetch & Cache
+ * Callable function - salon detay sayfasından tetiklenir
+ * 24 saat TTL ile cache'lenir
+ */
+exports.fetchGoogleReviews = functions
+    .region('europe-west1')
+    .https.onCall(async (data, context) => {
+        const { salonId } = data;
+        
+        if (!salonId) {
+            throw new functions.https.HttpsError('invalid-argument', 'Salon ID gerekli');
+        }
+        
+        try {
+            // Cache kontrolü (24 saat TTL)
+            const cacheRef = db.collection('salons').doc(salonId).collection('googleReviewsCache').doc('latest');
+            const cacheDoc = await cacheRef.get();
+            
+            if (cacheDoc.exists) {
+                const cacheData = cacheDoc.data();
+                const cachedAt = cacheData.cachedAt?.toDate?.() || new Date(0);
+                const hoursSinceCached = (Date.now() - cachedAt.getTime()) / (1000 * 60 * 60);
+                
+                if (hoursSinceCached < 24) {
+                    console.log('[Google Reviews] Cache geçerli, döndürülüyor');
+                    return { success: true, reviews: cacheData.reviews || [], fromCache: true };
+                }
+            }
+            
+            // Salon'un Google Place ID'sini al
+            const salonDoc = await db.collection('salons').doc(salonId).get();
+            if (!salonDoc.exists) {
+                throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
+            }
+            
+            const salonData = salonDoc.data();
+            const placeId = salonData.googlePlaceId || salonData.placeId;
+            
+            if (!placeId) {
+                // Place ID yoksa boş döndür
+                return { success: true, reviews: [], message: 'Google Place ID bulunamadı' };
+            }
+            
+            // Google Places API çağrısı
+            // NOT: API key functions config'den alınmalı
+            const apiKey = functions.config().google?.places_api_key || '';
+            
+            if (!apiKey) {
+                console.log('[Google Reviews] Google Places API key yapılandırılmamış');
+                return { success: true, reviews: [], message: 'API key yapılandırılmamış' };
+            }
+            
+            const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&language=tr&key=${apiKey}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            
+            const reviews = (result.result?.reviews || []).map(r => ({
+                author_name: r.author_name,
+                rating: r.rating,
+                text: r.text,
+                relative_time_description: r.relative_time_description,
+                profile_photo_url: r.profile_photo_url,
+                time: r.time
+            }));
+            
+            // Cache'e kaydet
+            await cacheRef.set({
+                reviews: reviews,
+                cachedAt: admin.firestore.FieldValue.serverTimestamp(),
+                placeId: placeId
+            });
+            
+            console.log(`[Google Reviews] ${reviews.length} yorum cache'lendi`);
+            return { success: true, reviews, fromCache: false };
+            
+        } catch (error) {
+            if (error instanceof functions.https.HttpsError) throw error;
+            console.error('[Google Reviews] Hata:', error);
+            return { success: false, reviews: [], error: error.message };
         }
     });

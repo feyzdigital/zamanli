@@ -41,7 +41,7 @@ async function getMonthlyAppointmentCount(salonId) {
     const snapshot = await db.collection('appointments')
         .where('salonId', '==', salonId)
         .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(startOfMonth))
-        .where('status', '!=', 'cancelled')
+        .where('status', 'in', ['pending', 'confirmed', 'completed'])
         .count()
         .get();
     
@@ -223,8 +223,9 @@ exports.resetMonthlyStats = functions
         try {
             const salonsSnapshot = await db.collection('salons').get();
             
-            const batch = db.batch();
+            let batch = db.batch();
             let count = 0;
+            let batchCount = 0;
             
             salonsSnapshot.forEach((doc) => {
                 batch.update(doc.ref, {
@@ -232,9 +233,18 @@ exports.resetMonthlyStats = functions
                     'monthlyStats.resetAt': admin.firestore.FieldValue.serverTimestamp()
                 });
                 count++;
+                batchCount++;
+                
+                if (batchCount >= 400) {
+                    batch.commit();
+                    batch = db.batch();
+                    batchCount = 0;
+                }
             });
             
-            await batch.commit();
+            if (batchCount > 0) {
+                await batch.commit();
+            }
             
             console.log(`[Package] ✅ ${count} salonun stats'ı sıfırlandı`);
             return null;

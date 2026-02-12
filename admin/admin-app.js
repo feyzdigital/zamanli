@@ -44,13 +44,28 @@ function checkAuth() {
     renderLogin();
 }
 
-function login() {
+async function login() {
     const pin = document.getElementById('pinInput').value;
-    if (ADMIN_CONFIG.verifySuperAdmin(pin)) {
-        const expiry = new Date(); expiry.setHours(expiry.getHours() + 24);
-        localStorage.setItem('zamanli_admin', JSON.stringify({ verified: true, expiry: expiry.toISOString() }));
-        AdminState.isLoggedIn = true; loadAllData();
-    } else { showToast('Geçersiz şifre!', 'error'); document.getElementById('pinInput').value = ''; }
+    const loginBtn = document.querySelector('.login-btn') || document.querySelector('button[onclick*="login"]');
+    
+    if (!pin) { showToast('Şifre girin', 'error'); return; }
+    
+    // UI: loading state
+    if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Doğrulanıyor...'; }
+    
+    try {
+        const isValid = await ADMIN_CONFIG.verifySuperAdmin(pin);
+        if (isValid) {
+            const expiry = new Date(); expiry.setHours(expiry.getHours() + 24);
+            localStorage.setItem('zamanli_admin', JSON.stringify({ verified: true, expiry: expiry.toISOString() }));
+            AdminState.isLoggedIn = true; loadAllData();
+        }
+    } catch (error) {
+        showToast(error.message || 'Geçersiz şifre!', 'error');
+        document.getElementById('pinInput').value = '';
+    } finally {
+        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Giriş Yap'; }
+    }
 }
 
 function logout() {
@@ -456,7 +471,9 @@ function renderSalonStaff() {
     else {
         h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Rol</th><th>Telefon</th><th>PIN</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>';
         AdminState.salonStaff.forEach(st => {
-            h += '<tr><td><strong>' + esc(st.name) + '</strong></td><td>' + esc(st.role || st.title || '-') + '</td><td>' + (st.phone || '-') + '</td><td><code>' + (st.pin || '-') + '</code></td><td><span class="status-badge ' + (st.active !== false ? 'active' : 'inactive') + '">' + (st.active !== false ? 'Aktif' : 'Pasif') + '</span></td><td><button onclick="showEditStaffModal(\'' + st.id + '\')" class="btn btn-icon">✏️</button><button onclick="deleteStaff(\'' + st.id + '\')" class="btn btn-icon danger">🗑️</button></td></tr>';
+            var roleLabel = st.staffRole === 'operator' ? 'Operatör' : 'Personel';
+            var roleBadge = st.staffRole === 'operator' ? 'badge-warning' : 'badge-info';
+            h += '<tr><td><strong>' + esc(st.name) + '</strong></td><td><span class="badge ' + roleBadge + '">' + roleLabel + '</span></td><td>' + (st.phone || '-') + '</td><td><code>' + (st.pin || '-') + '</code></td><td><span class="status-badge ' + (st.active !== false ? 'active' : 'inactive') + '">' + (st.active !== false ? 'Aktif' : 'Pasif') + '</span></td><td><button onclick="showEditStaffModal(\'' + st.id + '\')" class="btn btn-icon">✏️</button><button onclick="deleteStaff(\'' + st.id + '\')" class="btn btn-icon danger">🗑️</button></td></tr>';
         });
         h += '</tbody></table>';
     }
@@ -694,7 +711,7 @@ function filterCustomers(query) {
     tbody.innerHTML = filtered.map(c => {
         const createdDate = c.createdAt ? (typeof c.createdAt === 'string' ? c.createdAt.split('T')[0] : new Date(c.createdAt).toLocaleDateString('tr-TR')) : '-';
         const lastDate = c.lastAppointment || '-';
-        return '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + esc(c.salonName || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + lastDate + '</td><td>' + createdDate + '</td></tr>';
+        return '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + esc(c.salonName || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + lastDate + '</td><td>' + createdDate + '</td><td><button class="btn btn-sm btn-danger" onclick="deleteGlobalCustomer(\'' + (c.id || '') + '\',\'' + esc(c.salonId || '') + '\')">🗑️</button></td></tr>';
     }).join('');
 }
 
@@ -706,34 +723,26 @@ function showChangePasswordModal() {
     document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>🔐 Şifre Değiştir</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><p style="color:var(--slate-500);font-size:0.9rem;margin-bottom:1rem;">Süper admin şifresini değiştirmek için mevcut şifreyi doğrulamanız gerekiyor.</p><div class="form-group"><label class="form-label">Mevcut Şifre</label><input type="password" id="currentPassword" class="form-input"></div><div class="form-group"><label class="form-label">Yeni Şifre</label><input type="password" id="newPassword" class="form-input" placeholder="En az 8 karakter"></div><div class="form-group"><label class="form-label">Yeni Şifre (Tekrar)</label><input type="password" id="confirmPassword" class="form-input"></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="changeAdminPassword()" class="btn btn-primary">Değiştir</button></div></div></div>';
 }
 
-function changeAdminPassword() {
+async function changeAdminPassword() {
     const current = document.getElementById('currentPassword').value;
     const newPass = document.getElementById('newPassword').value;
-    const confirm = document.getElementById('confirmPassword').value;
+    const confirmPass = document.getElementById('confirmPassword').value;
     
-    if (!ADMIN_CONFIG.verifySuperAdmin(current)) {
-        showToast('Mevcut şifre yanlış!', 'error');
-        return;
+    if (!current) { showToast('Mevcut şifre gerekli', 'error'); return; }
+    if (newPass.length < 6) { showToast('Yeni şifre en az 6 karakter olmalı!', 'error'); return; }
+    if (newPass !== confirmPass) { showToast('Şifreler eşleşmiyor!', 'error'); return; }
+    
+    try {
+        const changePin = firebase.functions().httpsCallable('changeAdminPin');
+        const result = await changePin({ currentPin: current, newPin: newPass });
+        
+        if (result.data.success) {
+            closeModal();
+            showToast('Şifre başarıyla değiştirildi!', 'success');
+        }
+    } catch (error) {
+        showToast(error.message || 'Şifre değiştirme hatası', 'error');
     }
-    
-    if (newPass.length < 6) {
-        showToast('Yeni şifre en az 6 karakter olmalı!', 'error');
-        return;
-    }
-    
-    if (newPass !== confirm) {
-        showToast('Şifreler eşleşmiyor!', 'error');
-        return;
-    }
-    
-    // Yeni base64 encoded şifreyi oluştur
-    const newEncoded = btoa(newPass);
-    
-    // Kullanıcıya bilgi ver
-    alert('Yeni şifre kodu: ' + newEncoded + '\n\nBu kodu admin-config.js dosyasindaki _sp degerine yapistirin.\n\nDosyayi guncelledikten sonra yeni sifrenizi kullanabilirsiniz.');
-    
-    closeModal();
-    showToast('Kod olusturuldu! admin-config.js dosyasini guncelleyin.', 'success');
 }
 
 // ==================== ACTIONS ====================
@@ -885,7 +894,9 @@ function clearLocalCache() {
 async function addStaff() {
     const name = document.getElementById('staffName').value.trim(); if (!name) { showToast('Ad gerekli', 'error'); return; }
     const sid = AdminState.selectedSalon.id;
-    const newStaff = { id: 'staff-' + Date.now(), name, role: document.getElementById('staffRole').value.trim() || 'Personel', title: document.getElementById('staffRole').value.trim() || 'Personel', phone: document.getElementById('staffPhone').value.replace(/\D/g, '').slice(-10), pin: document.getElementById('staffPin').value.trim() || '000000', active: true, createdAt: new Date().toISOString() };
+    var selectedRole = document.getElementById('staffRole').value || 'staff';
+    var roleLabel = selectedRole === 'operator' ? 'Operatör' : 'Personel';
+    const newStaff = { id: 'staff-' + Date.now(), name, staffRole: selectedRole, role: roleLabel, title: roleLabel, phone: document.getElementById('staffPhone').value.replace(/\D/g, '').slice(-10), pin: document.getElementById('staffPin').value.trim() || '000000', active: true, createdAt: new Date().toISOString() };
     try { const currentStaff = AdminState.selectedSalon.staff || []; currentStaff.push(newStaff); await db.collection('salons').doc(sid).update({ staff: currentStaff }); showToast('Eklendi!', 'success'); closeModal(); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
@@ -895,7 +906,9 @@ async function updateStaff(staffId) {
         let currentStaff = AdminState.selectedSalon.staff ? [...AdminState.selectedSalon.staff] : [];
         const idx = currentStaff.findIndex(s => s.id === staffId);
         if (idx >= 0) {
-            currentStaff[idx] = { ...currentStaff[idx], name: document.getElementById('staffName').value.trim(), role: document.getElementById('staffRole').value.trim(), title: document.getElementById('staffRole').value.trim(), phone: document.getElementById('staffPhone').value.replace(/\D/g, '').slice(-10), pin: document.getElementById('staffPin').value.trim(), active: document.getElementById('staffActive').checked, updatedAt: new Date().toISOString() };
+            var updatedRole = document.getElementById('staffRole').value || 'staff';
+            var updatedRoleLabel = updatedRole === 'operator' ? 'Operatör' : 'Personel';
+            currentStaff[idx] = { ...currentStaff[idx], name: document.getElementById('staffName').value.trim(), staffRole: updatedRole, role: updatedRoleLabel, title: updatedRoleLabel, phone: document.getElementById('staffPhone').value.replace(/\D/g, '').slice(-10), pin: document.getElementById('staffPin').value.trim(), active: document.getElementById('staffActive').checked, updatedAt: new Date().toISOString() };
             await db.collection('salons').doc(sid).update({ staff: currentStaff }); showToast('Kaydedildi!', 'success'); closeModal(); await loadSalonDetails(sid);
         } else { showToast('Personel bulunamadı', 'error'); }
     } catch (e) { showToast('Hata: ' + e.message, 'error'); }
@@ -949,12 +962,7 @@ async function updateAppointment(aptId) {
     } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
-async function updateGlobalAppointment(aptId) {
-    try {
-        await db.collection('appointments').doc(aptId).update({ customerName: document.getElementById('aptCustomerName').value.trim(), customerPhone: document.getElementById('aptCustomerPhone').value.replace(/\D/g, ''), date: document.getElementById('aptDate').value, time: document.getElementById('aptTime').value, status: document.getElementById('aptStatus').value, updatedAt: new Date().toISOString(), updatedBy: 'admin' });
-        showToast('Güncellendi!', 'success'); closeModal();
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
-}
+// İlk updateGlobalAppointment tanımı kaldırıldı - aktif tanım altta (line 1234+)
 
 async function createSalon() {
     const name = document.getElementById('newName').value.trim();
@@ -1038,7 +1046,7 @@ async function createSalon() {
         const docRef = await db.collection('salons').add(salonData);
         showToast('Salon oluşturuldu! PIN: ' + pin + ' | ID: ' + docRef.id, 'success');
         closeModal();
-        await loadSalons();
+        await loadAllData();
         renderApp();
     } catch (e) {
         console.error('[Admin] Salon oluşturma hatası:', e);
@@ -1137,12 +1145,13 @@ function showQRCodeModal(id) {
 }
 
 function showAddStaffModal() {
-    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Yeni Personel</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Ad Soyad *</label><input type="text" id="staffName" class="form-input"></div><div class="form-group"><label class="form-label">Rol</label><input type="text" id="staffRole" class="form-input" placeholder="Berber"></div><div class="form-group"><label class="form-label">Telefon</label><input type="tel" id="staffPhone" class="form-input"></div><div class="form-group"><label class="form-label">PIN</label><input type="text" id="staffPin" class="form-input" maxlength="6" placeholder="000000"></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="addStaff()" class="btn btn-primary">Ekle</button></div></div></div>';
+    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Yeni Personel</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Ad Soyad *</label><input type="text" id="staffName" class="form-input"></div><div class="form-group"><label class="form-label">Rol</label><select id="staffRole" class="form-select"><option value="staff">Personel</option><option value="operator">Operatör</option></select></div><div class="form-group"><label class="form-label">Telefon</label><input type="tel" id="staffPhone" class="form-input"></div><div class="form-group"><label class="form-label">PIN</label><input type="text" id="staffPin" class="form-input" maxlength="6" placeholder="000000"></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="addStaff()" class="btn btn-primary">Ekle</button></div></div></div>';
 }
 
 function showEditStaffModal(staffId) {
     const st = AdminState.salonStaff.find(s => s.id === staffId); if (!st) return;
-    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Personel Düzenle</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Ad Soyad</label><input type="text" id="staffName" class="form-input" value="' + esc(st.name) + '"></div><div class="form-group"><label class="form-label">Rol</label><input type="text" id="staffRole" class="form-input" value="' + esc(st.role || st.title || '') + '"></div><div class="form-group"><label class="form-label">Telefon</label><input type="tel" id="staffPhone" class="form-input" value="' + (st.phone || '') + '"></div><div class="form-group"><label class="form-label">PIN</label><input type="text" id="staffPin" class="form-input" value="' + (st.pin || '') + '" maxlength="6"></div><div class="form-group"><label class="form-label"><input type="checkbox" id="staffActive"' + (st.active !== false ? ' checked' : '') + '> Aktif</label></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="updateStaff(\'' + staffId + '\')" class="btn btn-primary">Kaydet</button></div></div></div>';
+    var currentRole = st.staffRole || 'staff';
+    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Personel Düzenle</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Ad Soyad</label><input type="text" id="staffName" class="form-input" value="' + esc(st.name) + '"></div><div class="form-group"><label class="form-label">Rol</label><select id="staffRole" class="form-select"><option value="staff"' + (currentRole === 'staff' ? ' selected' : '') + '>Personel</option><option value="operator"' + (currentRole === 'operator' ? ' selected' : '') + '>Operatör</option></select></div><div class="form-group"><label class="form-label">Telefon</label><input type="tel" id="staffPhone" class="form-input" value="' + (st.phone || '') + '"></div><div class="form-group"><label class="form-label">PIN</label><input type="text" id="staffPin" class="form-input" value="' + (st.pin || '') + '" maxlength="6"></div><div class="form-group"><label class="form-label"><input type="checkbox" id="staffActive"' + (st.active !== false ? ' checked' : '') + '> Aktif</label></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="updateStaff(\'' + staffId + '\')" class="btn btn-primary">Kaydet</button></div></div></div>';
 }
 
 function showAddServiceModal() {

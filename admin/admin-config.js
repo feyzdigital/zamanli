@@ -12,30 +12,25 @@ const ADMIN_CONFIG = {
         templateApproval: 'template_k0an00y',
         publicKey: 'DFMgbrmsjlK0hxlc5'
     },
-    // Süper Admin şifresi (base64 encoded)
-    // Varsayılan: "admin2026"
-    // Değiştirmek için: btoa('yeni_sifre') ile encode edip buraya yazın
-    _sp: 'YWRtaW4yMDI2',
-    // Şifre doğrulama
-    verifySuperAdmin: function(input) {
+    // Süper Admin doğrulama: Cloud Function üzerinden bcrypt ile yapılır
+    // Şifre Firestore admin/superAdminConfig doc'unda hashli saklanır
+    // İlk girişte varsayılan şifre otomatik hashlenip Firestore'a kaydedilir
+    verifySuperAdmin: async function(input) {
+        // Cloud Function çağır (server-side bcrypt doğrulama)
         try {
-            return input === atob(this._sp);
-        } catch(e) {
-            return false;
-        }
-    },
-    // Mevcut şifreyi al (sadece değiştirme için)
-    getSuperAdminPin: function() {
-        try {
-            return atob(this._sp);
-        } catch(e) {
-            return '';
+            const verifyAdmin = firebase.functions().httpsCallable('verifyAdminAuth');
+            const result = await verifyAdmin({ pin: input });
+            return result.data.success === true;
+        } catch (error) {
+            // Rate limit veya hata mesajını döndür
+            const message = error.message || 'Doğrulama hatası';
+            throw new Error(message);
         }
     },
     categories: {
-        berber: { name: 'Berber', icon: '💈', color: '#10B981' },
-        kuafor: { name: 'Kuaför', icon: '💇‍♀️', color: '#ec4899' },
-        beauty: { name: 'Güzellik', icon: '💆', color: '#14b8a6' }
+        berber: { name: 'Berber Salonu', icon: '💈', color: '#10B981' },
+        kuafor: { name: 'Kuaför Salonu', icon: '💇‍♀️', color: '#ec4899' },
+        beauty: { name: 'Güzellik Salonu', icon: '💆', color: '#14b8a6' }
     },
     // 3 Paket Sistemi - Basitleştirilmiş
     packages: {
@@ -107,10 +102,10 @@ const ADMIN_CONFIG = {
                 multiLocation: true,
                 customBranding: true,
                 prioritySupport: true,
-                onlinePayment: true,
+                onlinePayment: false,  // Feature flag: şimdilik kapalı
                 apiAccess: true
             },
-            features: ['Sınırsız randevu', 'Sınırsız personel', 'Çoklu şube', 'Rapor export', 'Online ödeme', 'API erişimi', '7/24 destek']
+            features: ['Sınırsız randevu', 'Sınırsız personel', 'Çoklu şube', 'Rapor export', 'API erişimi', '7/24 destek']
         }
     },
     // Paket süreleri

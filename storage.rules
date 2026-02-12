@@ -1,0 +1,48 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ==================== VARSAYILAN: DENY-BY-DEFAULT ====================
+    match /{allPaths=**} {
+      allow read: if true;  // Public okuma (salon logoları, galeri görselleri)
+      allow write: if false; // Varsayılan: yazma kapalı
+    }
+    
+    // ==================== SALON MEDYA ====================
+    match /salons/{salonId}/{allPaths=**} {
+      // Public okuma
+      allow read: if true;
+      
+      // Yazma: dosya boyutu ve tip kontrolü
+      // Phase 2'de: request.auth ile salon üyelik kontrolü eklenecek
+      allow write: if request.resource != null &&
+                      request.resource.size < 5 * 1024 * 1024 && // Max 5MB
+                      request.resource.contentType.matches('image/.*'); // Sadece resimler
+    }
+    
+    // ==================== LOGO ====================
+    match /salons/{salonId}/logo/{fileName} {
+      allow read: if true;
+      allow write: if request.resource != null &&
+                      request.resource.size < 5 * 1024 * 1024 && // Max 5MB
+                      request.resource.contentType.matches('image/.*');
+    }
+    
+    // ==================== GALERİ ====================
+    match /salons/{salonId}/gallery/{fileName} {
+      allow read: if true;
+      allow write: if request.resource != null &&
+                      request.resource.size < 5 * 1024 * 1024 && // Max 5MB per image
+                      request.resource.contentType.matches('image/.*');
+    }
+    
+    // ==================== KULLANICI PROFİL GÖRSELLERİ ====================
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true;
+      // Phase 2'de: allow write: if request.auth.uid == userId
+      allow write: if request.resource != null &&
+                      request.resource.size < 2 * 1024 * 1024 && // Max 2MB
+                      request.resource.contentType.matches('image/.*');
+    }
+  }
+}

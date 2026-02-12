@@ -116,11 +116,13 @@ exports.hashStaffPin = functions
 /**
  * PIN doğrulama API endpoint
  * HTTPS callable function
+ * - Rate limiting: phone+salonId bazlı, 5 deneme / 15 dk
+ * - Lazy migration: düz metin PIN varsa otomatik hash'e çevir
  */
 exports.verifyPinAuth = functions
     .region('europe-west1')
     .https.onCall(async (data, context) => {
-        const { salonId, pin, userType, staffId } = data;
+        const { salonId, pin, userType, staffId, phone } = data;
         
         console.log('[Auth] PIN doğrulama isteği:', { salonId, userType });
         
@@ -132,41 +134,120 @@ exports.verifyPinAuth = functions
             );
         }
         
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_MINUTES = 15;
+        
         try {
-            let userDoc;
-            let hashedPin;
+            // === RATE LIMIT CHECK ===
+            const rateLimitKey = `${phone || 'unknown'}_${salonId}`.replace(/[^a-zA-Z0-9_]/g, '_');
+            const attemptsRef = db.collection('admin').doc('pinAttempts_' + rateLimitKey);
+            const attemptsDoc = await attemptsRef.get();
             
-            // Salon sahibi veya personel kontrolü
-            if (userType === 'staff' && staffId) {
-                // Personel
-                const staffRef = await db.collection('salons').doc(salonId)
-                    .collection('staff').doc(staffId).get();
+            if (attemptsDoc.exists) {
+                const ad = attemptsDoc.data();
+                const failedCount = ad.failedCount || 0;
+                const lastFailed = ad.lastFailedAt?.toDate?.() || new Date(ad.lastFailedAt || 0);
+                const lockoutUntil = new Date(lastFailed.getTime() + LOCKOUT_MINUTES * 60 * 1000);
                 
-                if (!staffRef.exists) {
-                    throw new functions.https.HttpsError('not-found', 'Personel bulunamadı');
+                if (failedCount >= MAX_ATTEMPTS && new Date() < lockoutUntil) {
+                    const remaining = Math.ceil((lockoutUntil - new Date()) / 60000);
+                    throw new functions.https.HttpsError(
+                        'resource-exhausted',
+                        `Çok fazla yanlış deneme. ${remaining} dakika sonra tekrar deneyin.`
+                    );
                 }
-                
-                userDoc = staffRef.data();
-                hashedPin = userDoc.pin;
-            } else {
-                // Salon sahibi
-                const salonRef = await db.collection('salons').doc(salonId).get();
-                
-                if (!salonRef.exists) {
-                    throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
+                // Lockout süresi geçtiyse sıfırla
+                if (failedCount >= MAX_ATTEMPTS && new Date() >= lockoutUntil) {
+                    await attemptsRef.update({ failedCount: 0 });
                 }
-                
-                userDoc = salonRef.data();
-                hashedPin = userDoc.pin;
             }
             
-            // PIN doğrula
-            const isValid = await verifyPin(pin, hashedPin);
+            // === PIN LOOKUP ===
+            let userDoc;
+            let storedPin;
+            let docRef;
+            
+            if (userType === 'staff' && staffId) {
+                docRef = db.collection('salons').doc(salonId).collection('staff').doc(staffId);
+                const staffSnap = await docRef.get();
+                if (!staffSnap.exists) {
+                    throw new functions.https.HttpsError('not-found', 'Personel bulunamadı');
+                }
+                userDoc = staffSnap.data();
+                storedPin = userDoc.pin;
+            } else {
+                docRef = db.collection('salons').doc(salonId);
+                const salonSnap = await docRef.get();
+                if (!salonSnap.exists) {
+                    throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
+                }
+                userDoc = salonSnap.data();
+                storedPin = userDoc.pin;
+            }
+            
+            // === PIN VERIFY (hash veya düz metin + lazy migration) ===
+            let isValid = false;
+            const isHashed = storedPin && storedPin.startsWith('$2a$');
+            
+            if (isHashed) {
+                isValid = await verifyPin(pin, storedPin);
+            } else {
+                // Düz metin karşılaştırma (eski salonlar)
+                isValid = (storedPin === pin);
+                
+                // Lazy migration: doğruysa hash'e çevir
+                if (isValid && docRef) {
+                    try {
+                        const newHash = await bcrypt.hash(pin.toString(), SALT_ROUNDS);
+                        await docRef.update({ pin: newHash, pinMigratedAt: admin.firestore.FieldValue.serverTimestamp() });
+                        console.log('[Auth] PIN lazy migrated to bcrypt for', salonId);
+                    } catch (migErr) {
+                        console.error('[Auth] Lazy migration hatası:', migErr);
+                    }
+                }
+            }
             
             if (isValid) {
-                console.log('[Auth] ✅ PIN doğru');
+                console.log('[Auth] PIN doğru');
                 
-                // Session token oluştur (basit versiyon)
+                // Başarılı girişte rate limit sayacını sıfırla
+                attemptsRef.set({ failedCount: 0, lastSuccessAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(() => {});
+                
+                // Rol belirleme
+                const role = userType === 'staff' ? (userDoc.role || 'staff') : 'owner';
+                
+                // UID oluştur: salonId + userType + staffId kombinasyonu
+                const uid = staffId 
+                    ? `staff_${salonId}_${staffId}`.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 128)
+                    : `owner_${salonId}`.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 128);
+                
+                // Firebase Custom Token oluştur (claims ile)
+                let customToken = null;
+                try {
+                    customToken = await admin.auth().createCustomToken(uid, {
+                        salonId: salonId,
+                        role: role,
+                        staffId: staffId || null,
+                        level: role === 'owner' ? 50 : (role === 'operator' ? 30 : 10)
+                    });
+                    console.log('[Auth] Custom token oluşturuldu:', uid, role);
+                    
+                    // users/{uid} dokümanını oluştur/güncelle (fire-and-forget)
+                    db.collection('users').doc(uid).set({
+                        phone: phone || null,
+                        name: userDoc.name || userDoc.ownerName || staffId || '',
+                        role: role,
+                        salonId: salonId,
+                        lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true }).catch(e => console.error('[Auth] User doc yazma hatası:', e));
+                    
+                } catch (tokenErr) {
+                    console.error('[Auth] Custom token oluşturma hatası:', tokenErr);
+                    // Token oluşturulamazsa da giriş başarılı sayılır (graceful degradation)
+                }
+                
+                // Legacy session token (geçiş dönemi için)
                 const sessionToken = Buffer.from(
                     JSON.stringify({
                         salonId,
@@ -178,22 +259,39 @@ exports.verifyPinAuth = functions
                 
                 return {
                     success: true,
-                    sessionToken,
+                    customToken: customToken, // Firebase Auth Custom Token
+                    sessionToken, // Legacy fallback
                     userData: {
+                        uid: uid,
                         salonId,
                         salonName: userDoc.name || userDoc.salonName,
-                        role: userType === 'staff' ? userDoc.role : 'owner',
+                        slug: userDoc.slug,
+                        role: role,
                         package: userDoc.package || 'free'
                     }
                 };
             } else {
-                console.log('[Auth] ❌ Yanlış PIN');
-                throw new functions.https.HttpsError('unauthenticated', 'Yanlış PIN');
+                console.log('[Auth] Yanlış PIN');
+                
+                // Başarısız deneme sayacını artır
+                const currentCount = attemptsDoc.exists ? (attemptsDoc.data().failedCount || 0) : 0;
+                await attemptsRef.set({
+                    failedCount: currentCount + 1,
+                    lastFailedAt: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                const remaining = MAX_ATTEMPTS - (currentCount + 1);
+                if (remaining > 0) {
+                    throw new functions.https.HttpsError('unauthenticated', `Yanlış PIN. ${remaining} hak kaldı.`);
+                } else {
+                    throw new functions.https.HttpsError('resource-exhausted', `Çok fazla yanlış deneme. ${LOCKOUT_MINUTES} dakika sonra tekrar deneyin.`);
+                }
             }
             
         } catch (error) {
+            if (error instanceof functions.https.HttpsError) throw error;
             console.error('[Auth] Doğrulama hatası:', error);
-            throw new functions.https.HttpsError('internal', error.message);
+            throw new functions.https.HttpsError('internal', 'Doğrulama hatası');
         }
     });
 
@@ -243,8 +341,27 @@ exports.changePinAuth = functions
             
             hashedPin = userDoc.data().pin;
             
-            // Eski PIN'i doğrula
-            const isValid = await verifyPin(oldPin, hashedPin);
+            // Eski PIN'i doğrula (hash veya düz metin)
+            let isValid = false;
+            const isHashed = hashedPin && hashedPin.startsWith('$2a$');
+            
+            if (isHashed) {
+                isValid = await verifyPin(oldPin, hashedPin);
+            } else {
+                // Düz metin karşılaştırma (eski salonlar)
+                isValid = (hashedPin === oldPin);
+                
+                // Lazy migration: doğruysa hash'e çevir
+                if (isValid) {
+                    try {
+                        const migHash = await bcrypt.hash(oldPin.toString(), SALT_ROUNDS);
+                        await userRef.update({ pin: migHash, pinMigratedAt: admin.firestore.FieldValue.serverTimestamp() });
+                        console.log('[Auth] PIN lazy migrated during changePin');
+                    } catch (migErr) {
+                        console.error('[Auth] Lazy migration hatası:', migErr);
+                    }
+                }
+            }
             
             if (!isValid) {
                 throw new functions.https.HttpsError('unauthenticated', 'Mevcut PIN yanlış');
@@ -267,7 +384,219 @@ exports.changePinAuth = functions
             
         } catch (error) {
             console.error('[Auth] PIN değiştirme hatası:', error);
+            if (error instanceof functions.https.HttpsError) throw error;
             throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
+ * Batch PIN Migration - düz metin PIN'leri bcrypt'e çevir
+ * HTTPS callable function (admin panelden tetiklenir)
+ */
+exports.migrateSalonPins = functions
+    .region('europe-west1')
+    .https.onCall(async (data, context) => {
+        console.log('[Migration] PIN migration başlatılıyor...');
+        
+        try {
+            const salonsSnap = await db.collection('salons').get();
+            let migrated = 0;
+            let skipped = 0;
+            let errors = 0;
+            
+            let batch = db.batch();
+            let batchCount = 0;
+            
+            for (const doc of salonsSnap.docs) {
+                const salon = doc.data();
+                const pin = salon.pin;
+                
+                // Zaten hashli mi?
+                if (pin && !pin.startsWith('$2a$') && pin.length >= 4 && pin.length <= 6) {
+                    try {
+                        const hashed = await bcrypt.hash(pin, SALT_ROUNDS);
+                        batch.update(doc.ref, { 
+                            pin: hashed, 
+                            pinMigratedAt: admin.firestore.FieldValue.serverTimestamp() 
+                        });
+                        migrated++;
+                        batchCount++;
+                        
+                        // Firestore batch max 500
+                        if (batchCount >= 400) {
+                            await batch.commit();
+                            batch = db.batch();
+                            batchCount = 0;
+                        }
+                    } catch (e) {
+                        errors++;
+                        console.error('[Migration] Hata:', doc.id, e.message);
+                    }
+                } else {
+                    skipped++;
+                }
+                
+                // Staff PIN'leri lazy migration ile login sırasında migrate edilir
+            }
+            
+            if (batchCount > 0) {
+                await batch.commit();
+            }
+            
+            console.log(`[Migration] Tamamlandı: ${migrated} migrate, ${skipped} atlandı, ${errors} hata`);
+            return { success: true, migrated, skipped, errors };
+        } catch (error) {
+            console.error('[Migration] Genel hata:', error);
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
+ * Super Admin doğrulama API endpoint
+ * HTTPS callable function
+ * - PIN, Firestore admin/superAdminConfig doc'unda bcrypt hash olarak saklanır
+ * - Rate limiting: 5 yanlış deneme / 15 dk kilit
+ */
+exports.verifyAdminAuth = functions
+    .region('europe-west1')
+    .https.onCall(async (data, context) => {
+        const { pin } = data;
+        
+        if (!pin || typeof pin !== 'string') {
+            throw new functions.https.HttpsError('invalid-argument', 'PIN gerekli');
+        }
+        
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_MINUTES = 15;
+        
+        try {
+            // Rate limit kontrolü
+            const attemptsRef = db.collection('admin').doc('loginAttempts');
+            const attemptsDoc = await attemptsRef.get();
+            
+            if (attemptsDoc.exists) {
+                const attemptsData = attemptsDoc.data();
+                const failedCount = attemptsData.failedCount || 0;
+                const lastFailedAt = attemptsData.lastFailedAt?.toDate?.() || new Date(attemptsData.lastFailedAt || 0);
+                const lockoutUntil = new Date(lastFailedAt.getTime() + LOCKOUT_MINUTES * 60 * 1000);
+                
+                if (failedCount >= MAX_ATTEMPTS && new Date() < lockoutUntil) {
+                    const remainingMin = Math.ceil((lockoutUntil - new Date()) / 60000);
+                    console.log('[Admin Auth] Hesap kilitli. Kalan süre:', remainingMin, 'dk');
+                    throw new functions.https.HttpsError(
+                        'resource-exhausted',
+                        `Çok fazla yanlış deneme. ${remainingMin} dakika sonra tekrar deneyin.`
+                    );
+                }
+                
+                // Lockout süresi geçtiyse sayacı sıfırla
+                if (failedCount >= MAX_ATTEMPTS && new Date() >= lockoutUntil) {
+                    await attemptsRef.update({ failedCount: 0 });
+                }
+            }
+            
+            // Admin config'i al
+            const configRef = db.collection('admin').doc('superAdminConfig');
+            const configDoc = await configRef.get();
+            
+            let hashedPin;
+            
+            if (configDoc.exists && configDoc.data().pinHash) {
+                // Yeni sistem: bcrypt hash
+                hashedPin = configDoc.data().pinHash;
+            } else {
+                // İlk kurulum: varsayılan şifreyi hashle ve kaydet
+                const defaultPin = 'admin2026';
+                // hashPin 4-6 karakter zorunluluğu var, admin şifresi daha uzun olabilir - doğrudan bcrypt
+                hashedPin = await bcrypt.hash(defaultPin, SALT_ROUNDS);
+                await configRef.set({
+                    pinHash: hashedPin,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    note: 'Varsayılan şifre kullanılıyor - lütfen değiştirin'
+                });
+            }
+            
+            // PIN doğrula
+            const isValid = await bcrypt.compare(pin, hashedPin);
+            
+            if (isValid) {
+                console.log('[Admin Auth] Başarılı giriş');
+                
+                // Başarılı girişte sayacı sıfırla
+                await attemptsRef.set({
+                    failedCount: 0,
+                    lastSuccessAt: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                return { success: true };
+            } else {
+                console.log('[Admin Auth] Yanlış PIN');
+                
+                // Başarısız deneme sayacını artır
+                const currentCount = attemptsDoc.exists ? (attemptsDoc.data().failedCount || 0) : 0;
+                await attemptsRef.set({
+                    failedCount: currentCount + 1,
+                    lastFailedAt: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                const remaining = MAX_ATTEMPTS - (currentCount + 1);
+                if (remaining > 0) {
+                    throw new functions.https.HttpsError('unauthenticated', `Yanlış şifre. ${remaining} hak kaldı.`);
+                } else {
+                    throw new functions.https.HttpsError('resource-exhausted', `Çok fazla yanlış deneme. ${LOCKOUT_MINUTES} dakika sonra tekrar deneyin.`);
+                }
+            }
+        } catch (error) {
+            if (error instanceof functions.https.HttpsError) throw error;
+            console.error('[Admin Auth] Hata:', error);
+            throw new functions.https.HttpsError('internal', 'Doğrulama hatası');
+        }
+    });
+
+/**
+ * Super Admin şifre değiştirme
+ * HTTPS callable function
+ */
+exports.changeAdminPin = functions
+    .region('europe-west1')
+    .https.onCall(async (data, context) => {
+        const { currentPin, newPin } = data;
+        
+        if (!currentPin || !newPin) {
+            throw new functions.https.HttpsError('invalid-argument', 'Mevcut ve yeni şifre gerekli');
+        }
+        
+        if (newPin.length < 6) {
+            throw new functions.https.HttpsError('invalid-argument', 'Yeni şifre en az 6 karakter olmalı');
+        }
+        
+        try {
+            const configRef = db.collection('admin').doc('superAdminConfig');
+            const configDoc = await configRef.get();
+            
+            if (!configDoc.exists || !configDoc.data().pinHash) {
+                throw new functions.https.HttpsError('not-found', 'Admin config bulunamadı');
+            }
+            
+            // Mevcut şifreyi doğrula
+            const isValid = await bcrypt.compare(currentPin, configDoc.data().pinHash);
+            if (!isValid) {
+                throw new functions.https.HttpsError('unauthenticated', 'Mevcut şifre yanlış');
+            }
+            
+            // Yeni şifreyi hashle
+            const newHash = await bcrypt.hash(newPin, SALT_ROUNDS);
+            await configRef.update({
+                pinHash: newHash,
+                changedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+            
+            console.log('[Admin Auth] Şifre değiştirildi');
+            return { success: true, message: 'Şifre başarıyla değiştirildi' };
+        } catch (error) {
+            if (error instanceof functions.https.HttpsError) throw error;
+            console.error('[Admin Auth] Şifre değiştirme hatası:', error);
+            throw new functions.https.HttpsError('internal', 'Şifre değiştirme hatası');
         }
     });
 

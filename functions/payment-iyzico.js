@@ -138,7 +138,7 @@ exports.createIyzicoCheckout = functions
                 email: salon.ownerEmail || 'info@zamanli.com',
                 identityNumber: buyerIdentity,
                 lastLoginDate: new Date().toISOString().split('T')[0] + ' 00:00:00',
-                registrationDate: salon.createdAt?.toDate()?.toISOString()?.split('T')[0] + ' 00:00:00' || '2024-01-01 00:00:00',
+                registrationDate: (salon.createdAt?.toDate?.()?.toISOString()?.split('T')[0] || '2024-01-01') + ' 00:00:00',
                 registrationAddress: salon.address || 'İstanbul, Türkiye',
                 ip: buyerIp,
                 city: salon.city || 'İstanbul',
@@ -166,7 +166,8 @@ exports.createIyzicoCheckout = functions
                     category1: 'Abonelik',
                     category2: packageType.toUpperCase(),
                     itemType: Iyzipay.BASKET_ITEM_TYPE.VIRTUAL,
-                    price: packageInfo.price.toFixed(2)
+                    price: packageInfo.price.toFixed(2),
+                    paidPrice: packageInfo.pricePaid.toFixed(2)
                 }
             ];
             

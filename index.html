@@ -366,29 +366,7 @@
         </div>
     </section>
 
-    <!-- Categories Preview -->
-    <section class="categories">
-        <div class="container">
-            <h2 class="section-title">Yakında Diğer Kategoriler</h2>
-            <div class="categories-grid">
-                <div class="category-card active">
-                    <div class="category-icon">💈</div>
-                    <h3>Berber</h3>
-                    <span class="category-status live">Aktif</span>
-                </div>
-                <div class="category-card">
-                    <div class="category-icon">💇‍♀️</div>
-                    <h3>Kuaför</h3>
-                    <span class="category-status soon">Yakında</span>
-                </div>
-                <div class="category-card">
-                    <div class="category-icon">💆</div>
-                    <h3>Güzellik</h3>
-                    <span class="category-status soon">Yakında</span>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- Kategoriler bölümü kaldırıldı (Phase 3.7) -->
 
     <!-- Footer -->
     <footer class="footer">
@@ -450,7 +428,9 @@
     
     <!-- Firebase & Push Notification Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
     <script src="/config.js"></script>
     <script src="/push-notifications.js"></script>
@@ -552,58 +532,79 @@
                 const db = firebase.firestore();
                 const phone10 = phone.slice(-10);
                 
-                // Tüm aktif salonları getir
+                // Telefon numarasına göre salon bul (sadece veri sorgulama, PIN client'ta kontrol edilmez)
                 const salonsSnap = await db.collection('salons').where('active', '==', true).get();
+                
+                let matchedSalonId = null;
+                let matchedSlug = null;
+                let matchedType = null; // 'owner' veya 'staff'
+                let matchedStaffInfo = null;
                 
                 for (const salonDoc of salonsSnap.docs) {
                     const salonData = salonDoc.data();
                     const salonId = salonDoc.id;
                     const slug = salonData.slug || salonId;
                     
-                    // 1. SALON SAHİBİ KONTROLÜ
+                    // 1. SALON SAHİBİ TELEFON EŞLEŞMESİ
                     const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
                     if (salonPhone === phone10) {
-                        let pinValid = salonData.pin === pin;
-                        if (!pinValid && salonData.staff) {
-                            const owner = salonData.staff.find(s => s.isOwner === true);
-                            if (owner && owner.pin === pin) pinValid = true;
-                        }
-                        if (pinValid) {
-                            localStorage.setItem('salonSession', JSON.stringify({
-                                type: 'owner', slug: slug, salonId: salonId,
-                                phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                            }));
-                            window.location.href = '/berber/salon/yonetim/?slug=' + slug;
-                            return;
-                        }
+                        matchedSalonId = salonId;
+                        matchedSlug = slug;
+                        matchedType = 'owner';
+                        break;
                     }
                     
-                    // 2. PERSONEL KONTROLÜ
+                    // 2. PERSONEL TELEFON EŞLEŞMESİ
                     const staffArray = salonData.staff || [];
                     const matchedStaff = staffArray.find(s => {
                         const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                        return staffPhone === phone10 && s.pin === pin;
+                        return staffPhone === phone10;
                     });
                     
                     if (matchedStaff) {
-                        if (matchedStaff.isOwner) {
-                            // Sahip personel - tam yetki
-                            localStorage.setItem('salonSession', JSON.stringify({
-                                type: 'owner', slug: slug, salonId: salonId,
-                                phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                            }));
-                            window.location.href = '/berber/salon/yonetim/?slug=' + slug;
-                        } else {
-                            // Normal personel
-                            localStorage.setItem('staffSession', JSON.stringify({
-                                type: 'staff', staffId: matchedStaff.id || matchedStaff.name,
-                                staffName: matchedStaff.name, salonId: salonId, salonSlug: slug,
-                                expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                            }));
-                            window.location.href = '/berber/salon/yonetim/?slug=' + slug + '&staff=' + encodeURIComponent(matchedStaff.id || matchedStaff.name) + '&staffName=' + encodeURIComponent(matchedStaff.name);
-                        }
-                        return;
+                        matchedSalonId = salonId;
+                        matchedSlug = slug;
+                        matchedType = matchedStaff.isOwner ? 'owner' : 'staff';
+                        matchedStaffInfo = matchedStaff;
+                        break;
                     }
+                }
+                
+                if (!matchedSalonId) {
+                    throw new Error('Telefon numarası kayıtlı değil');
+                }
+                
+                // PIN doğrulama: Cloud Function (server-side bcrypt)
+                const verifyPin = firebase.functions().httpsCallable('verifyPinAuth');
+                const result = await verifyPin({
+                    salonId: matchedSalonId,
+                    pin: pin,
+                    phone: phone10,
+                    userType: matchedType === 'owner' ? 'owner' : 'staff',
+                    staffId: matchedStaffInfo ? (matchedStaffInfo.id || matchedStaffInfo.name) : null
+                });
+                
+                if (result.data.success) {
+                    // Firebase Auth Custom Token ile oturum aç
+                    if (result.data.customToken) {
+                        try { await firebase.auth().signInWithCustomToken(result.data.customToken); } catch (e) { console.warn('[Login] Custom token hatası:', e); }
+                    }
+                    
+                    if (matchedType === 'owner' || (matchedStaffInfo && matchedStaffInfo.isOwner)) {
+                        localStorage.setItem('salonSession', JSON.stringify({
+                            type: 'owner', slug: matchedSlug, salonId: matchedSalonId,
+                            phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
+                        }));
+                        window.location.href = '/berber/salon/yonetim/?slug=' + matchedSlug;
+                    } else if (matchedStaffInfo) {
+                        localStorage.setItem('staffSession', JSON.stringify({
+                            type: 'staff', staffId: matchedStaffInfo.id || matchedStaffInfo.name,
+                            staffName: matchedStaffInfo.name, salonId: matchedSalonId, salonSlug: matchedSlug,
+                            expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
+                        }));
+                        window.location.href = '/berber/salon/yonetim/?slug=' + matchedSlug + '&staff=' + encodeURIComponent(matchedStaffInfo.id || matchedStaffInfo.name) + '&staffName=' + encodeURIComponent(matchedStaffInfo.name);
+                    }
+                    return;
                 }
                 
                 throw new Error('Telefon numarası veya PIN hatalı');
@@ -620,7 +621,10 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeLoginModal();
-                toggleMobileMenu();
+                const mobileMenu = document.getElementById('mobileMenu');
+                if (mobileMenu && mobileMenu.classList.contains('active')) {
+                    toggleMobileMenu();
+                }
             }
         });
     </script>

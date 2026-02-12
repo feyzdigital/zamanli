@@ -12,7 +12,7 @@ const FinanceDashboard = {
     // Renk paleti
     colors: {
         primary: '#10B981',
-        primaryLight: 'rgba(99, 102, 241, 0.1)',
+        primaryLight: 'rgba(16, 185, 129, 0.1)',
         success: '#10b981',
         successLight: 'rgba(16, 185, 129, 0.1)',
         warning: '#f59e0b',
@@ -24,11 +24,11 @@ const FinanceDashboard = {
         cyan: '#06b6d4',
         slate: '#64748b',
         chartColors: [
-            '#10B981', '#10b981', '#f59e0b', '#ef4444', 
-            '#C5A065', '#ec4899', '#06b6d4', '#84cc16'
+            '#10B981', '#C5A065', '#f59e0b', '#ef4444', 
+            '#6366f1', '#ec4899', '#06b6d4', '#84cc16'
         ],
-        gradientStart: 'rgba(99, 102, 241, 0.3)',
-        gradientEnd: 'rgba(99, 102, 241, 0.0)'
+        gradientStart: 'rgba(16, 185, 129, 0.3)',
+        gradientEnd: 'rgba(16, 185, 129, 0.0)'
     },
 
     /**

@@ -180,18 +180,8 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// ==================== MESSAGE (Cache temizleme komutu) ====================
-self.addEventListener('message', (event) => {
-    if (event.data === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
-    if (event.data === 'CLEAR_CACHE') {
-        caches.keys().then(names => {
-            names.forEach(name => caches.delete(name));
-        });
-        console.log('[SW] All caches cleared by request');
-    }
-});
+// ==================== MESSAGE (birleştirilmiş handler - string + object) ====================
+// İkinci handler sayfa sonunda
 
 // ==================== FETCH ====================
 self.addEventListener('fetch', (event) => {
@@ -432,22 +422,42 @@ async function checkUpcomingAppointments() {
     console.log('[SW] Checking upcoming appointments...');
 }
 
-// ==================== MESSAGE HANDLING ====================
+// ==================== MESSAGE HANDLING (birleştirilmiş) ====================
 self.addEventListener('message', (event) => {
-    console.log('[SW] Message received:', event.data);
+    const data = event.data;
     
-    if (event.data.type === 'SKIP_WAITING') {
+    // String mesajlar (eski format)
+    if (data === 'SKIP_WAITING') {
         self.skipWaiting();
+        return;
     }
-    
-    if (event.data.type === 'GET_VERSION') {
-        event.ports[0].postMessage({ version: CACHE_VERSION });
-    }
-    
-    if (event.data.type === 'CLEAR_CACHE') {
-        caches.delete(CACHE_NAME).then(() => {
-            event.ports[0].postMessage({ success: true });
+    if (data === 'CLEAR_CACHE') {
+        caches.keys().then(names => {
+            names.forEach(name => caches.delete(name));
         });
+        console.log('[SW] All caches cleared by request');
+        return;
+    }
+    
+    // Object mesajlar (yeni format)
+    if (data && typeof data === 'object') {
+        console.log('[SW] Message received:', data);
+        
+        if (data.type === 'SKIP_WAITING') {
+            self.skipWaiting();
+        }
+        
+        if (data.type === 'GET_VERSION' && event.ports && event.ports[0]) {
+            event.ports[0].postMessage({ version: CACHE_VERSION });
+        }
+        
+        if (data.type === 'CLEAR_CACHE') {
+            caches.delete(CACHE_NAME).then(() => {
+                if (event.ports && event.ports[0]) {
+                    event.ports[0].postMessage({ success: true });
+                }
+            });
+        }
     }
 });
 

@@ -1107,9 +1107,9 @@
                 <span class="logo-text">Zamanli</span>
             </a>
             <nav class="nav nav-desktop">
-                <a href="/berber/?category=berber" class="nav-link category-link" data-category="berber">💈 Berberler</a>
-                <a href="/berber/?category=kuafor" class="nav-link category-link" data-category="kuafor">💇‍♀️ Kuaförler</a>
-                <a href="/berber/?category=beauty" class="nav-link category-link" data-category="beauty">💆 Güzellik</a>
+                <a href="/berber/?category=berber" class="nav-link category-link" data-category="berber">💈 Berber Salonları</a>
+                <a href="/berber/?category=kuafor" class="nav-link category-link" data-category="kuafor">💇‍♀️ Kuaför Salonları</a>
+                <a href="/berber/?category=beauty" class="nav-link category-link" data-category="beauty">💆 Güzellik Salonları</a>
                 <a href="/berber/kayit/" class="nav-link highlight">Salonunu Ekle</a>
                 <a href="#" onclick="showLoginModal(); return false;" class="nav-link">🔑 Giriş</a>
             </nav>
@@ -1130,9 +1130,9 @@
             <a href="/">🏠 Ana Sayfa</a>
             <div class="mobile-menu-divider"></div>
             <span style="padding: 0.5rem 1.5rem; font-size: 0.75rem; color: var(--slate-400); text-transform: uppercase;">Kategoriler</span>
-            <a href="/berber/?category=berber" class="category-link" data-category="berber">💈 Berberler</a>
-            <a href="/berber/?category=kuafor" class="category-link" data-category="kuafor">💇‍♀️ Kuaförler</a>
-            <a href="/berber/?category=beauty" class="category-link" data-category="beauty">💆 Güzellik Merkezleri</a>
+            <a href="/berber/?category=berber" class="category-link" data-category="berber">💈 Berber Salonları</a>
+            <a href="/berber/?category=kuafor" class="category-link" data-category="kuafor">💇‍♀️ Kuaför Salonları</a>
+            <a href="/berber/?category=beauty" class="category-link" data-category="beauty">💆 Güzellik Salonları</a>
             <a href="/berber/" class="category-link" data-category="all">✨ Tüm Salonlar</a>
             <div class="mobile-menu-divider"></div>
             <a href="/fiyatlandirma/">💰 Fiyatlandırma</a>
@@ -1155,9 +1155,9 @@
         <!-- Kategori Tabları -->
         <div class="category-tabs" style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
             <button class="category-tab" data-category="all" onclick="setCategory('all')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">✨ Tümü</button>
-            <button class="category-tab" data-category="berber" onclick="setCategory('berber')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">💈 Berber</button>
-            <button class="category-tab" data-category="kuafor" onclick="setCategory('kuafor')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">💇‍♀️ Kuaför</button>
-            <button class="category-tab" data-category="beauty" onclick="setCategory('beauty')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">💆 Güzellik</button>
+            <button class="category-tab" data-category="berber" onclick="setCategory('berber')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">💈 Berber Salonu</button>
+            <button class="category-tab" data-category="kuafor" onclick="setCategory('kuafor')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">💇‍♀️ Kuaför Salonu</button>
+            <button class="category-tab" data-category="beauty" onclick="setCategory('beauty')" style="padding: 0.5rem 1rem; border-radius: 2rem; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;">💆 Güzellik Salonu</button>
         </div>
         
         <div class="search-box">
@@ -1310,7 +1310,9 @@
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-functions-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
     <script src="/config.js"></script>
     
@@ -1324,22 +1326,22 @@
         // Kategori Metinleri
         const CATEGORY_TEXT = {
             berber: {
-                singular: 'Berber', plural: 'Berberler', icon: '💈', color: '#10B981',
-                heroTitle: '💈 Berber Bul', heroSubtitle: 'Yakınındaki en iyi berberleri keşfet',
-                searchPlaceholder: 'Berber adı veya konum ara...',
-                resultText: 'berber bulundu', emptyText: 'Henüz kayıtlı berber yok'
+                singular: 'Berber Salonu', plural: 'Berber Salonları', icon: '💈', color: '#10B981',
+                heroTitle: '💈 Berber Salonu Bul', heroSubtitle: 'Yakınındaki en iyi berber salonlarını keşfet',
+                searchPlaceholder: 'Berber salonu adı veya konum ara...',
+                resultText: 'berber salonu bulundu', emptyText: 'Henüz kayıtlı berber salonu yok'
             },
             kuafor: {
-                singular: 'Kuaför', plural: 'Kuaförler', icon: '💇‍♀️', color: '#ec4899',
-                heroTitle: '💇‍♀️ Kuaför Bul', heroSubtitle: 'Profesyonel kuaförler, kolay randevu',
-                searchPlaceholder: 'Kuaför adı veya konum ara...',
-                resultText: 'kuaför bulundu', emptyText: 'Henüz kayıtlı kuaför yok'
+                singular: 'Kuaför Salonu', plural: 'Kuaför Salonları', icon: '💇‍♀️', color: '#ec4899',
+                heroTitle: '💇‍♀️ Kuaför Salonu Bul', heroSubtitle: 'Profesyonel kuaför salonları, kolay randevu',
+                searchPlaceholder: 'Kuaför salonu adı veya konum ara...',
+                resultText: 'kuaför salonu bulundu', emptyText: 'Henüz kayıtlı kuaför salonu yok'
             },
             beauty: {
-                singular: 'Güzellik Merkezi', plural: 'Güzellik Merkezleri', icon: '💆', color: '#14b8a6',
-                heroTitle: '💆 Güzellik Merkezi Bul', heroSubtitle: 'Cilt bakımı, spa ve wellness hizmetleri',
-                searchPlaceholder: 'Güzellik merkezi ara...',
-                resultText: 'güzellik merkezi bulundu', emptyText: 'Henüz kayıtlı güzellik merkezi yok'
+                singular: 'Güzellik Salonu', plural: 'Güzellik Salonları', icon: '💆', color: '#14b8a6',
+                heroTitle: '💆 Güzellik Salonu Bul', heroSubtitle: 'Cilt bakımı, spa ve wellness hizmetleri',
+                searchPlaceholder: 'Güzellik salonu ara...',
+                resultText: 'güzellik salonu bulundu', emptyText: 'Henüz kayıtlı güzellik salonu yok'
             },
             all: {
                 singular: 'Salon', plural: 'Salonlar', icon: '✨', color: '#10B981',
@@ -1715,10 +1717,19 @@
         function searchSalons() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             
-            if (!query) {
-                filteredSalons = [...allSalons];
+            // Önce kategori filtresini uygula
+            let categoryFiltered;
+            if (currentCategory === 'all') {
+                categoryFiltered = [...allSalons];
             } else {
-                filteredSalons = allSalons.filter(salon => 
+                categoryFiltered = allSalons.filter(s => (s.category || 'berber') === currentCategory);
+            }
+            
+            // Sonra metin araması uygula
+            if (!query) {
+                filteredSalons = categoryFiltered;
+            } else {
+                filteredSalons = categoryFiltered.filter(salon => 
                     salon.name?.toLowerCase().includes(query) ||
                     salon.city?.toLowerCase().includes(query) ||
                     salon.district?.toLowerCase().includes(query)
@@ -1980,8 +1991,8 @@
                 });
                 
                 // Filtre uygula
-                if (typeof applyFilter === 'function') {
-                    applyFilter(filter);
+                if (typeof applyFilters === 'function') {
+                    applyFilters();
                 }
             });
         });
@@ -2082,62 +2093,87 @@
                 const phone10 = phone.slice(-10);
                 const allSalons = await db.collection('salons').get();
                 
+                let matchedSalonId = null;
+                let matchedSlug = null;
+                let matchedType = null;
+                let matchedStaffInfo = null;
+                
                 for (const doc of allSalons.docs) {
                     const salonData = doc.data();
                     const salonId = doc.id;
                     const slug = salonData.slug || salonId;
                     
-                    // 1. SALON SAHİBİ KONTROLÜ
+                    // 1. SALON SAHİBİ TELEFON EŞLEŞMESİ
                     const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
                     const salonMobile = (salonData.mobilePhone || '').replace(/\D/g, '').slice(-10);
                     
                     if (salonPhone === phone10 || salonMobile === phone10) {
-                        let pinValid = salonData.pin === pin;
-                        if (!pinValid && salonData.staff) {
-                            const owner = salonData.staff.find(s => s.isOwner === true);
-                            if (owner && owner.pin === pin) pinValid = true;
-                        }
-                        if (pinValid) {
-                            localStorage.setItem('salonSession', JSON.stringify({
-                                type: 'owner', slug: slug, salonId: salonId,
-                                phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                            }));
-                            window.location.href = '/berber/salon/yonetim/?slug=' + slug;
-                            return;
-                        }
+                        matchedSalonId = salonId;
+                        matchedSlug = slug;
+                        matchedType = 'owner';
+                        break;
                     }
                     
-                    // 2. PERSONEL KONTROLÜ
+                    // 2. PERSONEL TELEFON EŞLEŞMESİ
                     const staffArray = salonData.staff || [];
-                    const matchedStaff = staffArray.find(s => {
-                        const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                        return staffPhone === phone10 && s.pin === pin;
+                    const ms = staffArray.find(s => {
+                        const sp = (s.phone || '').replace(/\D/g, '').slice(-10);
+                        return sp === phone10;
                     });
                     
-                    if (matchedStaff) {
-                        if (matchedStaff.isOwner) {
-                            localStorage.setItem('salonSession', JSON.stringify({
-                                type: 'owner', slug: slug, salonId: salonId,
-                                phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                            }));
-                            window.location.href = '/berber/salon/yonetim/?slug=' + slug;
-                        } else {
-                            localStorage.setItem('staffSession', JSON.stringify({
-                                type: 'staff', staffId: matchedStaff.id || matchedStaff.name,
-                                staffName: matchedStaff.name, salonId: salonId, salonSlug: slug,
-                                expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün
-                            }));
-                            window.location.href = '/berber/salon/yonetim/?slug=' + slug + '&staff=' + encodeURIComponent(matchedStaff.id || matchedStaff.name) + '&staffName=' + encodeURIComponent(matchedStaff.name);
-                        }
-                        return;
+                    if (ms) {
+                        matchedSalonId = salonId;
+                        matchedSlug = slug;
+                        matchedType = ms.isOwner ? 'owner' : 'staff';
+                        matchedStaffInfo = ms;
+                        break;
                     }
+                }
+                
+                if (!matchedSalonId) {
+                    errorEl.textContent = 'Telefon numarası kayıtlı değil';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                
+                // PIN doğrulama: Cloud Function (server-side)
+                const verifyPinFn = firebase.functions().httpsCallable('verifyPinAuth');
+                const result = await verifyPinFn({
+                    salonId: matchedSalonId,
+                    pin: pin,
+                    phone: phone10,
+                    userType: matchedType === 'owner' ? 'owner' : 'staff',
+                    staffId: matchedStaffInfo ? (matchedStaffInfo.id || matchedStaffInfo.name) : null
+                });
+                
+                if (result.data.success) {
+                    // Firebase Auth Custom Token ile oturum aç
+                    if (result.data.customToken) {
+                        try { await firebase.auth().signInWithCustomToken(result.data.customToken); } catch (e) { console.warn('[Login] Custom token hatası:', e); }
+                    }
+                    
+                    if (matchedType === 'owner' || (matchedStaffInfo && matchedStaffInfo.isOwner)) {
+                        localStorage.setItem('salonSession', JSON.stringify({
+                            type: 'owner', slug: matchedSlug, salonId: matchedSalonId,
+                            phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
+                        }));
+                        window.location.href = '/berber/salon/yonetim/?slug=' + matchedSlug;
+                    } else if (matchedStaffInfo) {
+                        localStorage.setItem('staffSession', JSON.stringify({
+                            type: 'staff', staffId: matchedStaffInfo.id || matchedStaffInfo.name,
+                            staffName: matchedStaffInfo.name, salonId: matchedSalonId, salonSlug: matchedSlug,
+                            expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
+                        }));
+                        window.location.href = '/berber/salon/yonetim/?slug=' + matchedSlug + '&staff=' + encodeURIComponent(matchedStaffInfo.id || matchedStaffInfo.name) + '&staffName=' + encodeURIComponent(matchedStaffInfo.name);
+                    }
+                    return;
                 }
                 
                 errorEl.textContent = 'Telefon numarası veya PIN hatalı';
                 errorEl.style.display = 'block';
             } catch (error) {
                 console.error('Login error:', error);
-                errorEl.textContent = 'Bir hata oluştu, tekrar deneyin';
+                errorEl.textContent = error.message || 'Bir hata oluştu, tekrar deneyin';
                 errorEl.style.display = 'block';
             } finally {
                 btn.disabled = false;
