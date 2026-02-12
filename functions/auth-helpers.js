@@ -256,7 +256,7 @@ exports.verifyPinAuth = functions
                     // users/{uid} dokümanını oluştur/güncelle (fire-and-forget)
                     db.collection('users').doc(uid).set({
                         phone: phone || null,
-                        name: userDoc.name || userDoc.ownerName || staffId || '',
+                        name: userType === 'staff' ? (userDoc.name || staffId || '') : (salonData.ownerName || salonData.name || ''),
                         role: role,
                         salonId: salonId,
                         lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -285,10 +285,10 @@ exports.verifyPinAuth = functions
                     userData: {
                         uid: uid,
                         salonId,
-                        salonName: userDoc.name || userDoc.salonName,
-                        slug: userDoc.slug,
+                        salonName: salonData.name || salonData.salonName,
+                        slug: salonData.slug,
                         role: role,
-                        package: userDoc.package || 'free'
+                        package: salonData.package || 'free'
                     }
                 };
             } else {

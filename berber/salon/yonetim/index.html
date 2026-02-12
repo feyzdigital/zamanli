@@ -6566,12 +6566,14 @@
                 // Düz metin PIN'ler Cloud Function'da lazy migrate edilir
                 try {
                     const verifyPinFn = firebase.app().functions('europe-west1').httpsCallable('verifyPinAuth');
+                    // Owner girişinde staffId gönderme (salon PIN kullanılır)
+                    const effectiveStaffId = (!isOwner && staffData) ? (staffData.id || staffData.name || null) : null;
                     const result = await verifyPinFn({
                         salonId: salonFound.id,
                         pin: pin,
                         phone: inputPhone,
                         userType: isOwner ? 'owner' : 'staff',
-                        staffId: staffData ? (staffData.id || staffData.name) : null
+                        staffId: effectiveStaffId
                     });
                     
                     if (result.data && result.data.success) {

@@ -243,7 +243,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
       allow update: if isAuthenticated() && request.auth.uid == userId;
-      allow create: if false; // Cloud Functions only
+      allow create: if isAuthenticated() && request.auth.uid == userId;
       allow delete: if false;
     }
     

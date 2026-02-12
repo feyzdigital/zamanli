@@ -2448,12 +2448,13 @@
                 
                 // PIN doğrulama: Cloud Function (server-side bcrypt)
                 const verifyPinFn = firebase.app().functions('europe-west1').httpsCallable('verifyPinAuth');
+                const effectiveStaffId = (matchedType !== 'owner' && matchedStaffInfo) ? (matchedStaffInfo.id || matchedStaffInfo.name || null) : null;
                 const result = await verifyPinFn({
                     salonId: matchedSalonId,
                     pin: pin,
                     phone: phone10,
                     userType: matchedType === 'owner' ? 'owner' : 'staff',
-                    staffId: matchedStaffInfo ? (matchedStaffInfo.id || matchedStaffInfo.name) : null
+                    staffId: effectiveStaffId
                 });
                 
                 if (result.data.success) {
