@@ -575,7 +575,7 @@
                 }
                 
                 // PIN doğrulama: Cloud Function (server-side bcrypt)
-                const verifyPin = firebase.functions().httpsCallable('verifyPinAuth');
+                const verifyPin = firebase.app().functions('europe-west1').httpsCallable('verifyPinAuth');
                 const result = await verifyPin({
                     salonId: matchedSalonId,
                     pin: pin,

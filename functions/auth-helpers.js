@@ -166,23 +166,31 @@ exports.verifyPinAuth = functions
             let userDoc;
             let storedPin;
             let docRef;
+            let staffIndex = -1; // staff array güncelleme için index
+            
+            // Her zaman salon dokümanını oku (staff da salon.staff array'inde)
+            docRef = db.collection('salons').doc(salonId);
+            const salonSnap = await docRef.get();
+            if (!salonSnap.exists) {
+                throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
+            }
+            const salonData = salonSnap.data();
             
             if (userType === 'staff' && staffId) {
-                docRef = db.collection('salons').doc(salonId).collection('staff').doc(staffId);
-                const staffSnap = await docRef.get();
-                if (!staffSnap.exists) {
+                // Staff: salon dokümanındaki staff array'inden bul
+                const staffArray = salonData.staff || [];
+                staffIndex = staffArray.findIndex(s => 
+                    s.id === staffId || s.name === staffId
+                );
+                if (staffIndex === -1) {
                     throw new functions.https.HttpsError('not-found', 'Personel bulunamadı');
                 }
-                userDoc = staffSnap.data();
+                userDoc = staffArray[staffIndex];
                 storedPin = userDoc.pin;
             } else {
-                docRef = db.collection('salons').doc(salonId);
-                const salonSnap = await docRef.get();
-                if (!salonSnap.exists) {
-                    throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
-                }
-                userDoc = salonSnap.data();
-                storedPin = userDoc.pin;
+                // Owner: salon dokümanının kendi pin'i
+                userDoc = salonData;
+                storedPin = salonData.pin;
             }
             
             // === PIN VERIFY (hash veya düz metin + lazy migration) ===
@@ -199,7 +207,20 @@ exports.verifyPinAuth = functions
                 if (isValid && docRef) {
                     try {
                         const newHash = await bcrypt.hash(pin.toString(), SALT_ROUNDS);
-                        await docRef.update({ pin: newHash, pinMigratedAt: admin.firestore.FieldValue.serverTimestamp() });
+                        if (userType === 'staff' && staffIndex >= 0) {
+                            // Staff: salon dokümanındaki staff array'ini güncelle
+                            const freshSnap = await docRef.get();
+                            const freshData = freshSnap.data();
+                            const updatedStaff = [...(freshData.staff || [])];
+                            if (updatedStaff[staffIndex]) {
+                                updatedStaff[staffIndex].pin = newHash;
+                                updatedStaff[staffIndex].pinMigratedAt = new Date().toISOString();
+                                await docRef.update({ staff: updatedStaff });
+                            }
+                        } else {
+                            // Owner: salon dokümanını doğrudan güncelle
+                            await docRef.update({ pin: newHash, pinMigratedAt: admin.firestore.FieldValue.serverTimestamp() });
+                        }
                         console.log('[Auth] PIN lazy migrated to bcrypt for', salonId);
                     } catch (migErr) {
                         console.error('[Auth] Lazy migration hatası:', migErr);
@@ -213,8 +234,8 @@ exports.verifyPinAuth = functions
                 // Başarılı girişte rate limit sayacını sıfırla
                 attemptsRef.set({ failedCount: 0, lastSuccessAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(() => {});
                 
-                // Rol belirleme
-                const role = userType === 'staff' ? (userDoc.role || 'staff') : 'owner';
+                // Rol belirleme (staffRole RBAC alanı, role eski display alanı)
+                const role = userType === 'staff' ? (userDoc.staffRole || userDoc.role || 'staff') : 'owner';
                 
                 // UID oluştur: salonId + userType + staffId kombinasyonu
                 const uid = staffId 
@@ -322,24 +343,29 @@ exports.changePinAuth = functions
         }
         
         try {
-            let userRef;
+            // Her zaman salon dokümanını oku
+            const salonRef = db.collection('salons').doc(salonId);
+            const salonSnap = await salonRef.get();
+            
+            if (!salonSnap.exists) {
+                throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
+            }
+            
+            const salonData = salonSnap.data();
             let hashedPin;
+            let staffIndex = -1;
             
-            // Kullanıcı tipine göre referans al
             if (userType === 'staff' && staffId) {
-                userRef = db.collection('salons').doc(salonId)
-                    .collection('staff').doc(staffId);
+                // Staff: salon dokümanındaki staff array'inden bul
+                const staffArray = salonData.staff || [];
+                staffIndex = staffArray.findIndex(s => s.id === staffId || s.name === staffId);
+                if (staffIndex === -1) {
+                    throw new functions.https.HttpsError('not-found', 'Personel bulunamadı');
+                }
+                hashedPin = staffArray[staffIndex].pin;
             } else {
-                userRef = db.collection('salons').doc(salonId);
+                hashedPin = salonData.pin;
             }
-            
-            const userDoc = await userRef.get();
-            
-            if (!userDoc.exists) {
-                throw new functions.https.HttpsError('not-found', 'Kullanıcı bulunamadı');
-            }
-            
-            hashedPin = userDoc.data().pin;
             
             // Eski PIN'i doğrula (hash veya düz metin)
             let isValid = false;
@@ -355,7 +381,16 @@ exports.changePinAuth = functions
                 if (isValid) {
                     try {
                         const migHash = await bcrypt.hash(oldPin.toString(), SALT_ROUNDS);
-                        await userRef.update({ pin: migHash, pinMigratedAt: admin.firestore.FieldValue.serverTimestamp() });
+                        if (userType === 'staff' && staffIndex >= 0) {
+                            const freshSnap = await salonRef.get();
+                            const updatedStaff = [...(freshSnap.data().staff || [])];
+                            if (updatedStaff[staffIndex]) {
+                                updatedStaff[staffIndex].pin = migHash;
+                                await salonRef.update({ staff: updatedStaff });
+                            }
+                        } else {
+                            await salonRef.update({ pin: migHash, pinMigratedAt: admin.firestore.FieldValue.serverTimestamp() });
+                        }
                         console.log('[Auth] PIN lazy migrated during changePin');
                     } catch (migErr) {
                         console.error('[Auth] Lazy migration hatası:', migErr);
@@ -370,10 +405,22 @@ exports.changePinAuth = functions
             // Yeni PIN'i hashle ve kaydet
             const newHashedPin = await hashPin(newPin);
             
-            await userRef.update({
-                pin: newHashedPin,
-                pinChangedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
+            if (userType === 'staff' && staffIndex >= 0) {
+                // Staff: salon dokümanındaki staff array'ini güncelle
+                const freshSnap = await salonRef.get();
+                const updatedStaff = [...(freshSnap.data().staff || [])];
+                if (updatedStaff[staffIndex]) {
+                    updatedStaff[staffIndex].pin = newHashedPin;
+                    updatedStaff[staffIndex].pinChangedAt = new Date().toISOString();
+                    await salonRef.update({ staff: updatedStaff });
+                }
+            } else {
+                // Owner: salon dokümanını doğrudan güncelle
+                await salonRef.update({
+                    pin: newHashedPin,
+                    pinChangedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            }
             
             console.log('[Auth] ✅ PIN değiştirildi');
             

@@ -733,7 +733,7 @@ async function changeAdminPassword() {
     if (newPass !== confirmPass) { showToast('Şifreler eşleşmiyor!', 'error'); return; }
     
     try {
-        const changePin = firebase.functions().httpsCallable('changeAdminPin');
+        const changePin = firebase.app().functions('europe-west1').httpsCallable('changeAdminPin');
         const result = await changePin({ currentPin: current, newPin: newPass });
         
         if (result.data.success) {

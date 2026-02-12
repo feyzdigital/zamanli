@@ -6565,7 +6565,7 @@
                 // PIN doğrulaması - Her zaman Cloud Function (server-side bcrypt + rate-limit)
                 // Düz metin PIN'ler Cloud Function'da lazy migrate edilir
                 try {
-                    const verifyPinFn = firebase.functions().httpsCallable('verifyPinAuth');
+                    const verifyPinFn = firebase.app().functions('europe-west1').httpsCallable('verifyPinAuth');
                     const result = await verifyPinFn({
                         salonId: salonFound.id,
                         pin: pin,

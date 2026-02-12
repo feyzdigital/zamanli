@@ -18,7 +18,7 @@ const ADMIN_CONFIG = {
     verifySuperAdmin: async function(input) {
         // Cloud Function çağır (server-side bcrypt doğrulama)
         try {
-            const verifyAdmin = firebase.functions().httpsCallable('verifyAdminAuth');
+            const verifyAdmin = firebase.app().functions('europe-west1').httpsCallable('verifyAdminAuth');
             const result = await verifyAdmin({ pin: input });
             return result.data.success === true;
         } catch (error) {
