@@ -2389,7 +2389,6 @@
             
             const phoneRaw = document.getElementById('salonLoginPhone').value.replace(/\D/g, '');
             const phone10 = phoneRaw.slice(-10);
-            const phone11 = '0' + phone10;
             const pin = document.getElementById('salonLoginPin').value;
             const errorEl = document.getElementById('salonLoginError');
             const btn = e.target.querySelector('button[type="submit"]');
@@ -2399,87 +2398,31 @@
             errorEl.textContent = '';
             
             try {
-                let matchedSalonId = null;
-                let matchedSlug = null;
-                let matchedType = null;
-                let matchedStaffInfo = null;
-                
-                // Telefon numarasına göre salon/personel bul
-                const allSalons = await db.collection('salons').get();
-                
-                // 1. PERSONEL TELEFON EŞLEŞMESİ
-                for (const doc of allSalons.docs) {
-                    const salonData = doc.data();
-                    const staff = salonData.staff || [];
-                    
-                    const foundStaff = staff.find(s => {
-                        const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                        return staffPhone === phone10;
-                    });
-                    
-                    if (foundStaff) {
-                        matchedSalonId = doc.id;
-                        matchedSlug = salonData.slug || doc.id;
-                        matchedType = foundStaff.isOwner ? 'owner' : 'staff';
-                        matchedStaffInfo = foundStaff;
-                        break;
-                    }
-                }
-                
-                // 2. SALON SAHİBİ TELEFON EŞLEŞMESİ
-                if (!matchedSalonId) {
-                    for (const doc of allSalons.docs) {
-                        const salonData = doc.data();
-                        const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
-                        const salonMobile = (salonData.mobilePhone || '').replace(/\D/g, '').slice(-10);
-                        
-                        if (salonPhone === phone10 || salonMobile === phone10) {
-                            matchedSalonId = doc.id;
-                            matchedSlug = salonData.slug || doc.id;
-                            matchedType = 'owner';
-                            break;
-                        }
-                    }
-                }
-                
-                if (!matchedSalonId) {
-                    throw new Error('Bu telefon ile kayıtlı salon veya personel bulunamadı');
-                }
-                
-                // PIN doğrulama: Cloud Function (server-side bcrypt)
+                // Doğrudan Cloud Function'a telefon + PIN gönder (client collection scan kaldırıldı)
                 const verifyPinFn = firebase.app().functions('europe-west1').httpsCallable('verifyPinAuth');
-                const effectiveStaffId = (matchedType !== 'owner' && matchedStaffInfo) ? (matchedStaffInfo.id || matchedStaffInfo.name || null) : null;
-                const result = await verifyPinFn({
-                    salonId: matchedSalonId,
-                    pin: pin,
-                    phone: phone10,
-                    userType: matchedType === 'owner' ? 'owner' : 'staff',
-                    staffId: effectiveStaffId
-                });
+                const result = await verifyPinFn({ pin: pin, phone: phone10 });
                 
                 if (result.data.success) {
-                    // Firebase Auth Custom Token ile oturum aç
+                    const ud = result.data.userData;
+                    
                     if (result.data.customToken) {
                         try { await firebase.auth().signInWithCustomToken(result.data.customToken); } catch (e) { console.warn('[Login] Custom token hatası:', e); }
                     }
                     
-                    if (matchedType === 'staff' && matchedStaffInfo && !matchedStaffInfo.isOwner) {
-                        localStorage.setItem('staffSession', JSON.stringify({
-                            staffId: matchedStaffInfo.id || matchedStaffInfo.name,
-                            staffName: matchedStaffInfo.name,
-                            salonId: matchedSalonId,
-                            salonSlug: matchedSlug
-                        }));
-                        const staffId = matchedStaffInfo.id || matchedStaffInfo.name;
-                        window.location.href = `/berber/salon/yonetim/?slug=${matchedSlug}&staff=${encodeURIComponent(staffId)}&staffName=${encodeURIComponent(matchedStaffInfo.name)}`;
-                    } else {
+                    if (ud.isOwner) {
                         localStorage.setItem('salonSession', JSON.stringify({
-                            slug: matchedSlug,
-                            salonId: matchedSalonId,
-                            type: 'owner',
+                            slug: ud.slug, salonId: ud.salonId,
+                            type: 'owner', expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
+                        }));
+                        window.location.href = `/berber/salon/yonetim/?slug=${ud.slug}`;
+                    } else {
+                        localStorage.setItem('staffSession', JSON.stringify({
+                            staffId: ud.staffId, staffName: ud.staffName,
+                            staffRole: ud.staffRole || 'staff',
+                            salonId: ud.salonId, salonSlug: ud.slug,
                             expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
                         }));
-                        window.location.href = `/berber/salon/yonetim/?slug=${matchedSlug}`;
+                        window.location.href = `/berber/salon/yonetim/?slug=${ud.slug}&staff=${encodeURIComponent(ud.staffId)}&staffName=${encodeURIComponent(ud.staffName)}`;
                     }
                     return;
                 }

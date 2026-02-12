@@ -383,26 +383,10 @@ self.addEventListener('sync', (event) => {
 });
 
 // Offline'da yapılan randevuları senkronize et
+// Not: Background sync şu an devre dışı (IndexedDB openDB ve /api/appointments endpoint mevcut değil)
+// Randevu işlemleri doğrudan Firestore üzerinden yapılıyor
 async function syncAppointments() {
-    try {
-        const db = await openDB();
-        const pendingAppointments = await db.getAll('pending-appointments');
-        
-        for (const appointment of pendingAppointments) {
-            // API'ye gönder
-            const response = await fetch('/api/appointments', {
-                method: 'POST',
-                body: JSON.stringify(appointment),
-                headers: { 'Content-Type': 'application/json' }
-            });
-            
-            if (response.ok) {
-                await db.delete('pending-appointments', appointment.id);
-            }
-        }
-    } catch (error) {
-        console.error('[SW] Sync failed:', error);
-    }
+    console.log('[SW] Background sync - randevular Firestore ile zaten senkron');
 }
 
 async function syncReviews() {

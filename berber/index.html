@@ -2091,80 +2091,32 @@
             
             try {
                 const phone10 = phone.slice(-10);
-                const allSalons = await db.collection('salons').get();
                 
-                let matchedSalonId = null;
-                let matchedSlug = null;
-                let matchedType = null;
-                let matchedStaffInfo = null;
-                
-                for (const doc of allSalons.docs) {
-                    const salonData = doc.data();
-                    const salonId = doc.id;
-                    const slug = salonData.slug || salonId;
-                    
-                    // 1. SALON SAHİBİ TELEFON EŞLEŞMESİ
-                    const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
-                    const salonMobile = (salonData.mobilePhone || '').replace(/\D/g, '').slice(-10);
-                    
-                    if (salonPhone === phone10 || salonMobile === phone10) {
-                        matchedSalonId = salonId;
-                        matchedSlug = slug;
-                        matchedType = 'owner';
-                        break;
-                    }
-                    
-                    // 2. PERSONEL TELEFON EŞLEŞMESİ
-                    const staffArray = salonData.staff || [];
-                    const ms = staffArray.find(s => {
-                        const sp = (s.phone || '').replace(/\D/g, '').slice(-10);
-                        return sp === phone10;
-                    });
-                    
-                    if (ms) {
-                        matchedSalonId = salonId;
-                        matchedSlug = slug;
-                        matchedType = ms.isOwner ? 'owner' : 'staff';
-                        matchedStaffInfo = ms;
-                        break;
-                    }
-                }
-                
-                if (!matchedSalonId) {
-                    errorEl.textContent = 'Telefon numarası kayıtlı değil';
-                    errorEl.style.display = 'block';
-                    return;
-                }
-                
-                // PIN doğrulama: Cloud Function (server-side)
+                // Doğrudan Cloud Function'a telefon + PIN gönder (client collection scan kaldırıldı)
                 const verifyPinFn = firebase.app().functions('europe-west1').httpsCallable('verifyPinAuth');
-                const result = await verifyPinFn({
-                    salonId: matchedSalonId,
-                    pin: pin,
-                    phone: phone10,
-                    userType: matchedType === 'owner' ? 'owner' : 'staff',
-                    staffId: matchedStaffInfo ? (matchedStaffInfo.id || matchedStaffInfo.name) : null
-                });
+                const result = await verifyPinFn({ pin: pin, phone: phone10 });
                 
                 if (result.data.success) {
-                    // Firebase Auth Custom Token ile oturum aç
+                    const ud = result.data.userData;
+                    
                     if (result.data.customToken) {
                         try { await firebase.auth().signInWithCustomToken(result.data.customToken); } catch (e) { console.warn('[Login] Custom token hatası:', e); }
                     }
                     
-                    if (matchedType === 'owner' || (matchedStaffInfo && matchedStaffInfo.isOwner)) {
+                    if (ud.isOwner) {
                         localStorage.setItem('salonSession', JSON.stringify({
-                            type: 'owner', slug: matchedSlug, salonId: matchedSalonId,
+                            type: 'owner', slug: ud.slug, salonId: ud.salonId,
                             phone: phone10, expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
                         }));
-                        window.location.href = '/berber/salon/yonetim/?slug=' + matchedSlug;
-                    } else if (matchedStaffInfo) {
+                        window.location.href = '/berber/salon/yonetim/?slug=' + ud.slug;
+                    } else {
                         localStorage.setItem('staffSession', JSON.stringify({
-                            type: 'staff', staffId: matchedStaffInfo.id || matchedStaffInfo.name,
-                            staffName: matchedStaffInfo.name, salonId: matchedSalonId, salonSlug: matchedSlug,
+                            type: 'staff', staffId: ud.staffId,
+                            staffName: ud.staffName, staffRole: ud.staffRole || 'staff',
+                            salonId: ud.salonId, salonSlug: ud.slug,
                             expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
                         }));
-                        window.location.href = '/berber/salon/yonetim/?slug=' + matchedSlug + '&staff=' + encodeURIComponent(matchedStaffInfo.id || matchedStaffInfo.name) + '&staffName=' + encodeURIComponent(matchedStaffInfo.name);
+                        window.location.href = '/berber/salon/yonetim/?slug=' + ud.slug + '&staff=' + encodeURIComponent(ud.staffId) + '&staffName=' + encodeURIComponent(ud.staffName);
                     }
                     return;
                 }

@@ -3940,9 +3940,10 @@
                                 <button class="period-btn" data-period="month" onclick="changeReportPeriod('month')">Bu Ay</button>
                                 <button class="period-btn" data-period="year" onclick="changeReportPeriod('year')">Bu Yıl</button>
                             </div>
-                            <div id="exportButtons" style="display:flex;gap:0.25rem;">
-                                <button onclick="exportAppointmentsCSV()" class="btn btn-outline btn-sm" title="Randevuları CSV olarak indir" id="btnExportCSV">📥 CSV</button>
-                                <button onclick="exportReportPDF()" class="btn btn-outline btn-sm" title="Rapor PDF olarak indir" id="btnExportPDF">📄 PDF</button>
+                            <div id="exportButtons" style="display:flex;gap:0.25rem;flex-wrap:wrap;">
+                                <button onclick="exportAppointmentsCSV()" class="btn btn-outline btn-sm" title="Randevuları CSV olarak indir" id="btnExportCSV">📥 Randevu CSV</button>
+                                <button onclick="exportCustomersCSV()" class="btn btn-outline btn-sm" title="Müşterileri CSV olarak indir" id="btnExportCustomerCSV">📥 Müşteri CSV</button>
+                                <button onclick="exportReportPDF()" class="btn btn-outline btn-sm" title="Rapor PDF olarak indir" id="btnExportPDF">📄 PDF İndir</button>
                             </div>
                         </div>
                     </div>
@@ -6535,101 +6536,75 @@
             loginBtn.textContent = '⏳ Giriş yapılıyor...';
             
             try {
-                console.log('[Login] Giriş denemesi, telefon:', inputPhone);
+                console.log('[Login] Giriş denemesi...');
                 
-                // Önce client-side kontrol (backward compatibility için)
-                const allSalonsSnapshot = await db.collection('salons')
-                    .where('active', '==', true)
-                    .get();
+                // Doğrudan Cloud Function'a telefon + PIN gönder
+                // Salon arama server-side yapılır (client collection scan kaldırıldı)
+                const verifyPinFn = firebase.app().functions('europe-west1').httpsCallable('verifyPinAuth');
+                const result = await verifyPinFn({
+                    pin: pin,
+                    phone: inputPhone
+                });
                 
-                let salonFound = null;
-                let isOwner = false;
-                let staffData = null;
-                
-                // Her salonda kontrol et
-                for (const doc of allSalonsSnapshot.docs) {
-                    const salonData = doc.data();
-                    const salonId = doc.id;
+                if (result.data && result.data.success) {
+                    console.log('[Login] PIN doğrulaması başarılı');
+                    const ud = result.data.userData;
                     
-                    // 1. Salon sahibi kontrolü
-                    const salonPhone = (salonData.phone || '').replace(/\D/g, '').slice(-10);
-                    if (salonPhone === inputPhone) {
-                        salonFound = { id: salonId, data: salonData };
-                        isOwner = true;
-                        
-                        // Owner staff PIN kontrolü
-                        if (salonData.staff) {
-                            const owner = salonData.staff.find(s => s.isOwner === true);
-                            if (owner) staffData = owner;
+                    // Firebase Auth Custom Token ile oturum aç
+                    if (result.data.customToken) {
+                        try {
+                            const userCred = await firebase.auth().signInWithCustomToken(result.data.customToken);
+                            localStorage.setItem('zamanli_user_uid', ud.uid || userCred.user.uid);
+                        } catch (authErr) {
+                            console.warn('[Login] Custom token signIn hatası (devam ediliyor):', authErr);
                         }
-                        break;
                     }
                     
-                    // 2. Personel kontrolü
-                    const staffArray = salonData.staff || [];
-                    const matchedStaff = staffArray.find(s => {
-                        const staffPhone = (s.phone || '').replace(/\D/g, '').slice(-10);
-                        return staffPhone === inputPhone;
-                    });
-                    
-                    if (matchedStaff) {
-                        salonFound = { id: salonId, data: salonData };
-                        isOwner = matchedStaff.isOwner || false;
-                        staffData = matchedStaff;
-                        break;
-                    }
-                }
-                
-                if (!salonFound) {
-                    showLoginError('Telefon numarası veya PIN hatalı');
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = originalBtnText;
-                    return;
-                }
-                
-                // PIN doğrulaması - Her zaman Cloud Function (server-side bcrypt + rate-limit)
-                // Düz metin PIN'ler Cloud Function'da lazy migrate edilir
-                try {
-                    const verifyPinFn = firebase.app().functions('europe-west1').httpsCallable('verifyPinAuth');
-                    // Owner girişinde staffId gönderme (salon PIN kullanılır)
-                    const effectiveStaffId = (!isOwner && staffData) ? (staffData.id || staffData.name || null) : null;
-                    const result = await verifyPinFn({
-                        salonId: salonFound.id,
-                        pin: pin,
-                        phone: inputPhone,
-                        userType: isOwner ? 'owner' : 'staff',
-                        staffId: effectiveStaffId
-                    });
-                    
-                    if (result.data && result.data.success) {
-                        console.log('[Login] PIN doğrulaması başarılı');
+                    if (ud.isOwner) {
+                        // Owner session oluştur
+                        localStorage.setItem('salonSession', JSON.stringify({
+                            type: 'owner',
+                            slug: ud.slug,
+                            salonId: ud.salonId,
+                            phone: inputPhone,
+                            expires: Date.now() + (30 * 24 * 60 * 60 * 1000)
+                        }));
+                        localStorage.removeItem('staffSession');
                         
-                        // Firebase Auth Custom Token ile oturum aç
-                        if (result.data.customToken) {
-                            try {
-                                const userCred = await firebase.auth().signInWithCustomToken(result.data.customToken);
-                                console.log('[Login] Firebase Auth oturumu açıldı');
-                                // UID kaydet (profil için)
-                                if (result.data.userData && result.data.userData.uid) {
-                                    localStorage.setItem('zamanli_user_uid', result.data.userData.uid);
-                                } else if (userCred.user) {
-                                    localStorage.setItem('zamanli_user_uid', userCred.user.uid);
-                                }
-                            } catch (authErr) {
-                                console.warn('[Login] Custom token signIn hatası (devam ediliyor):', authErr);
+                        // Slug ile salon yükle
+                        await loadSalonData(ud.slug);
+                        if (salon) {
+                            showDashboard();
+                        }
+                    } else {
+                        // Staff/Operator session oluştur
+                        const staffRole = ud.staffRole || ud.role || 'staff';
+                        localStorage.setItem('staffSession', JSON.stringify({
+                            type: 'staff',
+                            staffId: ud.staffId,
+                            staffName: ud.staffName,
+                            staffRole: staffRole,
+                            salonId: ud.salonId,
+                            salonSlug: ud.slug,
+                            expires: Date.now() + (90 * 24 * 60 * 60 * 1000)
+                        }));
+                        localStorage.removeItem('salonSession');
+                        
+                        isStaffMode = true;
+                        currentStaffId = ud.staffId;
+                        currentStaffName = ud.staffName;
+                        currentStaffRole = staffRole;
+                        
+                        await loadSalonData(ud.slug);
+                        if (salon) {
+                            showDashboard();
+                            if (staffRole === 'operator') {
+                                applyOperatorModeRestrictions();
+                            } else {
+                                applyStaffModeRestrictions();
                             }
                         }
-                        
-                        if (isOwner) {
-                            loginAsOwner(salonFound.id, salonFound.data);
-                        } else if (staffData) {
-                            loginAsStaff(staffData, salonFound.id, salonFound.data);
-                        }
-                        return;
                     }
-                } catch (pinError) {
-                    console.error('[Login] PIN doğrulama hatası:', pinError);
-                    showLoginError(pinError.message || 'Telefon numarası veya PIN hatalı');
                     return;
                 }
                 
@@ -6637,7 +6612,8 @@
                 
             } catch (error) {
                 console.error('[Login] Hata:', error);
-                showLoginError('Bir hata oluştu. Lütfen tekrar deneyin.');
+                const msg = error.message || 'Bir hata oluştu. Lütfen tekrar deneyin.';
+                showLoginError(msg);
             } finally {
                 // Loading kaldır
                 loginBtn.disabled = false;
@@ -7108,6 +7084,7 @@ ${reminderMessage}
                 renderWeeklyCalendarNew();
                 renderPendingRequests();
                 renderTodayAppointments();
+                loadReports();
             } catch (e) {
                 console.error('[Sync] Görünüm güncelleme hatası:', e);
             }
@@ -9175,32 +9152,46 @@ Panel: ${window.location.href}`);
             }
         }
         
-        // Change PIN
+        // Change PIN - Cloud Function üzerinden (server-side bcrypt + güvenlik)
         async function changePin(e) {
             e.preventDefault();
             
             const currentPin = document.getElementById('currentPin').value;
             const newPin = document.getElementById('newPin').value;
             
-            if (salon.pin !== currentPin) {
-                showToast('Mevcut PIN yanlış', 'error');
+            if (!currentPin || currentPin.length < 4) {
+                showToast('Mevcut PIN girin', 'error');
                 return;
             }
             
-            if (newPin.length < 4) {
-                showToast('PIN en az 4 karakter olmalı', 'error');
+            if (!newPin || newPin.length < 4 || newPin.length > 6) {
+                showToast('Yeni PIN 4-6 karakter olmalı', 'error');
                 return;
             }
+            
+            const btn = e.target.querySelector('button[type="submit"]');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Değiştiriliyor...'; }
             
             try {
-                await db.collection('salons').doc(salon.id).update({ pin: newPin });
-                salon.pin = newPin;
-                document.getElementById('currentPin').value = '';
-                document.getElementById('newPin').value = '';
-                showToast('PIN değiştirildi', 'success');
+                const changePinFn = firebase.app().functions('europe-west1').httpsCallable('changePinAuth');
+                const result = await changePinFn({
+                    salonId: salon.id,
+                    oldPin: currentPin,
+                    newPin: newPin,
+                    userType: isStaffMode ? 'staff' : 'owner',
+                    staffId: isStaffMode ? currentStaffId : null
+                });
+                
+                if (result.data.success) {
+                    document.getElementById('currentPin').value = '';
+                    document.getElementById('newPin').value = '';
+                    showToast('PIN başarıyla değiştirildi', 'success');
+                }
             } catch (error) {
                 console.error('Error changing PIN:', error);
-                showToast('Bir hata oluştu', 'error');
+                showToast(error.message || 'PIN değiştirme hatası', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'PIN Değiştir'; }
             }
         }
         
@@ -10916,20 +10907,26 @@ END:VEVENT
                 
                 if (data.length === 0) { showToast('Dışa aktarılacak randevu yok', 'warning'); return; }
                 
-                // CSV Header
-                const headers = ['Tarih', 'Saat', 'Müşteri', 'Telefon', 'Hizmet', 'Personel', 'Durum', 'Fiyat'];
+                // CSV Header - Operatör modunda fiyat gizle
+                const isOp = currentStaffRole === 'operator';
+                const headers = isOp
+                    ? ['Tarih', 'Saat', 'Müşteri', 'Telefon', 'Hizmet', 'Personel', 'Durum']
+                    : ['Tarih', 'Saat', 'Müşteri', 'Telefon', 'Hizmet', 'Personel', 'Durum', 'Fiyat'];
                 const statusMap = { pending: 'Bekliyor', confirmed: 'Onaylı', completed: 'Tamamlandı', cancelled: 'İptal' };
                 
-                const rows = data.map(a => [
-                    a.date || '',
-                    a.time || '',
-                    (a.customerName || '').replace(/,/g, ' '),
-                    (a.customerPhone || '').replace(/,/g, ' '),
-                    (a.serviceName || '').replace(/,/g, ' '),
-                    (a.staffName || '').replace(/,/g, ' '),
-                    statusMap[a.status] || a.status || '',
-                    a.servicePrice || 0
-                ]);
+                const rows = data.map(a => {
+                    const row = [
+                        a.date || '',
+                        a.time || '',
+                        (a.customerName || '').replace(/,/g, ' '),
+                        (a.customerPhone || '').replace(/,/g, ' '),
+                        (a.serviceName || '').replace(/,/g, ' '),
+                        (a.staffName || '').replace(/,/g, ' '),
+                        statusMap[a.status] || a.status || ''
+                    ];
+                    if (!isOp) row.push(a.servicePrice || 0);
+                    return row;
+                });
                 
                 // BOM + CSV
                 const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -10986,52 +10983,182 @@ END:VEVENT
         function exportReportPDF() {
             const pkg = (salon?.package || 'free').toLowerCase();
             if (pkg === 'free') {
-                showToast('PDF export Business pakette kullanılabilir', 'warning');
-                return;
-            }
-            if (pkg === 'pro') {
-                showToast('PDF export Business pakette kullanılabilir. CSV export kullanabilirsiniz.', 'warning');
+                showToast('Rapor dışa aktarma Pro pakette kullanılabilir', 'warning');
                 return;
             }
             
             try {
-                // HTML to print
-                const reportsContainer = document.querySelector('.reports-container');
-                if (!reportsContainer) { showToast('Rapor alanı bulunamadı', 'error'); return; }
+                // Rapor verilerini topla
+                const salonName = salon?.name || 'Salon';
+                const periodText = currentReportPeriod === 'week' ? 'Haftalık' : currentReportPeriod === 'month' ? 'Aylık' : 'Yıllık';
+                const dateStr = new Date().toLocaleString('tr-TR');
                 
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Zamanli - ${salon?.name || 'Salon'} Rapor</title>
-                        <style>
-                            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; color: #334155; }
-                            h1 { font-size: 1.5rem; color: #1e293b; border-bottom: 2px solid #6366f1; padding-bottom: 0.5rem; }
-                            .report-summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
-                            .report-card { padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
-                            .report-card-value { font-size: 1.5rem; font-weight: 700; }
-                            .report-card-label { font-size: 0.85rem; color: #64748b; }
-                            table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-                            th, td { padding: 0.5rem; border: 1px solid #e2e8f0; text-align: left; font-size: 0.85rem; }
-                            th { background: #f1f5f9; font-weight: 600; }
-                            .no-print { display: none; }
-                            @media print { .no-print { display: none; } }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>📊 ${salon?.name || 'Salon'} - Rapor (${currentReportPeriod === 'week' ? 'Haftalık' : currentReportPeriod === 'month' ? 'Aylık' : 'Yıllık'})</h1>
-                        <p style="color:#64748b;">Oluşturulma: ${new Date().toLocaleString('tr-TR')}</p>
-                        ${reportsContainer.innerHTML}
-                        <script>setTimeout(() => window.print(), 500);<\/script>
-                    </body>
-                    </html>
-                `);
-                printWindow.document.close();
+                // İstatistikleri DOM'dan oku
+                const totalApt = document.getElementById('reportTotalAppointments')?.textContent || '0';
+                const completedApt = document.getElementById('reportCompletedAppointments')?.textContent || '0';
+                const cancelledApt = document.getElementById('reportCancelledAppointments')?.textContent || '0';
+                const totalRevenue = document.getElementById('reportTotalRevenue')?.textContent || '0';
                 
-                showToast('PDF hazırlanıyor...', 'success');
+                // Randevu verilerini derle
+                const now = new Date();
+                let startDate;
+                if (currentReportPeriod === 'week') {
+                    startDate = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
+                } else if (currentReportPeriod === 'month') {
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                } else {
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                }
+                const startStr = startDate.toISOString().split('T')[0];
+                const periodAppointments = (appointments || []).filter(a => a.date && a.date >= startStr);
+                
+                // Yeni müşteri sayısını hesapla (dönem içinde ilk kez randevu alan)
+                const allPhones = new Set();
+                const periodPhones = new Set();
+                (appointments || []).forEach(a => {
+                    if (a.customerPhone) {
+                        if (a.date && a.date >= startStr) periodPhones.add(a.customerPhone);
+                        else allPhones.add(a.customerPhone);
+                    }
+                });
+                let newCustomerCount = 0;
+                periodPhones.forEach(p => { if (!allPhones.has(p)) newCustomerCount++; });
+                const newCustomers = String(newCustomerCount);
+                
+                // Personel performans tablosu
+                const staffStats = {};
+                periodAppointments.forEach(a => {
+                    const name = a.staffName || 'Belirtilmemiş';
+                    if (!staffStats[name]) staffStats[name] = { total: 0, completed: 0, cancelled: 0, revenue: 0 };
+                    staffStats[name].total++;
+                    if (a.status === 'completed') { staffStats[name].completed++; staffStats[name].revenue += (a.servicePrice || 0); }
+                    if (a.status === 'cancelled') staffStats[name].cancelled++;
+                });
+                
+                // Operatör modunda fiyat/gelir gizle
+                const showRevenue = currentStaffRole !== 'operator';
+                
+                let staffTableRows = '';
+                Object.entries(staffStats).sort((a, b) => b[1].total - a[1].total).forEach(([name, s]) => {
+                    staffTableRows += `<tr><td>${name}</td><td>${s.total}</td><td>${s.completed}</td><td>${s.cancelled}</td>${showRevenue ? `<td>${s.revenue.toLocaleString('tr-TR')} ₺</td>` : ''}</tr>`;
+                });
+                
+                // Hizmet dağılımı
+                const serviceStats = {};
+                periodAppointments.forEach(a => {
+                    const svc = a.serviceName || a.service || 'Diğer';
+                    if (!serviceStats[svc]) serviceStats[svc] = { count: 0, revenue: 0 };
+                    serviceStats[svc].count++;
+                    serviceStats[svc].revenue += (a.servicePrice || 0);
+                });
+                
+                let serviceTableRows = '';
+                Object.entries(serviceStats).sort((a, b) => b[1].count - a[1].count).forEach(([name, s]) => {
+                    serviceTableRows += `<tr><td>${name}</td><td>${s.count}</td>${showRevenue ? `<td>${s.revenue.toLocaleString('tr-TR')} ₺</td>` : ''}</tr>`;
+                });
+                
+                // Son randevular listesi (en fazla 30)
+                let recentRows = '';
+                const statusMap = { pending: 'Bekliyor', confirmed: 'Onaylı', completed: 'Tamamlandı', cancelled: 'İptal' };
+                periodAppointments.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 30).forEach(a => {
+                    recentRows += `<tr><td>${a.date || '-'}</td><td>${a.time || '-'}</td><td>${a.customerName || '-'}</td><td>${a.serviceName || a.service || '-'}</td><td>${a.staffName || '-'}</td><td>${statusMap[a.status] || a.status || '-'}</td></tr>`;
+                });
+                
+                // HTML rapor oluştur
+                const htmlContent = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>${salonName} - ${periodText} Rapor</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; color: #334155; background: white; max-width: 900px; margin: 0 auto; }
+    .header { border-bottom: 3px solid #10b981; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    .header h1 { font-size: 1.5rem; color: #1e293b; }
+    .header p { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-bottom: 2rem; }
+    .stat-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; text-align: center; }
+    .stat-box .value { font-size: 1.75rem; font-weight: 800; color: #166534; }
+    .stat-box .label { font-size: 0.75rem; color: #4ade80; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+    .section { margin-bottom: 1.5rem; }
+    .section h2 { font-size: 1.1rem; color: #1e293b; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th { background: #f1f5f9; padding: 0.5rem; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 0.5rem; border-bottom: 1px solid #f1f5f9; }
+    tr:hover { background: #fafafa; }
+    .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; text-align: center; }
+    .actions { margin: 1.5rem 0; text-align: center; }
+    .actions button { padding: 0.75rem 2rem; font-size: 1rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin: 0 0.5rem; }
+    .btn-pdf { background: #10b981; color: white; }
+    .btn-pdf:hover { background: #059669; }
+    .btn-close { background: #e2e8f0; color: #475569; }
+    .btn-close:hover { background: #cbd5e1; }
+    @media print { .actions { display: none; } body { padding: 1rem; } }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>${salonName} - ${periodText} Rapor</h1>
+        <p>Oluşturulma: ${dateStr} | Zamanli.com</p>
+    </div>
+    
+    <div class="actions">
+        <button class="btn-pdf" onclick="window.print()">🖨️ PDF Olarak Kaydet</button>
+        <button class="btn-close" onclick="window.close()">✕ Kapat</button>
+    </div>
+    
+    <div class="summary">
+        <div class="stat-box"><div class="value">${totalApt}</div><div class="label">Toplam Randevu</div></div>
+        <div class="stat-box"><div class="value">${completedApt}</div><div class="label">Tamamlanan</div></div>
+        <div class="stat-box"><div class="value">${cancelledApt}</div><div class="label">İptal</div></div>
+        ${showRevenue ? `<div class="stat-box"><div class="value">${totalRevenue}</div><div class="label">Toplam Gelir</div></div>` : ''}
+        <div class="stat-box"><div class="value">${newCustomers}</div><div class="label">Yeni Müşteri</div></div>
+    </div>
+    
+    ${staffTableRows ? `
+    <div class="section">
+        <h2>Personel Performansı</h2>
+        <table>
+            <thead><tr><th>Personel</th><th>Toplam</th><th>Tamamlanan</th><th>İptal</th>${showRevenue ? '<th>Gelir</th>' : ''}</tr></thead>
+            <tbody>${staffTableRows}</tbody>
+        </table>
+    </div>` : ''}
+    
+    ${serviceTableRows ? `
+    <div class="section">
+        <h2>Hizmet Dağılımı</h2>
+        <table>
+            <thead><tr><th>Hizmet</th><th>Adet</th>${showRevenue ? '<th>Gelir</th>' : ''}</tr></thead>
+            <tbody>${serviceTableRows}</tbody>
+        </table>
+    </div>` : ''}
+    
+    ${recentRows ? `
+    <div class="section">
+        <h2>Son Randevular</h2>
+        <table>
+            <thead><tr><th>Tarih</th><th>Saat</th><th>Müşteri</th><th>Hizmet</th><th>Personel</th><th>Durum</th></tr></thead>
+            <tbody>${recentRows}</tbody>
+        </table>
+    </div>` : ''}
+    
+    <div class="footer">
+        <p>${salonName} | Zamanli.com | ${dateStr}</p>
+    </div>
+</body>
+</html>`;
+                
+                const reportWindow = window.open('', '_blank');
+                if (!reportWindow) {
+                    showToast('Popup engelleyici aktif. Lütfen izin verin.', 'error');
+                    return;
+                }
+                reportWindow.document.write(htmlContent);
+                reportWindow.document.close();
+                
+                showToast('Rapor hazırlandı! "PDF Olarak Kaydet" butonuna tıklayın.', 'success');
             } catch (e) {
-                showToast('PDF export hatası: ' + e.message, 'error');
+                showToast('Rapor oluşturma hatası: ' + e.message, 'error');
             }
         }
         
@@ -11039,6 +11166,7 @@ END:VEVENT
         function updateExportButtons() {
             const pkg = (salon?.package || 'free').toLowerCase();
             const csvBtn = document.getElementById('btnExportCSV');
+            const customerCsvBtn = document.getElementById('btnExportCustomerCSV');
             const pdfBtn = document.getElementById('btnExportPDF');
             
             if (csvBtn) {
@@ -11047,10 +11175,16 @@ END:VEVENT
                     csvBtn.title = 'Pro pakete geçerek CSV export kullanabilirsiniz';
                 }
             }
+            if (customerCsvBtn) {
+                if (pkg === 'free') {
+                    customerCsvBtn.style.opacity = '0.5';
+                    customerCsvBtn.title = 'Pro pakete geçerek CSV export kullanabilirsiniz';
+                }
+            }
             if (pdfBtn) {
-                if (pkg !== 'business') {
+                if (pkg === 'free') {
                     pdfBtn.style.opacity = '0.5';
-                    pdfBtn.title = 'Business pakete geçerek PDF export kullanabilirsiniz';
+                    pdfBtn.title = 'Pro pakete geçerek rapor export kullanabilirsiniz';
                 }
             }
         }
@@ -11161,6 +11295,9 @@ END:VEVENT
             
             // Saatlik dağılım
             renderHourlyDistribution(periodAppointments);
+            
+            // Export butonlarını paket bazlı güncelle
+            updateExportButtons();
         }
         
         // Detaylı istatistikler render
@@ -11168,8 +11305,11 @@ END:VEVENT
             const container = document.getElementById('detailedStatsContainer');
             if (!container) return;
             
+            const hideFinancial = currentStaffRole === 'operator';
+            
             container.innerHTML = `
                 <div class="detailed-stats-grid">
+                    ${!hideFinancial ? `
                     <div class="detail-stat-card priority-high">
                         <div class="detail-stat-icon">💰</div>
                         <div class="detail-stat-content">
@@ -11191,6 +11331,7 @@ END:VEVENT
                             <div class="detail-stat-label">Ortalama Değer</div>
                         </div>
                     </div>
+                    ` : ''}
                     <div class="detail-stat-card ${stats.completionRate >= 80 ? 'priority-success' : ''}">
                         <div class="detail-stat-icon">✅</div>
                         <div class="detail-stat-content">
@@ -11283,6 +11424,7 @@ END:VEVENT
                 return;
             }
             
+            const hideRev = currentStaffRole === 'operator';
             const html = Object.entries(staffStats)
                 .sort((a, b) => b[1].count - a[1].count)
                 .map(([name, stats]) => `
@@ -11293,7 +11435,7 @@ END:VEVENT
                         </div>
                         <div class="staff-performance-stats">
                             <span>📅 <strong>${stats.count}</strong> randevu</span>
-                            <span>💰 <strong>${stats.revenue.toLocaleString('tr-TR')} ₺</strong></span>
+                            ${!hideRev ? `<span>💰 <strong>${stats.revenue.toLocaleString('tr-TR')} ₺</strong></span>` : ''}
                         </div>
                     </div>
                 `).join('');

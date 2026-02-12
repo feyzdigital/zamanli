@@ -122,15 +122,15 @@ exports.hashStaffPin = functions
 exports.verifyPinAuth = functions
     .region('europe-west1')
     .https.onCall(async (data, context) => {
-        const { salonId, pin, userType, staffId, phone } = data;
+        let { salonId, pin, userType, staffId, phone } = data;
         
-        console.log('[Auth] PIN doğrulama isteği:', { salonId, userType });
+        console.log('[Auth] PIN doğrulama isteği:', { salonId, userType, phone: phone ? '***' + phone.slice(-4) : null });
         
         // Validation
-        if (!salonId || !pin) {
+        if (!pin) {
             throw new functions.https.HttpsError(
                 'invalid-argument',
-                'Salon ID ve PIN gerekli'
+                'PIN gerekli'
             );
         }
         
@@ -138,6 +138,70 @@ exports.verifyPinAuth = functions
         const LOCKOUT_MINUTES = 15;
         
         try {
+            // === TELEFON İLE SALON ARAMA (salonId yoksa) ===
+            let salonData = null;
+            let docRef = null;
+            
+            if (!salonId && phone) {
+                // Telefon numarası ile salon bul (server-side - client collection scan yerine)
+                const phone10 = phone.replace(/\D/g, '').slice(-10);
+                console.log('[Auth] Telefon ile salon aranıyor...');
+                
+                const salonsSnap = await db.collection('salons').get();
+                
+                for (const doc of salonsSnap.docs) {
+                    const sd = doc.data();
+                    
+                    // 1. Salon sahibi telefon eşleşmesi
+                    const salonPhone = (sd.phone || '').replace(/\D/g, '').slice(-10);
+                    const salonMobile = (sd.mobilePhone || '').replace(/\D/g, '').slice(-10);
+                    if (salonPhone === phone10 || salonMobile === phone10) {
+                        salonId = doc.id;
+                        salonData = sd;
+                        docRef = db.collection('salons').doc(doc.id);
+                        userType = 'owner';
+                        staffId = null;
+                        
+                        // Owner staff array'inde isOwner olarak varsa kontrol et
+                        if (sd.staff) {
+                            const ownerStaff = sd.staff.find(s => s.isOwner === true);
+                            if (ownerStaff) staffId = null; // owner PIN kullanılacak
+                        }
+                        break;
+                    }
+                    
+                    // 2. Personel telefon eşleşmesi
+                    const staffArray = sd.staff || [];
+                    const matchedStaff = staffArray.find(s => {
+                        const sp = (s.phone || '').replace(/\D/g, '').slice(-10);
+                        return sp === phone10;
+                    });
+                    
+                    if (matchedStaff) {
+                        salonId = doc.id;
+                        salonData = sd;
+                        docRef = db.collection('salons').doc(doc.id);
+                        if (matchedStaff.isOwner) {
+                            userType = 'owner';
+                            staffId = null;
+                        } else {
+                            userType = 'staff';
+                            staffId = matchedStaff.id || matchedStaff.name;
+                        }
+                        break;
+                    }
+                }
+                
+                if (!salonId) {
+                    throw new functions.https.HttpsError('not-found', 'Telefon numarası kayıtlı değil');
+                }
+                console.log('[Auth] Salon bulundu:', salonId, 'userType:', userType);
+            }
+            
+            if (!salonId) {
+                throw new functions.https.HttpsError('invalid-argument', 'Salon ID veya telefon numarası gerekli');
+            }
+            
             // === RATE LIMIT CHECK ===
             const rateLimitKey = `${phone || 'unknown'}_${salonId}`.replace(/[^a-zA-Z0-9_]/g, '_');
             const attemptsRef = db.collection('admin').doc('pinAttempts_' + rateLimitKey);
@@ -165,16 +229,17 @@ exports.verifyPinAuth = functions
             // === PIN LOOKUP ===
             let userDoc;
             let storedPin;
-            let docRef;
             let staffIndex = -1; // staff array güncelleme için index
             
-            // Her zaman salon dokümanını oku (staff da salon.staff array'inde)
-            docRef = db.collection('salons').doc(salonId);
-            const salonSnap = await docRef.get();
-            if (!salonSnap.exists) {
-                throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
+            // Salon dokümanı henüz okunmadıysa oku
+            if (!salonData) {
+                docRef = db.collection('salons').doc(salonId);
+                const salonSnap = await docRef.get();
+                if (!salonSnap.exists) {
+                    throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
+                }
+                salonData = salonSnap.data();
             }
-            const salonData = salonSnap.data();
             
             if (userType === 'staff' && staffId) {
                 // Staff: salon dokümanındaki staff array'inden bul
@@ -288,7 +353,12 @@ exports.verifyPinAuth = functions
                         salonName: salonData.name || salonData.salonName,
                         slug: salonData.slug,
                         role: role,
-                        package: salonData.package || 'free'
+                        staffRole: role,
+                        package: salonData.package || 'free',
+                        // Staff bilgileri (client session oluşturma için)
+                        staffId: staffId || null,
+                        staffName: userType === 'staff' ? (userDoc.name || staffId || '') : null,
+                        isOwner: userType === 'owner'
                     }
                 };
             } else {
