@@ -5000,11 +5000,29 @@
                 if (staffParam && slug && staffNameParam) {
                     console.log('[Init] URL parametrelerinden personel session oluşturuluyor');
                     
-                    // Yeni session oluştur - localStorage'a kaydet (90 gün)
+                    const decodedStaffId = decodeURIComponent(staffParam);
+                    const decodedStaffName = decodeURIComponent(staffNameParam);
+                    
+                    // Salon verisini yükle ve personel rolünü bul
+                    await loadSalonData(slug);
+                    let detectedRole = 'staff';
+                    if (salon && salon.staff) {
+                        const matchedStaff = salon.staff.find(s => 
+                            (s.id === decodedStaffId || s.name === decodedStaffId)
+                        );
+                        if (matchedStaff) {
+                            detectedRole = matchedStaff.staffRole || matchedStaff.role || 'staff';
+                            if (detectedRole === 'assistant') detectedRole = 'operator';
+                        }
+                    }
+                    
+                    // Session oluştur - staffRole dahil
                     const newSession = {
-                        staffId: decodeURIComponent(staffParam),
-                        staffName: decodeURIComponent(staffNameParam),
+                        staffId: decodedStaffId,
+                        staffName: decodedStaffName,
+                        staffRole: detectedRole,
                         salonSlug: slug,
+                        salonId: salon ? salon.id : null,
                         expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün (PWA)
                     };
                     localStorage.setItem('staffSession', JSON.stringify(newSession));
@@ -5012,11 +5030,18 @@
                     isStaffMode = true;
                     currentStaffId = newSession.staffId;
                     currentStaffName = newSession.staffName;
+                    currentStaffRole = detectedRole;
                     
-                    await loadSalonData(slug);
                     if (salon) {
-                        console.log('[Init] Personel dashboard gösteriliyor (URL params)');
+                        console.log('[Init] Personel dashboard gösteriliyor (URL params), Rol:', detectedRole);
                         showDashboard();
+                        
+                        // Rol bazlı kısıtlamalar
+                        if (detectedRole === 'operator') {
+                            applyOperatorModeRestrictions();
+                        } else {
+                            applyStaffModeRestrictions();
+                        }
                         return;
                     }
                 }
@@ -7926,7 +7951,7 @@ ${salon.name}`;
                 <div class="staff-card ${person.isOwner ? 'owner-card' : ''}">
                     <div class="staff-avatar">${person.isOwner ? 'P' : (person.staffRole === 'operator' ? 'O' : (person.name?.charAt(0) || 'P'))}</div>
                     <div class="staff-name">${escapeHtml(person.name)} ${getRoleBadge(person)}</div>
-                    <div class="staff-title">${escapeHtml(person.title || 'Personel')}</div>
+                    <div class="staff-title">${escapeHtml(person.staffRole === 'operator' ? 'Operatör' : (person.title || 'Personel'))}</div>
                     ${person.phone ? `
                         <div class="staff-pin-section">
                             <div style="font-size: 0.75rem; color: var(--slate-500); margin-bottom: 0.25rem;">Giris PIN</div>

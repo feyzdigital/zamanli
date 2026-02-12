@@ -495,12 +495,12 @@ function renderSalonServices() {
 
 function renderSalonCustomers() {
     const customers = AdminState.salonCustomers || [];
-    let h = '<div class="card"><div class="card-header"><h3>Müşteriler</h3><div style="display:flex;gap:0.5rem;align-items:center"><span class="badge badge-info">' + customers.length + ' müşteri</span><button onclick="syncCustomersFromAppointments()" class="btn btn-outline btn-sm" title="Randevulardaki müşterileri kaydet">🔄 Senkronize Et</button></div></div>';
+    let h = '<div class="card"><div class="card-header"><h3>Müşteriler</h3><div style="display:flex;gap:0.5rem;align-items:center"><span class="badge badge-info">' + customers.length + ' müşteri</span><button onclick="showCreateCustomerModal()" class="btn btn-primary btn-sm">+ Ekle</button><button onclick="syncCustomersFromAppointments()" class="btn btn-outline btn-sm" title="Randevulardaki müşterileri kaydet">🔄 Senkronize Et</button></div></div>';
     if (customers.length === 0) h += '<div class="empty-state small"><p>Henüz müşteri yok</p><p style="font-size:0.8rem;color:var(--slate-400)">Senkronize Et butonuna tıklayarak randevulardaki müşterileri ekleyebilirsiniz</p></div>';
     else {
         h += '<table class="data-table"><thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Randevu</th><th>Toplam</th><th>Son Randevu</th><th>İşlem</th></tr></thead><tbody>';
         customers.slice(0, 50).forEach(c => {
-            h += '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + (c.totalSpent || 0) + ' ₺</td><td>' + (c.lastAppointment || '-') + '</td><td><button onclick="deleteCustomerFromSalon(\'' + c.phone + '\')" class="btn btn-icon danger" title="Sil">🗑️</button></td></tr>';
+            h += '<tr><td><strong>' + esc(c.name || 'İsimsiz') + '</strong>' + (c.isManual ? ' <span class="badge badge-info" style="font-size:0.6rem">Manuel</span>' : '') + '</td><td>0' + (c.phone || '-') + '</td><td>' + (c.appointmentCount || 0) + '</td><td>' + (c.totalSpent || 0) + ' ₺</td><td>' + (c.lastAppointment || '-') + '</td><td><button onclick="showEditCustomerModal(\'' + (c.phone || '') + '\')" class="btn btn-icon" title="Düzenle">✏️</button><button onclick="deleteCustomerFromSalon(\'' + c.phone + '\')" class="btn btn-icon danger" title="Sil">🗑️</button></td></tr>';
         });
         h += '</tbody></table>';
         if (customers.length > 50) {
@@ -508,6 +508,48 @@ function renderSalonCustomers() {
         }
     }
     return h + '</div>';
+}
+
+function showCreateCustomerModal() {
+    var sid = AdminState.selectedSalon ? AdminState.selectedSalon.id : null; if (!sid) return;
+    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Yeni Müşteri</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Ad Soyad *</label><input type="text" id="custName" class="form-input" placeholder="Ad Soyad"></div><div class="form-group"><label class="form-label">Telefon *</label><input type="tel" id="custPhone" class="form-input" placeholder="05XX XXX XX XX"></div><div class="form-group"><label class="form-label">E-posta</label><input type="email" id="custEmail" class="form-input" placeholder="mail@ornek.com"></div><div class="form-group"><label class="form-label">Not</label><textarea id="custNote" class="form-input" rows="2" placeholder="Müşteri notu..."></textarea></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="createCustomer()" class="btn btn-primary">Ekle</button></div></div></div>';
+}
+
+async function createCustomer() {
+    var sid = AdminState.selectedSalon ? AdminState.selectedSalon.id : null; if (!sid) return;
+    var name = document.getElementById('custName').value.trim();
+    var phone = document.getElementById('custPhone').value.replace(/\D/g, '').slice(-10);
+    if (!name || phone.length < 10) { showToast('Ad ve geçerli telefon gerekli', 'error'); return; }
+    try {
+        await db.collection('salons').doc(sid).collection('customers').doc(phone).set({
+            name: name, phone: phone, email: document.getElementById('custEmail').value.trim() || '',
+            note: document.getElementById('custNote').value.trim() || '',
+            appointmentCount: 0, totalSpent: 0, isManual: true,
+            createdAt: new Date().toISOString(), createdBy: 'admin'
+        }, { merge: true });
+        showToast('Müşteri eklendi!', 'success'); closeModal(); await loadSalonDetails(sid);
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+}
+
+function showEditCustomerModal(phone) {
+    var sid = AdminState.selectedSalon ? AdminState.selectedSalon.id : null; if (!sid) return;
+    var c = (AdminState.salonCustomers || []).find(function(x) { return x.phone === phone; }); if (!c) return;
+    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Müşteri Düzenle</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Ad Soyad</label><input type="text" id="custName" class="form-input" value="' + esc(c.name || '') + '"></div><div class="form-group"><label class="form-label">Telefon</label><input type="tel" id="custPhone" class="form-input" value="0' + (c.phone || '') + '" readonly style="opacity:0.7"></div><div class="form-group"><label class="form-label">E-posta</label><input type="email" id="custEmail" class="form-input" value="' + esc(c.email || '') + '"></div><div class="form-group"><label class="form-label">Not</label><textarea id="custNote" class="form-input" rows="2">' + esc(c.note || '') + '</textarea></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="updateCustomer(\'' + phone + '\')" class="btn btn-primary">Kaydet</button></div></div></div>';
+}
+
+async function updateCustomer(phone) {
+    var sid = AdminState.selectedSalon ? AdminState.selectedSalon.id : null; if (!sid) return;
+    var cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    var name = document.getElementById('custName').value.trim();
+    if (!name) { showToast('Ad gerekli', 'error'); return; }
+    try {
+        await db.collection('salons').doc(sid).collection('customers').doc(cleanPhone).set({
+            name: name, email: document.getElementById('custEmail').value.trim() || '',
+            note: document.getElementById('custNote').value.trim() || '',
+            updatedAt: new Date().toISOString(), updatedBy: 'admin'
+        }, { merge: true });
+        showToast('Müşteri güncellendi!', 'success'); closeModal(); await loadSalonDetails(sid);
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
 async function deleteCustomerFromSalon(phone) {
@@ -622,7 +664,7 @@ async function syncCustomersFromAppointments() {
 }
 
 function renderSalonAppointments() {
-    let h = '<div class="card"><div class="card-header"><h3>Randevular</h3></div>';
+    let h = '<div class="card"><div class="card-header"><h3>Randevular</h3><button onclick="showCreateAppointmentModal()" class="btn btn-primary btn-sm">+ Randevu Ekle</button></div>';
     if (AdminState.salonAppointments.length === 0) h += '<div class="empty-state small"><p>Randevu yok</p></div>';
     else {
         h += '<table class="data-table"><thead><tr><th>Tarih</th><th>Saat</th><th>Müşteri</th><th>Hizmet</th><th>Personel</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>';
@@ -1161,6 +1203,40 @@ function showAddServiceModal() {
 function showEditServiceModal(svcId) {
     const sv = AdminState.salonServices.find(s => s.id === svcId); if (!sv) return;
     document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Hizmet Düzenle</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Hizmet Adı</label><input type="text" id="svcName" class="form-input" value="' + esc(sv.name) + '"></div><div class="form-group"><label class="form-label">Fiyat (₺)</label><input type="number" id="svcPrice" class="form-input" value="' + (sv.price || 0) + '" min="0"></div><div class="form-group"><label class="form-label">Süre (dk)</label><input type="number" id="svcDuration" class="form-input" value="' + (sv.duration || 30) + '" min="5"></div><div class="form-group"><label class="form-label"><input type="checkbox" id="svcActive"' + (sv.active !== false ? ' checked' : '') + '> Aktif</label></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="updateService(\'' + svcId + '\')" class="btn btn-primary">Kaydet</button></div></div></div>';
+}
+
+function showCreateAppointmentModal() {
+    var s = AdminState.selectedSalon; if (!s) return;
+    var staffOpts = '<option value="">Seçin</option>';
+    (s.staff || []).forEach(function(st) { if (st.active !== false) staffOpts += '<option value="' + esc(st.name) + '">' + esc(st.name) + '</option>'; });
+    var svcOpts = '<option value="">Seçin</option>';
+    (s.services || []).forEach(function(sv) { if (sv.active !== false) svcOpts += '<option value="' + esc(sv.name) + '">' + esc(sv.name) + ' (' + (sv.price || 0) + '₺)</option>'; });
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Yeni Randevu</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Müşteri Adı *</label><input type="text" id="newAptCustomerName" class="form-input" placeholder="Ad Soyad"></div><div class="form-group"><label class="form-label">Telefon *</label><input type="tel" id="newAptCustomerPhone" class="form-input" placeholder="05XX XXX XX XX"></div><div class="form-group"><label class="form-label">Personel</label><select id="newAptStaff" class="form-select">' + staffOpts + '</select></div><div class="form-group"><label class="form-label">Hizmet</label><select id="newAptService" class="form-select">' + svcOpts + '</select></div><div class="form-group"><label class="form-label">Tarih *</label><input type="date" id="newAptDate" class="form-input" value="' + today + '"></div><div class="form-group"><label class="form-label">Saat *</label><input type="time" id="newAptTime" class="form-input" value="10:00"></div><div class="form-group"><label class="form-label">Durum</label><select id="newAptStatus" class="form-select"><option value="confirmed">Onaylandı</option><option value="pending">Bekliyor</option><option value="completed">Tamamlandı</option></select></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="createAppointment()" class="btn btn-primary">Oluştur</button></div></div></div>';
+}
+
+async function createAppointment() {
+    var s = AdminState.selectedSalon; if (!s) return;
+    var name = document.getElementById('newAptCustomerName').value.trim();
+    var phone = document.getElementById('newAptCustomerPhone').value.replace(/\D/g, '').slice(-10);
+    var date = document.getElementById('newAptDate').value;
+    var time = document.getElementById('newAptTime').value;
+    if (!name || !date || !time) { showToast('Müşteri adı, tarih ve saat zorunlu', 'error'); return; }
+    var newApt = {
+        salonId: s.id, salonName: s.name, salonSlug: s.slug || '',
+        customerName: name, customerPhone: phone,
+        staffName: document.getElementById('newAptStaff').value || '',
+        service: document.getElementById('newAptService').value || '', serviceName: document.getElementById('newAptService').value || '',
+        date: date, time: time,
+        status: document.getElementById('newAptStatus').value || 'confirmed',
+        source: 'admin', createdAt: new Date().toISOString(), createdBy: 'superAdmin'
+    };
+    try {
+        await db.collection('appointments').add(newApt);
+        showToast('Randevu oluşturuldu!', 'success');
+        closeModal();
+        await loadSalonDetails(s.id);
+    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
 }
 
 function showEditAppointmentModal(aptId) {
