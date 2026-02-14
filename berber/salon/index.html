@@ -3624,19 +3624,44 @@ Onayınızı bekliyorum. Teşekkürler!`;
             btn.disabled = true;
             
             try {
-                // Müşteri randevularını getir
                 const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-                const snapshot = await db.collection('appointments')
-                    .where('customerPhone', '>=', cleanPhone)
-                    .where('customerPhone', '<=', cleanPhone + '\uf8ff')
-                    .orderBy('customerPhone')
+                
+                // Salon randevularını yükle (müsaitlik kontrolü için) - son 60 gün + gelecek 60 gün
+                const today = new Date().toISOString().split('T')[0];
+                const sixtyDaysAgo = new Date();
+                sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                const sixtyDaysLater = new Date();
+                sixtyDaysLater.setDate(sixtyDaysLater.getDate() + 60);
+                const startStr = sixtyDaysAgo.toISOString().split('T')[0];
+                const endStr = sixtyDaysLater.toISOString().split('T')[0];
+                
+                let allAppointments = [];
+                try {
+                    const aptSnap = await db.collection('appointments')
+                        .where('salonId', '==', salon.id)
+                        .orderBy('date', 'desc')
+                        .limit(500)
+                        .get();
+                    allAppointments = aptSnap.docs
+                        .map(doc => ({ id: doc.id, ...doc.data() }))
+                        .filter(a => a.date >= startStr && a.date <= endStr && a.status !== 'cancelled');
+                    window.allAppointments = allAppointments;
+                } catch (aptErr) {
+                    console.warn('[AI] Randevu yükleme hatası, müsaitlik kontrolü sınırlı:', aptErr);
+                }
+                
+                // Müşteri randevularını getir (bu salon için - index gerektirmemek için client-side filtre)
+                const custSnap = await db.collection('appointments')
+                    .where('salonId', '==', salon.id)
                     .get();
-                
-                const customerAppointments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const customerAppointments = custSnap.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(a => {
+                        const p = (a.customerPhone || '').replace(/\D/g, '').slice(-10);
+                        return p === cleanPhone;
+                    })
+                    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
                 customerAppointmentsCache = customerAppointments;
-                
-                // Salon randevularını al (müsaitlik için)
-                const allAppointments = window.allAppointments || [];
                 
                 // AI Önerisini oluştur
                 if (typeof AIRecommendation !== 'undefined') {

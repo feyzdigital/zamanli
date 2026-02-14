@@ -22,8 +22,8 @@ const ADMIN_CONFIG = {
             const result = await verifyAdmin({ pin: input });
             return result.data.success === true;
         } catch (error) {
-            // Rate limit veya hata mesajını döndür
-            const message = error.message || 'Doğrulama hatası';
+            const msg = error?.message || '';
+            const message = (msg && /[ğüşıöçĞÜŞİÖÇ]/.test(msg)) ? msg : 'Doğrulama hatası. Lütfen tekrar deneyin.';
             throw new Error(message);
         }
     },

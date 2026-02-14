@@ -3,6 +3,11 @@
  * Tam Yetkili Admin Sistemi
  */
 
+function getTurkishErrorMsg(e) {
+    const msg = e?.message || '';
+    return (msg && /[ğüşıöçĞÜŞİÖÇ]/.test(msg)) ? msg : 'Bir hata oluştu. Lütfen tekrar deneyin.';
+}
+
 const AdminState = {
     isLoggedIn: false, currentView: 'dashboard', currentTab: 'active', currentCategory: 'all',
     salons: [], allAppointments: [], allCustomers: [], pushTokens: [],
@@ -22,6 +27,7 @@ function initAdmin() {
             if (!firebase.apps.length) firebase.initializeApp(ADMIN_CONFIG.firebase);
             db = firebase.firestore();
             emailjs.init(ADMIN_CONFIG.emailjs.publicKey);
+            firebase.app().functions('europe-west1');
             checkAuth();
         } catch (e) {
             console.error('[Admin] Başlatma hatası:', e);
@@ -61,7 +67,9 @@ async function login() {
             AdminState.isLoggedIn = true; loadAllData();
         }
     } catch (error) {
-        showToast(error.message || 'Geçersiz şifre!', 'error');
+        const msg = error?.message || '';
+        const turkishMsg = (msg && /[ğüşıöçĞÜŞİÖÇ]/.test(msg)) ? msg : 'Doğrulama hatası. Lütfen tekrar deneyin.';
+        showToast(turkishMsg, 'error');
         document.getElementById('pinInput').value = '';
     } finally {
         if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Giriş Yap'; }
@@ -89,7 +97,7 @@ async function loadAllData() {
         await loadAllCustomers();
         
         calculateStats(); setupRealtimeListeners();
-    } catch (e) { console.error('[Admin] Veri yükleme hatası:', e); showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { console.error('[Admin] Veri yükleme hatası:', e); showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
     AdminState.loading = false; renderApp();
 }
 
@@ -222,7 +230,7 @@ async function loadSalonDetails(id) {
         await loadSalonCustomers(id);
         
         AdminState.currentView = 'salon-detail'; AdminState.detailTab = 'info';
-    } catch (e) { console.error('[Admin] Salon detay hatası:', e); showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { console.error('[Admin] Salon detay hatası:', e); showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
     AdminState.loading = false; renderApp();
 }
 
@@ -528,7 +536,7 @@ async function createCustomer() {
             createdAt: new Date().toISOString(), createdBy: 'admin'
         }, { merge: true });
         showToast('Müşteri eklendi!', 'success'); closeModal(); await loadSalonDetails(sid);
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 function showEditCustomerModal(phone) {
@@ -549,7 +557,7 @@ async function updateCustomer(phone) {
             updatedAt: new Date().toISOString(), updatedBy: 'admin'
         }, { merge: true });
         showToast('Müşteri güncellendi!', 'success'); closeModal(); await loadSalonDetails(sid);
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function deleteCustomerFromSalon(phone) {
@@ -587,7 +595,7 @@ async function deleteCustomerFromSalon(phone) {
         
     } catch (e) {
         console.error('[Delete] Hata:', e);
-        showToast('Hata: ' + e.message, 'error');
+        showToast('Hata: ' + getTurkishErrorMsg(e), 'error');
     }
 }
 
@@ -659,7 +667,7 @@ async function syncCustomersFromAppointments() {
         
     } catch (e) {
         console.error('[Sync] Hata:', e);
-        showToast('Senkronizasyon hatası: ' + e.message, 'error');
+        showToast('Senkronizasyon hatası: ' + getTurkishErrorMsg(e), 'error');
     }
 }
 
@@ -783,7 +791,7 @@ async function changeAdminPassword() {
             showToast('Şifre başarıyla değiştirildi!', 'success');
         }
     } catch (error) {
-        showToast(error.message || 'Şifre değiştirme hatası', 'error');
+        showToast(getTurkishErrorMsg(error) || 'Şifre değiştirme hatası', 'error');
     }
 }
 
@@ -806,17 +814,17 @@ async function approveSalon(id) {
                 showToast('Onaylandı ve mail gönderildi! PIN: ' + pin, 'success');
             } catch (e) { showToast('Onaylandı! Mail gönderilemedi. PIN: ' + pin, 'warning'); }
         } else { showToast('Onaylandı! PIN: ' + pin, 'success'); }
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function rejectSalon(id) {
     const reason = prompt('Red sebebi:'); if (reason === null) return;
-    try { await db.collection('salons').doc(id).update({ active: false, status: 'rejected', rejectionReason: reason, rejectedAt: new Date().toISOString() }); showToast('Reddedildi', 'warning'); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { await db.collection('salons').doc(id).update({ active: false, status: 'rejected', rejectionReason: reason, rejectedAt: new Date().toISOString() }); showToast('Reddedildi', 'warning'); } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function toggleSalonStatus(id, active) {
     if (!confirm('Salonu ' + (active ? 'aktif' : 'pasif') + ' yapmak istediğinize emin misiniz?')) return;
-    try { await db.collection('salons').doc(id).update({ active, statusUpdatedAt: new Date().toISOString() }); showToast('Salon ' + (active ? 'aktif' : 'pasif') + ' yapıldı', 'success'); if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { await db.collection('salons').doc(id).update({ active, statusUpdatedAt: new Date().toISOString() }); showToast('Salon ' + (active ? 'aktif' : 'pasif') + ' yapıldı', 'success'); if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id); } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function changePackage(id) {
@@ -836,7 +844,7 @@ async function changePackage(id) {
         await db.collection('salons').doc(id).update(updateData);
         showToast('Paket değiştirildi: ' + (pkgData ? pkgData.name : pkg), 'success');
         if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id);
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function permanentDeleteSalon(id) {
@@ -880,7 +888,7 @@ async function permanentDeleteSalon(id) {
         
     } catch (e) {
         console.error('[Delete] Hata:', e);
-        showToast('Hata: ' + e.message, 'error');
+        showToast('Hata: ' + getTurkishErrorMsg(e), 'error');
     }
 }
 
@@ -892,7 +900,7 @@ async function regenerateQRCode(id) {
         const qrCodeUrl = generateQRCodeUrl(salonUrl, 256);
         await db.collection('salons').doc(id).update({ qrCodeUrl, qrUpdatedAt: new Date().toISOString() });
         showToast('QR oluşturuldu!', 'success'); if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id);
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 function downloadQRCode(id) {
@@ -906,7 +914,7 @@ async function saveWorkingHours() {
     const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     const workingHours = {};
     days.forEach(day => { workingHours[day] = { open: document.getElementById('hour-' + day + '-open').value || '09:00', close: document.getElementById('hour-' + day + '-close').value || '19:00', closed: document.getElementById('hour-' + day + '-closed').checked }; });
-    try { await db.collection('salons').doc(sid).update({ workingHours, hoursUpdatedAt: new Date().toISOString() }); showToast('Saatler kaydedildi!', 'success'); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { await db.collection('salons').doc(sid).update({ workingHours, hoursUpdatedAt: new Date().toISOString() }); showToast('Saatler kaydedildi!', 'success'); } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 function toggleDayClosed(day) {
@@ -917,7 +925,7 @@ function toggleDayClosed(day) {
 
 async function deleteAppointment(id) {
     if (!confirm('Randevuyu silmek istediğinize emin misiniz?')) return;
-    try { await db.collection('appointments').doc(id).delete(); showToast('Silindi', 'success'); if (AdminState.selectedSalon) await loadSalonDetails(AdminState.selectedSalon.id); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { await db.collection('appointments').doc(id).delete(); showToast('Silindi', 'success'); if (AdminState.selectedSalon) await loadSalonDetails(AdminState.selectedSalon.id); } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 function exportAllData() {
@@ -939,7 +947,7 @@ async function addStaff() {
     var selectedRole = document.getElementById('staffRole').value || 'staff';
     var roleLabel = selectedRole === 'operator' ? 'Operatör' : 'Personel';
     const newStaff = { id: 'staff-' + Date.now(), name, staffRole: selectedRole, role: roleLabel, title: roleLabel, phone: document.getElementById('staffPhone').value.replace(/\D/g, '').slice(-10), pin: document.getElementById('staffPin').value.trim() || '000000', active: true, createdAt: new Date().toISOString() };
-    try { const currentStaff = AdminState.selectedSalon.staff || []; currentStaff.push(newStaff); await db.collection('salons').doc(sid).update({ staff: currentStaff }); showToast('Eklendi!', 'success'); closeModal(); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { const currentStaff = AdminState.selectedSalon.staff || []; currentStaff.push(newStaff); await db.collection('salons').doc(sid).update({ staff: currentStaff }); showToast('Eklendi!', 'success'); closeModal(); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function updateStaff(staffId) {
@@ -953,7 +961,7 @@ async function updateStaff(staffId) {
             currentStaff[idx] = { ...currentStaff[idx], name: document.getElementById('staffName').value.trim(), staffRole: updatedRole, role: updatedRoleLabel, title: updatedRoleLabel, phone: document.getElementById('staffPhone').value.replace(/\D/g, '').slice(-10), pin: document.getElementById('staffPin').value.trim(), active: document.getElementById('staffActive').checked, updatedAt: new Date().toISOString() };
             await db.collection('salons').doc(sid).update({ staff: currentStaff }); showToast('Kaydedildi!', 'success'); closeModal(); await loadSalonDetails(sid);
         } else { showToast('Personel bulunamadı', 'error'); }
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function deleteStaff(staffId) {
@@ -963,7 +971,7 @@ async function deleteStaff(staffId) {
         let currentStaff = AdminState.selectedSalon.staff ? [...AdminState.selectedSalon.staff] : [];
         currentStaff = currentStaff.filter(s => s.id !== staffId);
         await db.collection('salons').doc(sid).update({ staff: currentStaff }); showToast('Silindi', 'success'); await loadSalonDetails(sid);
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function addService() {
@@ -972,7 +980,7 @@ async function addService() {
     if (!name || price <= 0) { showToast('Ad ve fiyat gerekli', 'error'); return; }
     const sid = AdminState.selectedSalon.id;
     const newSvc = { id: name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(), name, price, duration: parseInt(document.getElementById('svcDuration').value) || 30, icon: '✂️', active: true, createdAt: new Date().toISOString() };
-    try { const currentSvcs = AdminState.selectedSalon.services || []; currentSvcs.push(newSvc); await db.collection('salons').doc(sid).update({ services: currentSvcs }); showToast('Eklendi!', 'success'); closeModal(); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { const currentSvcs = AdminState.selectedSalon.services || []; currentSvcs.push(newSvc); await db.collection('salons').doc(sid).update({ services: currentSvcs }); showToast('Eklendi!', 'success'); closeModal(); await loadSalonDetails(sid); } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function updateService(svcId) {
@@ -984,7 +992,7 @@ async function updateService(svcId) {
             currentSvcs[idx] = { ...currentSvcs[idx], name: document.getElementById('svcName').value.trim(), price: parseInt(document.getElementById('svcPrice').value) || 0, duration: parseInt(document.getElementById('svcDuration').value) || 30, active: document.getElementById('svcActive').checked, updatedAt: new Date().toISOString() };
             await db.collection('salons').doc(sid).update({ services: currentSvcs }); showToast('Kaydedildi!', 'success'); closeModal(); await loadSalonDetails(sid);
         } else { showToast('Hizmet bulunamadı', 'error'); }
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function deleteService(svcId) {
@@ -994,14 +1002,14 @@ async function deleteService(svcId) {
         let currentSvcs = AdminState.selectedSalon.services ? [...AdminState.selectedSalon.services] : [];
         currentSvcs = currentSvcs.filter(s => s.id !== svcId);
         await db.collection('salons').doc(sid).update({ services: currentSvcs }); showToast('Silindi', 'success'); await loadSalonDetails(sid);
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function updateAppointment(aptId) {
     try {
         await db.collection('appointments').doc(aptId).update({ customerName: document.getElementById('aptCustomerName').value.trim(), customerPhone: document.getElementById('aptCustomerPhone').value.replace(/\D/g, ''), date: document.getElementById('aptDate').value, time: document.getElementById('aptTime').value, status: document.getElementById('aptStatus').value, updatedAt: new Date().toISOString(), updatedBy: 'admin' });
         showToast('Güncellendi!', 'success'); closeModal(); if (AdminState.selectedSalon) await loadSalonDetails(AdminState.selectedSalon.id);
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 // İlk updateGlobalAppointment tanımı kaldırıldı - aktif tanım altta (line 1234+)
@@ -1092,20 +1100,20 @@ async function createSalon() {
         renderApp();
     } catch (e) {
         console.error('[Admin] Salon oluşturma hatası:', e);
-        showToast('Hata: ' + e.message, 'error');
+        showToast('Hata: ' + getTurkishErrorMsg(e), 'error');
     }
 }
 
 async function saveSalonEdit(id) {
     const data = { name: document.getElementById('editName').value.trim(), ownerName: document.getElementById('editOwner').value.trim(), phone: document.getElementById('editPhone').value.replace(/\D/g, '').slice(-10), email: document.getElementById('editEmail').value.trim(), category: document.getElementById('editCategory').value, package: document.getElementById('editPackage').value, city: document.getElementById('editCity').value.trim(), district: document.getElementById('editDistrict').value.trim(), active: document.getElementById('editActive').checked, updatedAt: new Date().toISOString() };
     if (!data.name) { showToast('Salon adı gerekli', 'error'); return; }
-    try { await db.collection('salons').doc(id).update(data); showToast('Kaydedildi!', 'success'); closeModal(); if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { await db.collection('salons').doc(id).update(data); showToast('Kaydedildi!', 'success'); closeModal(); if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id); } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 async function changePin(id) {
     const newPin = document.getElementById('newPin').value.trim();
     if (!newPin || newPin.length < 4) { showToast('En az 4 haneli PIN girin', 'error'); return; }
-    try { await db.collection('salons').doc(id).update({ pin: newPin, pinUpdatedAt: new Date().toISOString() }); showToast('PIN değiştirildi: ' + newPin, 'success'); closeModal(); if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id); } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    try { await db.collection('salons').doc(id).update({ pin: newPin, pinUpdatedAt: new Date().toISOString() }); showToast('PIN değiştirildi: ' + newPin, 'success'); closeModal(); if (AdminState.selectedSalon?.id === id) await loadSalonDetails(id); } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 // ==================== MODALS ====================
@@ -1236,7 +1244,7 @@ async function createAppointment() {
         showToast('Randevu oluşturuldu!', 'success');
         closeModal();
         await loadSalonDetails(s.id);
-    } catch (e) { showToast('Hata: ' + e.message, 'error'); }
+    } catch (e) { showToast('Hata: ' + getTurkishErrorMsg(e), 'error'); }
 }
 
 function showEditAppointmentModal(aptId) {
@@ -1269,7 +1277,7 @@ async function deleteGlobalAppointment(id) {
         renderApp();
     } catch (e) {
         console.error('[Delete] Randevu silme hatası:', e);
-        showToast('Hata: ' + e.message, 'error');
+        showToast('Hata: ' + getTurkishErrorMsg(e), 'error');
     }
 }
 
@@ -1304,7 +1312,7 @@ async function deleteGlobalCustomer(phone, salonId) {
         renderApp();
     } catch (e) {
         console.error('[Delete] Müşteri silme hatası:', e);
-        showToast('Hata: ' + e.message, 'error');
+        showToast('Hata: ' + getTurkishErrorMsg(e), 'error');
     }
 }
 
@@ -1324,7 +1332,7 @@ async function updateGlobalAppointment(id) {
         closeModal();
         await loadAllData();
     } catch (e) {
-        showToast('Hata: ' + e.message, 'error');
+        showToast('Hata: ' + getTurkishErrorMsg(e), 'error');
     }
 }
 

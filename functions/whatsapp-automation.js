@@ -99,18 +99,22 @@ exports.sendAppointmentConfirmationWhatsApp = functions
                 const salonDoc = await db.collection('salons').doc(after.salonId).get();
                 const salon = salonDoc.data();
                 
+                // Tarih: Firestore'da string veya Timestamp olabilir
+                const dateObj = after.date?.toDate ? after.date.toDate() : new Date(after.date);
+                const serviceName = after.service || after.serviceName || 'Randevu';
+                
                 // Mesaj içeriği
                 const message = `✅ *Randevunuz Onaylandı!*
 
 🏪 ${salon.name}
-📅 Tarih: ${new Date(after.date.toDate()).toLocaleDateString('tr-TR', { 
+📅 Tarih: ${dateObj.toLocaleDateString('tr-TR', { 
     weekday: 'long', 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric' 
 })}
 ⏰ Saat: ${after.time}
-✂️ Hizmet: ${after.serviceName}
+✂️ Hizmet: ${serviceName}
 ${after.staffName ? `👤 Personel: ${after.staffName}` : ''}
 
 📍 Adres: ${salon.address}
@@ -168,12 +172,15 @@ exports.sendAppointmentCancellationWhatsApp = functions
                 const salonDoc = await db.collection('salons').doc(after.salonId).get();
                 const salon = salonDoc.data();
                 
+                const dateObj = after.date?.toDate ? after.date.toDate() : new Date(after.date);
+                const serviceName = after.service || after.serviceName || 'Randevu';
+                
                 const message = `❌ *Randevunuz İptal Edildi*
 
 🏪 ${salon.name}
-📅 Tarih: ${new Date(after.date.toDate()).toLocaleDateString('tr-TR')}
+📅 Tarih: ${dateObj.toLocaleDateString('tr-TR')}
 ⏰ Saat: ${after.time}
-✂️ Hizmet: ${after.serviceName}
+✂️ Hizmet: ${serviceName}
 
 ${after.cancelReason ? `📝 İptal Nedeni: ${after.cancelReason}` : ''}
 
@@ -211,6 +218,7 @@ Yeni randevu almak için: ${salon.bookingUrl || 'zamanli.com'}
 /**
  * Randevu hatırlatma WhatsApp mesajı gönder
  * Scheduled function: Her 15 dakikada bir çalış
+ * date Firestore'da string ("2024-01-15") olarak saklanıyor
  */
 exports.sendAppointmentRemindersWhatsApp = functions
     .region('europe-west1')
@@ -220,15 +228,13 @@ exports.sendAppointmentRemindersWhatsApp = functions
         console.log('[WhatsApp] Randevu hatırlatmaları kontrol ediliyor');
         
         try {
-            const now = admin.firestore.Timestamp.now();
-            const twoHoursLater = admin.firestore.Timestamp.fromDate(
-                new Date(now.toDate().getTime() + 2 * 60 * 60 * 1000)
-            );
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
             
-            // 2 saat içinde başlayacak onaylanmış randevuları bul
+            // Bugün ve yarın için onaylanmış randevuları al (date string olarak saklanıyor)
             const appointmentsSnapshot = await db.collection('appointments')
-                .where('date', '>=', now)
-                .where('date', '<=', twoHoursLater)
+                .where('date', 'in', [today, tomorrow])
                 .where('status', '==', 'confirmed')
                 .get();
             
@@ -250,14 +256,27 @@ exports.sendAppointmentRemindersWhatsApp = functions
                     continue;
                 }
                 
-                // Salon bilgilerini al
+                // Salon bilgilerini al (reminderHours ayarı için)
                 const salonDoc = await db.collection('salons').doc(appointment.salonId).get();
-                const salon = salonDoc.data();
+                const salon = salonDoc.exists ? salonDoc.data() : {};
+                const reminderHours = parseFloat(salon.advancedSettings?.reminderHours) ?? 1;
                 
-                // Randevuya kalan süreyi hesapla
-                const timeDiff = appointment.date.toDate().getTime() - now.toDate().getTime();
-                const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
-                const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                if (reminderHours === 0) continue;
+                
+                // Randevu zamanı (date string "2024-01-15", time "14:00")
+                const aptDateTime = new Date((appointment.date || '') + 'T' + (appointment.time || '00:00') + ':00');
+                const reminderTime = new Date(aptDateTime.getTime() - reminderHours * 60 * 60 * 1000);
+                
+                // Hatırlatma zamanı geldi mi? (±15 dakika tolerans)
+                const timeDiff = now.getTime() - reminderTime.getTime();
+                const shouldRemind = timeDiff >= 0 && timeDiff <= 15 * 60 * 1000;
+                
+                if (!shouldRemind) continue;
+                
+                const timeDiffToApt = aptDateTime.getTime() - now.getTime();
+                const hoursLeft = Math.floor(timeDiffToApt / (1000 * 60 * 60));
+                const minutesLeft = Math.floor((timeDiffToApt % (1000 * 60 * 60)) / (1000 * 60));
+                const serviceName = appointment.service || appointment.serviceName || 'Randevu';
                 
                 const message = `⏰ *Randevu Hatırlatması*
 
@@ -266,9 +285,9 @@ Merhaba ${appointment.customerName}! 👋
 Randevunuza ${hoursLeft > 0 ? `${hoursLeft} saat ` : ''}${minutesLeft} dakika kaldı.
 
 🏪 ${salon.name}
-📅 ${new Date(appointment.date.toDate()).toLocaleDateString('tr-TR')}
+📅 ${aptDateTime.toLocaleDateString('tr-TR')}
 ⏰ Saat: ${appointment.time}
-✂️ Hizmet: ${appointment.serviceName}
+✂️ Hizmet: ${serviceName}
 ${appointment.staffName ? `👤 Personel: ${appointment.staffName}` : ''}
 
 📍 Adres: ${salon.address}

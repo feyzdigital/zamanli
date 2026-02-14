@@ -3613,7 +3613,7 @@
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label class="form-label">Telefon Numarası</label>
-                    <input type="tel" id="loginPhone" class="form-input" placeholder="05XX XXX XX XX" required>
+                    <input type="tel" id="loginPhone" class="form-input" placeholder="05XX veya 5XX XXX XX XX" required autocomplete="tel">
                 </div>
                 <div class="form-group">
                     <label class="form-label">PIN Kodu</label>
@@ -4906,11 +4906,11 @@
         async function init() {
             console.log('[Init] Başlatılıyor...');
             
-            // Firebase yüklenmesini bekle (max 5 saniye)
+            // Firebase yüklenmesini bekle (max 2 saniye)
             let waitTime = 0;
-            while (typeof firebase === 'undefined' && waitTime < 5000) {
-                await new Promise(r => setTimeout(r, 100));
-                waitTime += 100;
+            while (typeof firebase === 'undefined' && waitTime < 2000) {
+                await new Promise(r => setTimeout(r, 50));
+                waitTime += 50;
             }
             
             if (typeof firebase === 'undefined') {
@@ -4927,6 +4927,7 @@
             
             try {
                 db = firebase.firestore();
+                firebase.app().functions('europe-west1');
                 
                 const urlParams = new URLSearchParams(window.location.search);
                 const slug = getSlugFromUrl();
@@ -5100,13 +5101,7 @@
                     console.log('[Init] salonSession bulunamadı');
                 }
                 
-                // 4. URL'de slug varsa direkt o salon için login ekranı göster
-                if (slug) {
-                    console.log('[Init] URL slug ile salon yükleniyor (login gerekli):', slug);
-                    await loadSalonData(slug);
-                }
-                
-                // Session yok veya geçersiz - login ekranı göster
+                // 4. Session yok - login ekranını hemen göster (loadSalonData atlanır, giriş sonrası yüklenecek)
                 console.log('[Init] Login ekranı gösteriliyor');
                 showLoginScreen();
             } catch (error) {
@@ -6517,10 +6512,11 @@
             
             const phone = document.getElementById('loginPhone').value.trim();
             const pin = document.getElementById('loginPin').value.trim();
+            // 0 ile başlasın veya başlamasın - son 10 hane kullanılır (05XX, 5XX, 905XX hepsi geçerli)
             const inputPhone = phone.replace(/\D/g, '').slice(-10);
             
-            if (inputPhone.length < 10) {
-                showLoginError('Geçerli bir telefon numarası girin');
+            if (inputPhone.length !== 10) {
+                showLoginError('Geçerli 10 haneli telefon numarası girin (05XX veya 5XX)');
                 return;
             }
             
@@ -6612,7 +6608,7 @@
                 
             } catch (error) {
                 console.error('[Login] Hata:', error);
-                const msg = error.message || 'Bir hata oluştu. Lütfen tekrar deneyin.';
+                const msg = getTurkishErrorMessage(error);
                 showLoginError(msg);
             } finally {
                 // Loading kaldır
@@ -6677,6 +6673,27 @@
             }
             
             console.log('[Login] Personel girişi başarılı:', matchedStaff.name, 'Rol:', staffRole, 'Salon:', salonData.name);
+        }
+        
+        // Hata mesajlarını Türkçe'ye çevir
+        function getTurkishErrorMessage(error) {
+            const msg = error?.message || '';
+            if (msg && /[ğüşıöçĞÜŞİÖÇ]/.test(msg)) return msg; // Zaten Türkçe karakter varsa
+            const code = (error?.code || '').replace('functions/', '');
+            const map = {
+                'unavailable': 'Servis geçici olarak kullanılamıyor. Lütfen tekrar deneyin.',
+                'internal': 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.',
+                'resource-exhausted': 'Çok fazla deneme. Lütfen daha sonra tekrar deneyin.',
+                'not-found': 'Telefon numarası veya salon bulunamadı.',
+                'invalid-argument': 'Geçersiz bilgi. Lütfen kontrol edin.',
+                'unauthenticated': 'Telefon numarası veya PIN hatalı.',
+                'permission-denied': 'Yetkiniz yok.',
+                'deadline-exceeded': 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.',
+                'failed-precondition': 'İşlem şu an yapılamıyor.',
+                'network': 'İnternet bağlantınızı kontrol edin.',
+                'NETWORK_ERROR': 'İnternet bağlantınızı kontrol edin.'
+            };
+            return map[code] || (msg && msg.length < 100 ? msg : 'Bir hata oluştu. Lütfen tekrar deneyin.');
         }
         
         // Show Login Error
@@ -12621,44 +12638,15 @@ ${salon.name}`;
             },
             
             // Real-time dinlemeyi başlat
+            // NOT: Appointments bildirimleri startAppointmentsListener tarafından yönetiliyor.
+            // Duplikat ve eski randevu bildirimi önlemek için burada listener KALDIRILDI.
             startListening: function() {
                 if (this.listener) {
                     this.listener();
+                    this.listener = null;
                 }
-                
-                if (!this.salonId) {
-                    console.log('[Notify] Salon ID yok, dinleme başlatılamadı');
-                    return;
-                }
-                
-                console.log('[Notify] Real-time dinleme başlatılıyor:', this.salonId);
-                
-                try {
-                    this.listener = db.collection('appointments')
-                        .where('salonId', '==', this.salonId)
-                        .onSnapshot(
-                            (snapshot) => {
-                                snapshot.docChanges().forEach(change => {
-                                    if (change.type === 'added') {
-                                        const apt = { id: change.doc.id, ...change.doc.data() };
-                                        
-                                        if (!this.knownAppointments.has(apt.id)) {
-                                            console.log('[Notify] YENİ RANDEVU:', apt);
-                                            this.knownAppointments.add(apt.id);
-                                            this.notifyNewAppointment(apt);
-                                        }
-                                    }
-                                });
-                            },
-                            (error) => {
-                                console.error('[Notify] Dinleme hatası:', error);
-                            }
-                        );
-                    
-                    console.log('[Notify] Dinleme aktif');
-                } catch (e) {
-                    console.error('[Notify] Dinleme başlatılamadı:', e);
-                }
+                if (!this.salonId) return;
+                console.log('[Notify] Bildirimler startAppointmentsListener üzerinden yönetiliyor');
             },
             
             // Yeni randevu bildirimi

@@ -513,13 +513,14 @@
         async function handleLogin(e) {
             e.preventDefault();
             
-            const phone = document.getElementById('loginPhone').value.replace(/\D/g, '').slice(-10);
+            const rawPhone = document.getElementById('loginPhone').value.replace(/\D/g, '');
+            const phone = rawPhone.slice(-10);
             const pin = document.getElementById('loginPin').value;
             const errorEl = document.getElementById('loginError');
             const btn = e.target.querySelector('button[type="submit"]');
             
-            if (phone.length < 10 || pin.length < 4) {
-                errorEl.textContent = 'Geçerli telefon ve PIN girin';
+            if (phone.length !== 10 || pin.length < 4) {
+                errorEl.textContent = 'Geçerli 10 haneli telefon ve PIN girin (05XX veya 5XX)';
                 errorEl.classList.add('show');
                 return;
             }
@@ -561,7 +562,8 @@
                 throw new Error('Telefon numarası veya PIN hatalı');
                 
             } catch (error) {
-                errorEl.textContent = error.message || 'Giriş başarısız';
+                const msg = error?.message || '';
+                errorEl.textContent = (msg && /[ğüşıöçĞÜŞİÖÇ]/.test(msg)) ? msg : 'Giriş başarısız. Lütfen tekrar deneyin.';
                 errorEl.classList.add('show');
                 btn.disabled = false;
                 btn.textContent = 'Giriş Yap';

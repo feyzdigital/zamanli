@@ -2072,9 +2072,10 @@
             const pin = document.getElementById('loginPin').value;
             const errorEl = document.getElementById('loginError');
             const btn = document.querySelector('#loginModal .btn-primary');
+            const phone10 = phone.slice(-10);
             
-            if (phone.length < 10) {
-                errorEl.textContent = 'Geçerli telefon numarası girin';
+            if (phone10.length !== 10) {
+                errorEl.textContent = 'Geçerli 10 haneli telefon girin (05XX veya 5XX)';
                 errorEl.style.display = 'block';
                 return;
             }
@@ -2090,8 +2091,6 @@
             errorEl.style.display = 'none';
             
             try {
-                const phone10 = phone.slice(-10);
-                
                 // Doğrudan Cloud Function'a telefon + PIN gönder (client collection scan kaldırıldı)
                 const verifyPinFn = firebase.app().functions('europe-west1').httpsCallable('verifyPinAuth');
                 const result = await verifyPinFn({ pin: pin, phone: phone10 });
@@ -2125,7 +2124,7 @@
                 errorEl.style.display = 'block';
             } catch (error) {
                 console.error('Login error:', error);
-                errorEl.textContent = error.message || 'Bir hata oluştu, tekrar deneyin';
+                errorEl.textContent = (error?.message && /[ğüşıöçĞÜŞİÖÇ]/.test(error.message)) ? error.message : 'Bir hata oluştu. Lütfen tekrar deneyin.';
                 errorEl.style.display = 'block';
             } finally {
                 btn.disabled = false;

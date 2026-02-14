@@ -123,6 +123,7 @@ exports.verifyPinAuth = functions
     .region('europe-west1')
     .https.onCall(async (data, context) => {
         let { salonId, pin, userType, staffId, phone } = data;
+        if (phone) phone = String(phone).replace(/\D/g, '').slice(-10);
         
         console.log('[Auth] PIN doğrulama isteği:', { salonId, userType, phone: phone ? '***' + phone.slice(-4) : null });
         
@@ -143,8 +144,10 @@ exports.verifyPinAuth = functions
             let docRef = null;
             
             if (!salonId && phone) {
-                // Telefon numarası ile salon bul (server-side - client collection scan yerine)
-                const phone10 = phone.replace(/\D/g, '').slice(-10);
+                const phone10 = phone.length === 10 ? phone : phone.replace(/\D/g, '').slice(-10);
+                if (phone10.length !== 10) {
+                    throw new functions.https.HttpsError('invalid-argument', 'Geçerli 10 haneli telefon numarası girin');
+                }
                 console.log('[Auth] Telefon ile salon aranıyor...');
                 
                 const salonsSnap = await db.collection('salons').get();
@@ -193,8 +196,9 @@ exports.verifyPinAuth = functions
                 }
                 
                 if (!salonId) {
-                    throw new functions.https.HttpsError('not-found', 'Telefon numarası kayıtlı değil');
+                    throw new functions.https.HttpsError('not-found', 'Bu telefon numarası kayıtlı değil');
                 }
+                phone = phone10;
                 console.log('[Auth] Salon bulundu:', salonId, 'userType:', userType);
             }
             
