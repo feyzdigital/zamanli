@@ -5810,7 +5810,7 @@
         function applyOperatorModeRestrictions() {
             console.log('[Operator Mode] Kısıtlamalar uygulanıyor...');
             
-            // Operatör: Tüm randevuları görebilir, düzenleyebilir, onaylayabilir, iptal edebilir
+            // Operatör: Tüm randevuları görebilir, düzenleyebilir, manuel randevu ekleyebilir. Onay/iptal yetkisi yoktur.
             // Manuel randevu ekleyebilir, müşterileri görebilir
             // AMA: Personel/hizmet/saat/ayarlar düzenleyemez
             // AMA: Fiyat/ciro/gelir hiçbir yerde GÖRÜNMEZ
@@ -9343,24 +9343,30 @@ Panel: ${window.location.href}`);
             if (!select) return;
             
             const staff = salon?.staff || [];
+            const parent = select.parentElement;
+            const existingSpan = parent?.querySelector('.staff-name-only');
             
-            // Personel modunda sadece kendi adı gösterilsin, Tüm Personel seçeneği olmasın
             if (isStaffMode) {
-                select.innerHTML = '';
                 const currentStaff = staff.find(s => s.id === currentStaffId || s.name === currentStaffName);
-                if (currentStaff) {
-                    select.innerHTML = `<option value="${currentStaff.id || currentStaff.name}" selected>${escapeHtml(currentStaff.name)}</option>`;
+                if (parent && currentStaff) {
+                    if (existingSpan) {
+                        existingSpan.textContent = currentStaff.name;
+                    } else {
+                        const span = document.createElement('span');
+                        span.className = 'staff-name-only';
+                        span.textContent = currentStaff.name;
+                        span.style.cssText = 'font-weight:600;color:var(--slate-700);padding:0.3rem 0.5rem;font-size:0.85rem;';
+                        parent.insertBefore(span, select);
+                    }
+                    select.style.display = 'none';
                 }
-                select.disabled = true;
-                select.style.opacity = '0.7';
             } else {
-                // Salon sahibi için Tüm Personel seçeneği
+                if (existingSpan) existingSpan.remove();
+                select.style.display = '';
                 select.innerHTML = '<option value="all">Tüm Personel</option>';
                 staff.forEach(s => {
                     select.innerHTML += `<option value="${s.id || s.name}">${escapeHtml(s.name)}</option>`;
                 });
-                select.disabled = false;
-                select.style.opacity = '1';
             }
         }
         
@@ -10598,27 +10604,30 @@ Panel: ${window.location.href}`);
         // Staff filter'ı yeni takvim için de doldur
         function populateStaffFiltersNew() {
             const staff = salon?.staff || [];
-            
             const filterNew = document.getElementById('calendarStaffFilterNew');
-            if (filterNew) {
-                // Personel modunda sadece kendi adı gösterilsin
-                if (isStaffMode) {
-                    filterNew.innerHTML = '';
-                    const currentStaff = staff.find(s => s.id === currentStaffId || s.name === currentStaffName);
-                    if (currentStaff) {
-                        filterNew.innerHTML = `<option value="${currentStaff.id || currentStaff.name}" selected>${escapeHtml(currentStaff.name)}</option>`;
+            if (!filterNew) return;
+            const parent = filterNew.closest('.staff-filter-inline');
+            if (isStaffMode) {
+                const currentStaff = staff.find(s => s.id === currentStaffId || s.name === currentStaffName);
+                if (parent && currentStaff) {
+                    let span = parent.querySelector('.staff-name-only');
+                    if (!span) {
+                        span = document.createElement('span');
+                        span.className = 'staff-name-only';
+                        span.style.cssText = 'font-weight:600;color:var(--slate-700);padding:0.3rem 0.5rem;font-size:0.85rem;';
+                        parent.insertBefore(span, filterNew);
                     }
-                    filterNew.disabled = true;
-                    filterNew.style.opacity = '0.7';
-                } else {
-                    // Salon sahibi için Tüm Personel seçeneği
-                    filterNew.innerHTML = '<option value="all">Tüm Personel</option>';
-                    staff.forEach(s => {
-                        filterNew.innerHTML += `<option value="${s.id || s.name}">${escapeHtml(s.name)}</option>`;
-                    });
-                    filterNew.disabled = false;
-                    filterNew.style.opacity = '1';
+                    span.textContent = currentStaff.name;
+                    filterNew.style.display = 'none';
                 }
+            } else {
+                const span = parent?.querySelector('.staff-name-only');
+                if (span) span.remove();
+                filterNew.style.display = '';
+                filterNew.innerHTML = '<option value="all">Tüm Personel</option>';
+                staff.forEach(s => {
+                    filterNew.innerHTML += `<option value="${s.id || s.name}">${escapeHtml(s.name)}</option>`;
+                });
             }
         }
         
@@ -11095,7 +11104,7 @@ END:VEVENT
                     recentRows += `<tr><td>${a.date || '-'}</td><td>${a.time || '-'}</td><td>${a.customerName || '-'}</td><td>${a.serviceName || a.service || '-'}</td><td>${a.staffName || '-'}</td><td>${statusMap[a.status] || a.status || '-'}</td></tr>`;
                 });
                 
-                // HTML rapor oluştur
+                // HTML rapor oluştur - Marka kimliğine uygun şık şablon
                 const htmlContent = `<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -11103,35 +11112,43 @@ END:VEVENT
 <title>${salonName} - ${periodText} Rapor</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; color: #334155; background: white; max-width: 900px; margin: 0 auto; }
-    .header { border-bottom: 3px solid #10b981; padding-bottom: 1rem; margin-bottom: 1.5rem; }
-    .header h1 { font-size: 1.5rem; color: #1e293b; }
-    .header p { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
-    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-bottom: 2rem; }
-    .stat-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; text-align: center; }
-    .stat-box .value { font-size: 1.75rem; font-weight: 800; color: #166534; }
-    .stat-box .label { font-size: 0.75rem; color: #4ade80; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
-    .section { margin-bottom: 1.5rem; }
-    .section h2 { font-size: 1.1rem; color: #1e293b; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; padding: 2rem; color: #1e293b; background: #fafafa; max-width: 900px; margin: 0 auto; }
+    .report-wrapper { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(11,43,38,0.08); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #0B2B26 0%, #134a42 100%); color: white; padding: 1.5rem 2rem; }
+    .header-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .header-brand .logo { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
+    .header-brand .badge { background: rgba(16,185,129,0.3); padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .header h1 { font-size: 1.5rem; font-weight: 700; }
+    .header p { font-size: 0.85rem; opacity: 0.9; margin-top: 0.35rem; }
+    .content { padding: 1.5rem 2rem; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-box { background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border: 1px solid #A7F3D0; border-radius: 10px; padding: 1.25rem; text-align: center; }
+    .stat-box .value { font-size: 1.75rem; font-weight: 800; color: #0B2B26; }
+    .stat-box .label { font-size: 0.7rem; color: #059669; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.35rem; font-weight: 600; }
+    .section { margin-bottom: 1.75rem; }
+    .section h2 { font-size: 1rem; color: #0B2B26; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid #10B981; font-weight: 700; }
     table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-    th { background: #f1f5f9; padding: 0.5rem; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
-    td { padding: 0.5rem; border-bottom: 1px solid #f1f5f9; }
-    tr:hover { background: #fafafa; }
-    .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; text-align: center; }
+    th { background: #0B2B26; color: white; padding: 0.6rem 0.75rem; text-align: left; font-weight: 600; font-size: 0.75rem; }
+    td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0; }
+    tr:nth-child(even) { background: #f8fafc; }
+    .footer { background: #f1f5f9; padding: 1rem 2rem; font-size: 0.75rem; color: #64748b; text-align: center; }
     .actions { margin: 1.5rem 0; text-align: center; }
-    .actions button { padding: 0.75rem 2rem; font-size: 1rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin: 0 0.5rem; }
-    .btn-pdf { background: #10b981; color: white; }
-    .btn-pdf:hover { background: #059669; }
+    .actions button { padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin: 0 0.5rem; }
+    .btn-pdf { background: linear-gradient(135deg, #10B981, #059669); color: white; box-shadow: 0 2px 8px rgba(16,185,129,0.4); }
+    .btn-pdf:hover { background: linear-gradient(135deg, #059669, #047857); }
     .btn-close { background: #e2e8f0; color: #475569; }
     .btn-close:hover { background: #cbd5e1; }
-    @media print { .actions { display: none; } body { padding: 1rem; } }
+    @media print { .actions { display: none !important; } body { background: white; padding: 1rem; } .report-wrapper { box-shadow: none; } }
 </style>
 </head>
 <body>
+    <div class="report-wrapper">
     <div class="header">
-        <h1>${salonName} - ${periodText} Rapor</h1>
-        <p>Oluşturulma: ${dateStr} | Zamanli.com</p>
+        <div class="header-brand"><span class="logo">Zamanli</span><span class="badge">RAPOR</span></div>
+        <h1>${salonName}</h1>
+        <p>${periodText} Rapor | Oluşturulma: ${dateStr}</p>
     </div>
+    <div class="content">
     
     <div class="actions">
         <button class="btn-pdf" onclick="window.print()">🖨️ PDF Olarak Kaydet</button>
@@ -11173,8 +11190,10 @@ END:VEVENT
         </table>
     </div>` : ''}
     
+    </div>
     <div class="footer">
-        <p>${salonName} | Zamanli.com | ${dateStr}</p>
+        <p>${salonName} | Zamanli - Online Randevu Sistemi | ${dateStr}</p>
+    </div>
     </div>
 </body>
 </html>`;

@@ -59,12 +59,20 @@ const AIRecommendation = {
         // Tercih edilen saat dilimini bul
         const preferredTime = this.findPreferredTime(completedAppointments);
         
-        // En uygun slotu bul
+        // En çok tercih edilen personeli bul (müşteri geçmişinden - en yoğun kullandığı)
+        const preferredStaff = this.findPreferredStaff(completedAppointments);
+        
+        // Personel müsaitliğine göre randevuları filtrele
+        const staffAppointments = preferredStaff 
+            ? allAppointments.filter(a => a.staffId === preferredStaff.id || a.staffName === preferredStaff.name)
+            : allAppointments;
+        
+        // En uygun slotu bul (hizmet süresi ve personel müsaitliği dahil)
         const bestSlot = this.findBestSlot(
             adjustedDate, 
             preferredTime, 
             salon, 
-            allAppointments,
+            staffAppointments,
             lastAppointment.serviceDuration || 30
         );
         
@@ -76,6 +84,8 @@ const AIRecommendation = {
             prediction: {
                 date: bestSlot.date,
                 time: bestSlot.time,
+                staffId: preferredStaff?.id || preferredStaff?.name,
+                staffName: preferredStaff?.name,
                 dateFormatted: this.formatDate(bestSlot.date),
                 dayName: this.getDayName(bestSlot.date),
                 intervalDays: Math.round(predictedInterval),
@@ -89,6 +99,11 @@ const AIRecommendation = {
                 lastVisit: this.formatDate(lastAppointment.date),
                 daysSinceLastVisit: Math.floor((today - lastDate) / (1000 * 60 * 60 * 24))
             },
+            pastAppointments: completedAppointments.slice(-5).reverse().map(a => ({
+                date: this.formatDate(a.date),
+                service: a.service || a.serviceName,
+                staff: a.staffName
+            })),
             message: this.generateMessage(bestSlot, preferredService, Math.round(predictedInterval))
         };
     },
@@ -162,6 +177,30 @@ const AIRecommendation = {
         };
         
         return slotDefaults[preferredSlot];
+    },
+    
+    /**
+     * En çok tercih edilen personeli bul (müşteri geçmişinden)
+     */
+    findPreferredStaff(appointments) {
+        const staffCounts = {};
+        appointments.forEach(apt => {
+            const staffId = apt.staffId || apt.staffName;
+            if (staffId) {
+                staffCounts[staffId] = (staffCounts[staffId] || 0) + 1;
+            }
+        });
+        let maxCount = 0;
+        let preferredId = null;
+        Object.entries(staffCounts).forEach(([id, count]) => {
+            if (count > maxCount) {
+                maxCount = count;
+                preferredId = id;
+            }
+        });
+        if (!preferredId) return null;
+        const apt = appointments.find(a => (a.staffId || a.staffName) === preferredId);
+        return apt ? { id: apt.staffId || apt.staffName, name: apt.staffName || apt.staffId || preferredId } : null;
     },
     
     /**
@@ -347,6 +386,7 @@ const AIRecommendation = {
         return {
             date: adjustedDate.toISOString().split('T')[0],
             time: '10:00',
+            staffId: null,
             dateFormatted: this.formatDate(adjustedDate),
             dayName: this.getDayName(adjustedDate),
             message: 'Henüz yeterli randevu geçmişiniz yok. Size uygun bir tarih önerdik.'
@@ -438,6 +478,12 @@ function showAIRecommendationPopup(recommendation) {
                         </div>
                     </div>
                     
+                    ${(recommendation.prediction.staffName || recommendation.preferredStaff?.name) ? `
+                    <div class="ai-service-suggestion">
+                        <span>👤 Önerilen personel:</span>
+                        <strong>${recommendation.prediction.staffName || recommendation.preferredStaff?.name}</strong>
+                    </div>
+                    ` : ''}
                     ${recommendation.preferredService ? `
                     <div class="ai-service-suggestion">
                         <span>✂️ Tercih ettiğiniz hizmet:</span>
@@ -446,6 +492,14 @@ function showAIRecommendationPopup(recommendation) {
                     </div>
                     ` : ''}
                     
+                    ${(recommendation.pastAppointments && recommendation.pastAppointments.length) ? `
+                    <div class="ai-past-section">
+                        <div class="ai-past-title">📋 Son Randevularınız</div>
+                        ${recommendation.pastAppointments.map(a => `
+                            <div class="ai-past-item">${a.date} - ${a.service || '-'} ${a.staff ? '(' + a.staff + ')' : ''}</div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
                     <div class="ai-analysis">
                         <div class="ai-analysis-item">
                             <span>📊 Ortalama ziyaret aralığı</span>
@@ -462,7 +516,7 @@ function showAIRecommendationPopup(recommendation) {
                     </div>
                 </div>
                 <div class="ai-popup-actions">
-                    <button class="ai-btn ai-btn-primary" onclick="applyAIRecommendation('${pred.date}', '${pred.time}')">
+                    <button class="ai-btn ai-btn-primary" onclick="applyAIRecommendation('${pred.date}', '${pred.time}', '${(pred.staffId || '').replace(/'/g, "\\'")}')">
                         ✓ Bu Tarihi Seç
                     </button>
                     <button class="ai-btn ai-btn-secondary" onclick="closeAIPopup()">
@@ -493,7 +547,7 @@ function showAIRecommendationPopup(recommendation) {
                     </div>
                 </div>
                 <div class="ai-popup-actions">
-                    <button class="ai-btn ai-btn-primary" onclick="applyAIRecommendation('${fallback.date}', '${fallback.time}')">
+                    <button class="ai-btn ai-btn-primary" onclick="applyAIRecommendation('${fallback.date}', '${fallback.time}', '')">
                         ✓ Bu Tarihi Seç
                     </button>
                     <button class="ai-btn ai-btn-secondary" onclick="closeAIPopup()">
@@ -519,28 +573,21 @@ function closeAIPopup() {
 }
 
 function applyAIRecommendation(date, time) {
-    // Tarih seçiciyi güncelle
+    if (typeof window.applyAIRecommendation === 'function') {
+        window.applyAIRecommendation(date, time);
+        return;
+    }
     const dateInput = document.getElementById('appointmentDate') || document.querySelector('input[type="date"]');
     if (dateInput) {
-        dateInput.value = date;
+        dateInput.value = (date || '').split('T')[0];
         dateInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    
-    // Saat seçiciyi güncelle (eğer varsa)
     setTimeout(() => {
-        const timeSlot = document.querySelector(`[data-time="${time}"]`) || 
-                         document.querySelector(`.time-slot[data-time="${time}"]`);
-        if (timeSlot) {
-            timeSlot.click();
-        }
+        const timeSlot = document.querySelector(`[data-time="${time}"]`) || document.querySelector(`.time-slot[data-time="${time}"]`);
+        if (timeSlot) timeSlot.click();
     }, 500);
-    
     closeAIPopup();
-    
-    // Başarı mesajı
-    if (typeof showToast === 'function') {
-        showToast('Önerilen tarih seçildi!', 'success');
-    }
+    if (typeof showToast === 'function') showToast('Önerilen tarih seçildi!', 'success');
 }
 
 // CSS Stilleri ekle
@@ -701,6 +748,15 @@ aiStyles.textContent = `
     .ai-analysis-item span {
         color: #64748b;
     }
+    
+    .ai-past-section {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    .ai-past-title { font-size: 0.8rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem; }
+    .ai-past-item { font-size: 0.85rem; color: #64748b; padding: 0.25rem 0; }
     
     .ai-popup-actions {
         display: flex;

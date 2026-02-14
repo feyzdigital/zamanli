@@ -1491,26 +1491,29 @@
             border-color: var(--primary);
         }
         
-        /* Date Selector */
+        /* Date Selector - 5 gün görünür, yatay kaydırma */
         .date-scroll {
             display: flex;
             gap: 0.5rem;
             overflow-x: auto;
-            padding: 0.25rem 0;
+            padding: 0.5rem 0;
             -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
         }
         
         .date-scroll::-webkit-scrollbar { display: none; }
         
         .date-item {
-            min-width: 60px;
-            padding: 0.75rem 0.5rem;
+            min-width: 64px;
+            flex-shrink: 0;
+            padding: 0.6rem 0.5rem;
             text-align: center;
             border: 2px solid var(--slate-200);
             border-radius: var(--radius);
             cursor: pointer;
             transition: all 0.2s;
             background: white;
+            scroll-snap-align: start;
         }
         
         .date-item:hover { border-color: var(--slate-300); }
@@ -1522,24 +1525,19 @@
         }
         
         .date-item.selected .date-day,
-        .date-item.selected .date-month { color: white; }
+        .date-item.selected .date-num { color: white; }
         
         .date-day {
             font-size: 0.7rem;
             color: var(--slate-500);
-            margin-bottom: 0.25rem;
-            font-weight: 500;
+            margin-bottom: 0.35rem;
+            font-weight: 600;
         }
         
         .date-num {
-            font-size: 1.25rem;
+            font-size: 0.95rem;
             font-weight: 700;
-        }
-        
-        .date-month {
-            font-size: 0.7rem;
-            color: var(--slate-500);
-            margin-top: 0.15rem;
+            color: var(--slate-800);
         }
         
         /* Time Grid */
@@ -1597,12 +1595,12 @@
         .consent-label input { margin-top: 0.2rem; flex-shrink: 0; }
         .consent-label a { color: var(--primary); text-decoration: underline; }
         
-        /* Date selector - responsive */
+        /* Date selector - responsive, 5 kutucuk görünür */
         @media (max-width: 480px) {
-            .date-scroll { gap: 0.35rem; padding: 0.5rem 0; }
-            .date-item { min-width: 52px; padding: 0.5rem 0.35rem; }
-            .date-day, .date-month { font-size: 0.65rem; }
-            .date-num { font-size: 1.1rem; }
+            .date-scroll { gap: 0.4rem; padding: 0.5rem 0; }
+            .date-item { min-width: 58px; padding: 0.5rem 0.4rem; }
+            .date-day { font-size: 0.65rem; }
+            .date-num { font-size: 0.85rem; }
             .time-grid { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
             .time-slot { padding: 0.6rem; font-size: 0.9rem; }
         }
@@ -2891,26 +2889,24 @@
             const container = document.getElementById('dateScroll');
             let html = '';
             const today = new Date();
-            
-            // Salon'un gelişmiş ayarlarından maksimum ileri tarih al
             const maxAdvanceDays = parseInt(salon?.advancedSettings?.maxAdvanceDays) || 30;
-            
-            for (let i = 0; i < maxAdvanceDays; i++) {
+            let count = 0;
+            for (let i = 0; i < maxAdvanceDays && count < 60; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() + i);
-                
                 const dayKey = DAY_KEYS[date.getDay()];
                 const hours = salon.workingHours?.[dayKey];
                 const isClosed = hours?.closed;
-                
                 if (!isClosed) {
+                    const dd = String(date.getDate()).padStart(2, '0');
+                    const mm = String(date.getMonth() + 1).padStart(2, '0');
                     html += `
                         <div class="date-item" data-date="${date.toISOString()}" onclick="selectDate(this)">
                             <div class="date-day">${DAYS_SHORT[date.getDay()]}</div>
-                            <div class="date-num">${date.getDate()}</div>
-                            <div class="date-month">${MONTHS_TR[date.getMonth()]}</div>
+                            <div class="date-num">${dd}/${mm}</div>
                         </div>
                     `;
+                    count++;
                 }
             }
             container.innerHTML = html;
@@ -3650,8 +3646,12 @@ Onayınızı bekliyorum. Teşekkürler!`;
         
         // AI Önerisini tetikle
         async function triggerAIRecommendation() {
-            // Telefon numarası iste
-            const phone = prompt('Telefon numaranızı girin (Daha önce randevu aldıysanız):', '05');
+            const phoneInput = document.getElementById('customerPhone');
+            const savedPhone = (typeof ZamanliUX !== 'undefined') ? ZamanliUX.getCustomerInfo?.()?.phone : '';
+            const defaultPhone = phoneInput?.value?.trim() || savedPhone || (window.savedCustomerPhone || '');
+            const phone = defaultPhone && defaultPhone.replace(/\D/g, '').length >= 10 
+                ? defaultPhone 
+                : prompt('Telefon numaranızı girin (Daha önce randevu aldıysanız):', defaultPhone || '05');
             
             if (!phone || phone.length < 10) {
                 if (typeof ZamanliUX !== 'undefined') {
@@ -3738,27 +3738,40 @@ Onayınızı bekliyorum. Teşekkürler!`;
             }
         }
         
-        // Öneriyi uygula (tarih ve saat seç)
-        function applyAIRecommendation(date, time) {
-            // Tarih seçiciden o tarihi bul ve tıkla
-            const dateItems = document.querySelectorAll('.date-item');
-            dateItems.forEach(item => {
-                if (item.dataset.date === date) {
-                    item.click();
-                }
-            });
-            
-            // Saat seçimi için bekle
+        // Öneriyi uygula (personel, tarih ve saat seç)
+        function applyAIRecommendation(date, time, staffId) {
+            if (staffId && document.getElementById('staffSelect')) {
+                const staffSelect = document.getElementById('staffSelect');
+                staffSelect.value = staffId;
+                onStaffChange();
+            }
+            const dateStr = (date || '').split('T')[0];
+            setTimeout(() => {
+                const dateItems = document.querySelectorAll('.date-item');
+                let found = false;
+                dateItems.forEach(item => {
+                    const itemDate = (item.dataset.date || '').split('T')[0];
+                    if (itemDate === dateStr) {
+                        item.click();
+                        found = true;
+                    }
+                });
+                if (!found && dateItems.length) dateItems[0].click();
+            }, staffId ? 300 : 0);
             setTimeout(() => {
                 const timeSlots = document.querySelectorAll('.time-slot:not(.disabled)');
+                let timeFound = false;
                 timeSlots.forEach(slot => {
                     if (slot.dataset.time === time) {
                         slot.click();
+                        timeFound = true;
                     }
                 });
-            }, 500);
-            
+                if (!timeFound && timeSlots.length) timeSlots[0].click();
+                updateBooking();
+            }, staffId ? 700 : 400);
             closeAIPopup();
+            if (typeof ZamanliUX !== 'undefined') ZamanliUX.success('Önerilen tarih seçildi!');
         }
         
         // Sayfa yüklendiğinde AI banner'ı göster
