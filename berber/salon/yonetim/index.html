@@ -8271,6 +8271,7 @@ Panel: ${window.location.href}`);
                         title: document.getElementById('staffTitle').value || 'Personel',
                         phone: phone.slice(-10),
                         pin: pinFromModal,
+                        pinPlain: pinFromModal, // Görüntüleme için
                         staffRole: staffRole, // ÖNEMLİ: Rol kaydediliyor
                         isOwner: existingPerson.isOwner || false
                     };
@@ -8283,6 +8284,7 @@ Panel: ${window.location.href}`);
                     title: document.getElementById('staffTitle').value || 'Personel',
                     phone: phone.slice(-10),
                     pin: pinFromModal,
+                    pinPlain: pinFromModal, // Görüntüleme için
                     staffRole: staffRole // ÖNEMLİ: Rol kaydediliyor
                 };
                 staff.push(person);
@@ -8300,13 +8302,15 @@ Panel: ${window.location.href}`);
             if (!confirm('Bu personelin PIN kodunu sıfırlamak istediğinize emin misiniz?')) return;
             
             let staff = salon.staff || [];
-            staff[index].pin = generateStaffPin();
+                const newPin = generateStaffPin();
+                staff[index].pin = newPin;
+                staff[index].pinPlain = newPin;
             
             try {
                 await db.collection('salons').doc(salon.id).update({ staff });
                 salon.staff = staff;
                 renderStaff();
-                showToast('PIN kodu sıfırlandı: ' + staff[index].pin, 'success');
+                showToast('PIN sıfırlandı: ' + newPin, 'success');
             } catch (error) {
                 console.error('Error resetting PIN:', error);
                 showToast('Bir hata oluştu', 'error');
@@ -8776,13 +8780,24 @@ Panel: ${window.location.href}`);
             });
         }
         
-        // Google Business Link Kaydet
+        // Place ID'yi Google Maps URL'den çıkar (ChIJ... veya 0x... formatı)
+        function extractPlaceIdFromUrl(url) {
+            if (!url) return null;
+            const match = url.match(/!1s(0x[0-9a-f]+:0x[0-9a-f]+|ChIJ[a-zA-Z0-9_-]+)/i);
+            return match ? match[1] : null;
+        }
+        
+        // Google Business Link Kaydet (placeId de çıkarılıp kaydedilir)
         async function saveGoogleBusinessLink() {
             const url = document.getElementById('settingGoogleBusiness').value.trim();
+            const placeId = extractPlaceIdFromUrl(url);
             
             try {
-                await db.collection('salons').doc(salon.id).update({ googleBusinessUrl: url });
+                const update = { googleBusinessUrl: url };
+                if (placeId) update.googlePlaceId = placeId;
+                await db.collection('salons').doc(salon.id).update(update);
                 salon.googleBusinessUrl = url;
+                if (placeId) salon.googlePlaceId = placeId;
                 showToast('Google Business linki kaydedildi', 'success');
             } catch (error) {
                 showToast('Hata oluştu', 'error');
@@ -8838,8 +8853,8 @@ Panel: ${window.location.href}`);
                     const phone = apt.customerPhone?.replace(/\D/g, '').slice(-10);
                     if (!phone || deletedSet.has(phone)) return;
                     
-                    // PERSONEL MODU: Sadece kendi müşterilerini göster
-                    if (isStaffMode && currentStaffId) {
+                    // PERSONEL MODU: Sadece kendi müşterilerini göster (operatör TÜM müşterileri görür)
+                    if (isStaffMode && currentStaffId && currentStaffRole !== 'operator') {
                         if (apt.staffId !== currentStaffId && apt.staffName !== currentStaffName) {
                             return;
                         }
@@ -9355,7 +9370,8 @@ Panel: ${window.location.href}`);
             const parent = select.parentElement;
             const existingSpan = parent?.querySelector('.staff-name-only');
             
-            if (isStaffMode) {
+            // Operatör: Tüm personelleri filtreleyebilir (sahip dahil). Personel: sadece kendisi
+            if (isStaffMode && currentStaffRole !== 'operator') {
                 const currentStaff = staff.find(s => s.id === currentStaffId || s.name === currentStaffName);
                 if (parent && currentStaff) {
                     if (existingSpan) {
@@ -10616,7 +10632,8 @@ Panel: ${window.location.href}`);
             const filterNew = document.getElementById('calendarStaffFilterNew');
             if (!filterNew) return;
             const parent = filterNew.closest('.staff-filter-inline');
-            if (isStaffMode) {
+            // Operatör: Tüm personelleri filtreleyebilir. Personel: sadece kendisi
+            if (isStaffMode && currentStaffRole !== 'operator') {
                 const currentStaff = staff.find(s => s.id === currentStaffId || s.name === currentStaffName);
                 if (parent && currentStaff) {
                     let span = parent.querySelector('.staff-name-only');
@@ -11020,12 +11037,7 @@ END:VEVENT
                     serviceTableRows += `<tr><td>${name}</td><td>${s.count}</td>${showRevenue ? `<td>${s.revenue.toLocaleString('tr-TR')} ₺</td>` : ''}</tr>`;
                 });
                 
-                // Son randevular listesi (en fazla 30)
-                let recentRows = '';
-                const statusMap = { pending: 'Bekliyor', confirmed: 'Onaylı', completed: 'Tamamlandı', cancelled: 'İptal' };
-                periodAppointments.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 30).forEach(a => {
-                    recentRows += `<tr><td>${a.date || '-'}</td><td>${a.time || '-'}</td><td>${a.customerName || '-'}</td><td>${a.serviceName || a.service || '-'}</td><td>${a.staffName || '-'}</td><td>${statusMap[a.status] || a.status || '-'}</td></tr>`;
-                });
+                // Müşteri listesi PDF'de gösterilmez (gizlilik)
                 
                 // HTML rapor oluştur - Kurumsal kimlik, logo ve mağaza adı
                 const logoUrl = (salon?.logo && salon.logo.startsWith('http')) ? salon.logo : (location.origin + '/icons/logo.png');
@@ -11059,13 +11071,8 @@ END:VEVENT
     td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #e2e8f0; }
     tr:nth-child(even) { background: #f8fafc; }
     .footer { background: #f1f5f9; padding: 1rem 2rem; font-size: 0.75rem; color: #64748b; text-align: center; }
-    .actions { margin: 1.5rem 0; text-align: center; }
-    .actions button { padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin: 0 0.5rem; }
-    .btn-pdf { background: linear-gradient(135deg, #10B981, #059669); color: white; box-shadow: 0 2px 8px rgba(16,185,129,0.4); }
-    .btn-pdf:hover { background: linear-gradient(135deg, #059669, #047857); }
-    .btn-close { background: #e2e8f0; color: #475569; }
-    .btn-close:hover { background: #cbd5e1; }
-    @media print { .actions { display: none !important; } body { background: white; padding: 1rem; } .report-wrapper { box-shadow: none; } }
+    .section { page-break-inside: avoid; }
+    @media print { body { background: white; padding: 0.5rem; } .report-wrapper { box-shadow: none; } }
 </style>
 </head>
 <body>
@@ -11084,11 +11091,6 @@ END:VEVENT
         </div>
     </div>
     <div class="content">
-    
-    <div class="actions">
-        <button class="btn-pdf" onclick="window.print()">🖨️ PDF Olarak Kaydet</button>
-        <button class="btn-close" onclick="window.close()">✕ Kapat</button>
-    </div>
     
     <div class="summary">
         <div class="stat-box"><div class="value">${totalApt}</div><div class="label">Toplam Randevu</div></div>
@@ -11116,15 +11118,6 @@ END:VEVENT
         </table>
     </div>` : ''}
     
-    ${recentRows ? `
-    <div class="section">
-        <h2>Son Randevular</h2>
-        <table>
-            <thead><tr><th>Tarih</th><th>Saat</th><th>Müşteri</th><th>Hizmet</th><th>Personel</th><th>Durum</th></tr></thead>
-            <tbody>${recentRows}</tbody>
-        </table>
-    </div>` : ''}
-    
     </div>
     <div class="footer">
         <p>${salonName} | Zamanli - Online Randevu Sistemi | ${dateStr}</p>
@@ -11137,11 +11130,12 @@ END:VEVENT
                 if (typeof html2pdf !== 'undefined') {
                     showToast('PDF hazırlanıyor...', 'info');
                     const opt = {
-                        margin: 10,
+                        margin: [10, 10, 10, 10],
                         filename: `zamanli_rapor_${salonName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-                        image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { scale: 2 },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                        image: { type: 'jpeg', quality: 0.95 },
+                        html2canvas: { scale: 2, useCORS: true },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                     };
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(htmlContent, 'text/html');
@@ -11766,10 +11760,15 @@ END:VEVENT
         
         function populateStaffForManual() {
             const select = document.getElementById('manualStaffSelect');
-            const staff = salon?.staff || [];
+            let staff = salon?.staff || [];
+            // Salon sahibini listeye ekle (yoksa)
+            const ownerPhone = salon?.phone?.replace(/\D/g, '').slice(-10);
+            if (ownerPhone && !staff.some(s => (s.phone || '').replace(/\D/g, '').slice(-10) === ownerPhone)) {
+                staff = [{ name: salon.ownerName || 'Salon Sahibi', id: 'owner', isOwner: true, staffRole: 'owner' }, ...staff];
+            }
             
-            // PERSONEL MODU: Sadece kendisini seçebilsin
-            if (isStaffMode && currentStaffId) {
+            // PERSONEL MODU (operatör hariç): Sadece kendisini seçebilsin
+            if (isStaffMode && currentStaffId && currentStaffRole !== 'operator') {
                 select.innerHTML = '';
                 const currentStaff = staff.find(s => s.id === currentStaffId || s.name === currentStaffName);
                 if (currentStaff) {
@@ -11780,13 +11779,18 @@ END:VEVENT
                 return;
             }
             
-            select.innerHTML = '<option value="">Personel Seçin (Opsiyonel)</option>';
+            // Operatör veya salon sahibi: Tüm personeli seçebilir (operatör kendisini SEÇEMEZ)
+            select.innerHTML = '<option value="">Personel Seçin *</option>';
             select.disabled = false;
             select.style.opacity = '1';
             
             staff.forEach(s => {
-                if (s.active !== false) {
-                    select.innerHTML += `<option value="${s.id || s.name}" data-name="${s.name}">${s.name}</option>`;
+                const isOwner = s.isOwner === true;
+                if (s.active !== false || isOwner) {
+                    // Operatör kendine randevu oluşturamaz
+                    const isOperatorSelf = (currentStaffRole === 'operator') && (s.id === currentStaffId || s.name === currentStaffName || s.staffRole === 'operator');
+                    if (isOperatorSelf) return;
+                    select.innerHTML += `<option value="${s.id || s.name}" data-name="${s.name}">${s.name}${isOwner ? ' (Sahip)' : ''}</option>`;
                 }
             });
         }
@@ -11826,6 +11830,12 @@ END:VEVENT
             
             if (!customerName || !customerPhone || !date || !time || !serviceSelect.value) {
                 showToast('Lütfen tüm zorunlu alanları doldurun', 'error');
+                return;
+            }
+            
+            // Operatör personel seçmek zorunda (kendine randevu oluşturamaz)
+            if (currentStaffRole === 'operator' && (!staffId || !staffName)) {
+                showToast('Randevu için personel seçmeniz gerekiyor', 'error');
                 return;
             }
             

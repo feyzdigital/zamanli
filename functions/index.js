@@ -746,7 +746,7 @@ exports.fetchGoogleReviews = functions
                 
                 if (hoursSinceCached < 24) {
                     console.log('[Google Reviews] Cache geçerli, döndürülüyor');
-                    return { success: true, reviews: cacheData.reviews || [], fromCache: true };
+                    return { success: true, reviews: cacheData.reviews || [], rating: cacheData.rating, userRatingsTotal: cacheData.userRatingsTotal || 0, fromCache: true };
                 }
             }
             
@@ -757,10 +757,16 @@ exports.fetchGoogleReviews = functions
             }
             
             const salonData = salonDoc.data();
-            const placeId = salonData.googlePlaceId || salonData.placeId;
+            let placeId = salonData.googlePlaceId || salonData.placeId;
+            
+            // Place ID yoksa URL'den çıkarmayı dene
+            if (!placeId && salonData.googleBusinessUrl) {
+                const url = salonData.googleBusinessUrl;
+                const match = url.match(/!1s(0x[0-9a-f]+:0x[0-9a-f]+|ChIJ[a-zA-Z0-9_-]+)/i);
+                if (match) placeId = match[1];
+            }
             
             if (!placeId) {
-                // Place ID yoksa boş döndür
                 return { success: true, reviews: [], message: 'Google Place ID bulunamadı' };
             }
             
@@ -773,7 +779,7 @@ exports.fetchGoogleReviews = functions
                 return { success: true, reviews: [], message: 'API key yapılandırılmamış' };
             }
             
-            const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews&language=tr&key=${apiKey}`;
+            const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews,rating,user_ratings_total&language=tr&key=${apiKey}`;
             const response = await fetch(url);
             const result = await response.json();
             
@@ -785,16 +791,20 @@ exports.fetchGoogleReviews = functions
                 profile_photo_url: r.profile_photo_url,
                 time: r.time
             }));
+            const rating = result.result?.rating || null;
+            const userRatingsTotal = result.result?.user_ratings_total || 0;
             
             // Cache'e kaydet
             await cacheRef.set({
                 reviews: reviews,
+                rating: rating,
+                userRatingsTotal: userRatingsTotal,
                 cachedAt: admin.firestore.FieldValue.serverTimestamp(),
                 placeId: placeId
             });
             
-            console.log(`[Google Reviews] ${reviews.length} yorum cache'lendi`);
-            return { success: true, reviews, fromCache: false };
+            console.log(`[Google Reviews] ${reviews.length} yorum, puan: ${rating} cache'lendi`);
+            return { success: true, reviews, rating, userRatingsTotal, fromCache: false };
             
         } catch (error) {
             if (error instanceof functions.https.HttpsError) throw error;

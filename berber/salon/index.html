@@ -2057,9 +2057,12 @@
                         <button onclick="callSalon()" class="action-btn">
                             <span>📞</span> Ara
                         </button>
-                        <a href="#" id="googleBusinessBtn" class="action-btn" target="_blank" style="display:none;">
-                            <span>⭐</span> Google'da Değerlendir
+                        <a href="#" id="googleRatingBtn" class="action-btn" target="_blank" style="display:none;" title="Google'da görüntüle">
+                            <span id="googleRatingText">⭐ -</span>
                         </a>
+                        <button onclick="document.getElementById('reviewsSection')?.scrollIntoView({behavior:'smooth'})" class="action-btn" id="salonReviewsBtn" title="Salon değerlendirmeleri">
+                            <span id="salonRatingBtnText">⭐ <span id="salonRatingShort">-</span></span>
+                        </button>
                     </div>
                 </div>
                 
@@ -2644,11 +2647,16 @@
                 document.getElementById('directionsBtn').style.display = 'inline-flex';
             }
             
-            // Google Business link (varsa göster)
+            // Salon değerlendirme butonu - Zamanli puanı
+            document.getElementById('salonRatingShort').textContent = (salon.rating || 5).toFixed(1);
+            document.getElementById('salonReviewsBtn').style.display = 'inline-flex';
+            
+            // Google puanı butonu (entegrasyon varsa - loadReviews'da güncellenir)
             if (salon.googleBusinessUrl) {
-                const gbBtn = document.getElementById('googleBusinessBtn');
-                gbBtn.href = salon.googleBusinessUrl;
-                gbBtn.style.display = 'inline-flex';
+                const gBtn = document.getElementById('googleRatingBtn');
+                gBtn.href = salon.googleBusinessUrl;
+                gBtn.style.display = 'inline-flex';
+                gBtn.querySelector('#googleRatingText').textContent = '⭐ Google';
             }
             
             // Galeri (varsa göster)
@@ -2771,14 +2779,28 @@
                 
                 const zamanliReviews = snap.docs.map(d => ({ id: d.id, ...d.data(), source: 'zamanli' }));
                 
-                // 2. Google Maps entegrasyonu varsa - Google yorumları (cache'den, sayfanın en altında)
+                // 2. Google Maps entegrasyonu varsa - Google yorumları (önce fetch dene, sonra cache)
                 let googleReviews = [];
-                if (salon.googleBusinessUrl) {
+                let googleRating = null;
+                if (salon.googleBusinessUrl || salon.googlePlaceId) {
                     try {
-                        const cacheSnap = await db.collection('salons').doc(salon.id).collection('googleReviewsCache').doc('latest').get();
-                        if (cacheSnap.exists) {
-                            const cacheData = cacheSnap.data();
-                            googleReviews = (cacheData.reviews || []).map(r => ({ ...r, source: 'google' }));
+                        // Önce Cloud Function ile güncel veriyi çek (cache boşsa veya eskiyse)
+                        if (typeof firebase !== 'undefined' && firebase.apps?.length) {
+                            const fn = firebase.app().functions('europe-west1').httpsCallable('fetchGoogleReviews');
+                            const res = await fn({ salonId: salon.id });
+                            if (res?.data?.reviews?.length) {
+                                googleReviews = res.data.reviews.map(r => ({ ...r, source: 'google' }));
+                                googleRating = res.data.rating;
+                            }
+                        }
+                        // Cloud Function'dan gelmezse cache'den oku
+                        if (googleReviews.length === 0) {
+                            const cacheSnap = await db.collection('salons').doc(salon.id).collection('googleReviewsCache').doc('latest').get();
+                            if (cacheSnap.exists) {
+                                const cacheData = cacheSnap.data();
+                                googleReviews = (cacheData.reviews || []).map(r => ({ ...r, source: 'google' }));
+                                googleRating = cacheData.rating;
+                            }
                         }
                     } catch (gErr) {
                         console.warn('Google yorumları yüklenemedi:', gErr);
@@ -2786,6 +2808,14 @@
                 }
                 
                 const allReviews = [...zamanliReviews, ...googleReviews]; // Zamanli üstte, Google en altta
+                
+                // Google puanı varsa butonu güncelle
+                if (googleRating != null && salon.googleBusinessUrl) {
+                    const gBtn = document.getElementById('googleRatingBtn');
+                    if (gBtn) {
+                        gBtn.querySelector('#googleRatingText').textContent = `⭐ ${Number(googleRating).toFixed(1)} Google`;
+                    }
+                }
                 
                 if (allReviews.length === 0) {
                     document.getElementById('reviewsList').innerHTML = '<p class="no-reviews">Henüz değerlendirme yok</p>';
