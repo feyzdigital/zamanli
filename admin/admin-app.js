@@ -486,7 +486,8 @@ function renderSalonStaff() {
         AdminState.salonStaff.forEach(st => {
             var roleLabel = st.staffRole === 'operator' ? 'Operatör' : 'Personel';
             var roleBadge = st.staffRole === 'operator' ? 'badge-warning' : 'badge-info';
-            h += '<tr><td><strong>' + esc(st.name) + '</strong></td><td><span class="badge ' + roleBadge + '">' + roleLabel + '</span></td><td>' + (st.phone || '-') + '</td><td><code title="Güvenlik nedeniyle gizli">••••••</code></td><td><span class="status-badge ' + (st.active !== false ? 'active' : 'inactive') + '">' + (st.active !== false ? 'Aktif' : 'Pasif') + '</span></td><td><button onclick="showEditStaffModal(\'' + st.id + '\')" class="btn btn-icon">✏️</button><button onclick="deleteStaff(\'' + st.id + '\')" class="btn btn-icon danger">🗑️</button></td></tr>';
+            var pinDisplay = (st.pin && st.pin.startsWith('$2a$')) ? '<code title="Hashlenmiş - Düzenle\'den yeni PIN belirleyebilirsiniz">••••••</code>' : '<code class="pin-visible" title="Mevcut PIN">' + esc(st.pin || '-') + '</code>';
+            h += '<tr><td><strong>' + esc(st.name) + '</strong></td><td><span class="badge ' + roleBadge + '">' + roleLabel + '</span></td><td>' + (st.phone || '-') + '</td><td>' + pinDisplay + '</td><td><span class="status-badge ' + (st.active !== false ? 'active' : 'inactive') + '">' + (st.active !== false ? 'Aktif' : 'Pasif') + '</span></td><td><button onclick="showEditStaffModal(\'' + st.id + '\')" class="btn btn-icon">✏️</button><button onclick="deleteStaff(\'' + st.id + '\')" class="btn btn-icon danger">🗑️</button></td></tr>';
         });
         h += '</tbody></table>';
     }

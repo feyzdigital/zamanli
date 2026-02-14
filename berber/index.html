@@ -58,6 +58,7 @@
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -1127,8 +1128,9 @@
             <button class="mobile-menu-close" onclick="toggleMobileMenu()" aria-label="Menüyü kapat">✕</button>
         </div>
         <nav class="mobile-menu-nav">
-            <a href="/">🏠 Ana Sayfa</a>
+            <a href="/berber/" class="mobile-randevu-al"><i data-lucide="calendar-check" style="width:1.2em;height:1.2em;margin-right:0.35em;"></i> Randevu Al</a>
             <div class="mobile-menu-divider"></div>
+            <a href="/">🏠 Ana Sayfa</a>
             <span style="padding: 0.5rem 1.5rem; font-size: 0.75rem; color: var(--slate-400); text-transform: uppercase;">Kategoriler</span>
             <a href="/berber/?category=berber" class="category-link" data-category="berber">💈 Berber Salonları</a>
             <a href="/berber/?category=kuafor" class="category-link" data-category="kuafor">💇‍♀️ Kuaför Salonları</a>
@@ -2212,5 +2214,6 @@
     
     <!-- UX Enhancements -->
     <script src="/ux-enhancements.js"></script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
 </body>
 </html>

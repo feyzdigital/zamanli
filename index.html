@@ -152,6 +152,7 @@
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <!-- Header -->
@@ -180,6 +181,8 @@
             <button class="mobile-menu-close" onclick="toggleMobileMenu()" aria-label="Menüyü kapat">✕</button>
         </div>
         <nav class="mobile-menu-nav">
+            <a href="/berber/" class="mobile-randevu-al"><i data-lucide="calendar-check" style="width:1.2em;height:1.2em;margin-right:0.35em;"></i> Randevu Al</a>
+            <div class="mobile-menu-divider"></div>
             <a href="/" class="active">🏠 Ana Sayfa</a>
             <span style="padding: 0.5rem 1.5rem; font-size: 0.75rem; color: var(--slate-400); text-transform: uppercase;">Kategoriler</span>
             <a href="/berber/?category=berber">💈 Berberler</a>
@@ -206,27 +209,29 @@
                 <p class="hero-desc">Berber, kuaför ve güzellik merkezlerini bul, anında randevu al!</p>
                 
                 <!-- Kategori Kartları -->
-                <div class="category-cards" style="display: flex; gap: 1rem; margin: 2rem 0; flex-wrap: wrap; justify-content: center;">
-                    <a href="/berber/?category=berber" class="category-card" style="background: white; border-radius: 12px; padding: 1.5rem 2rem; text-decoration: none; color: inherit; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s; text-align: center; min-width: 140px;">
-                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">💈</span>
-                        <span style="font-weight: 700; color: #10B981;">Berberler</span>
+                <div class="category-cards">
+                    <a href="/berber/?category=berber" class="category-card">
+                        <span class="category-icon"><i data-lucide="scissors"></i></span>
+                        <span class="category-name">Berberler</span>
                     </a>
-                    <a href="/berber/?category=kuafor" class="category-card" style="background: white; border-radius: 12px; padding: 1.5rem 2rem; text-decoration: none; color: inherit; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s; text-align: center; min-width: 140px;">
-                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">💇‍♀️</span>
-                        <span style="font-weight: 700; color: #ec4899;">Kuaförler</span>
+                    <a href="/berber/?category=kuafor" class="category-card">
+                        <span class="category-icon"><i data-lucide="sparkles"></i></span>
+                        <span class="category-name">Kuaförler</span>
                     </a>
-                    <a href="/berber/?category=beauty" class="category-card" style="background: white; border-radius: 12px; padding: 1.5rem 2rem; text-decoration: none; color: inherit; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s; text-align: center; min-width: 140px;">
-                        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">💆</span>
-                        <span style="font-weight: 700; color: #14b8a6;">Güzellik</span>
+                    <a href="/berber/?category=beauty" class="category-card">
+                        <span class="category-icon"><i data-lucide="flower-2"></i></span>
+                        <span class="category-name">Güzellik</span>
                     </a>
                 </div>
                 
                 <div class="hero-actions">
-                    <a href="/berber/" class="btn btn-primary btn-lg" id="randevuAlBtn">
-                        <span>📅</span> Randevu Al
+                    <a href="/berber/" class="btn btn-primary btn-lg hero-randevu-btn" id="randevuAlBtn">
+                        <i data-lucide="calendar-check" style="width:1.2em;height:1.2em;margin-right:0.35em;"></i>
+                        Randevu Al
                     </a>
                     <a href="/berber/" class="btn btn-outline btn-lg">
-                        <span>🔍</span> Tüm Salonları Gör
+                        <i data-lucide="search" style="width:1.1em;height:1.1em;margin-right:0.35em;"></i>
+                        Tüm Salonları Gör
                     </a>
                 </div>
 
@@ -285,22 +290,22 @@
             <h2 class="section-title">Neden Zamanli?</h2>
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
+                    <div class="feature-icon"><i data-lucide="zap"></i></div>
                     <h3>Anında Randevu</h3>
                     <p>Telefon açmadan, beklemeden saniyeler içinde randevu al</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">📱</div>
+                    <div class="feature-icon"><i data-lucide="message-circle"></i></div>
                     <h3>WhatsApp Hatırlatma</h3>
                     <p>Randevu saatinden önce WhatsApp ile hatırlatma al</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
+                    <div class="feature-icon"><i data-lucide="badge-check"></i></div>
                     <h3>Şeffaf Fiyatlar</h3>
                     <p>Tüm hizmet fiyatlarını önceden gör, sürpriz yaşama</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">⭐</div>
+                    <div class="feature-icon"><i data-lucide="star"></i></div>
                     <h3>Kaliteli Salonlar</h3>
                     <p>Onaylı ve değerlendirmeli berber salonları</p>
                 </div>
@@ -588,5 +593,8 @@
     <!-- UX Enhancements -->
     <script src="/ux-enhancements.js"></script>
     
+    <script>
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    </script>
 </body>
 </html>

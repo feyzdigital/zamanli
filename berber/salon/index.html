@@ -1583,6 +1583,30 @@
             font-size: 0.9rem;
         }
         
+        /* Consent / KVKK */
+        .consent-group { margin-top: 1rem; }
+        .consent-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--slate-600);
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+        }
+        .consent-label input { margin-top: 0.2rem; flex-shrink: 0; }
+        .consent-label a { color: var(--primary); text-decoration: underline; }
+        
+        /* Date selector - responsive */
+        @media (max-width: 480px) {
+            .date-scroll { gap: 0.35rem; padding: 0.5rem 0; }
+            .date-item { min-width: 52px; padding: 0.5rem 0.35rem; }
+            .date-day, .date-month { font-size: 0.65rem; }
+            .date-num { font-size: 1.1rem; }
+            .time-grid { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+            .time-slot { padding: 0.6rem; font-size: 0.9rem; }
+        }
+        
         /* Summary */
         .booking-summary {
             background: var(--slate-50);
@@ -2205,6 +2229,20 @@
                     <div class="form-group">
                         <label class="form-label">Not (Opsiyonel)</label>
                         <input type="text" id="customerNote" class="form-input" placeholder="Özel isteğiniz var mı?">
+                    </div>
+                    <div class="form-group consent-group">
+                        <label class="consent-label">
+                            <input type="checkbox" id="consentKvkk" required>
+                            <span><a href="/kvkk/" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum ve kişisel verilerimin işlenmesine onay veriyorum.</span>
+                        </label>
+                        <label class="consent-label">
+                            <input type="checkbox" id="consentGizlilik" required>
+                            <span><a href="/gizlilik/" target="_blank">Gizlilik Politikası</a>'nı okudum ve kabul ediyorum.</span>
+                        </label>
+                        <label class="consent-label">
+                            <input type="checkbox" id="consentIletisim">
+                            <span>Randevu hatırlatma ve bilgilendirme için WhatsApp/SMS ile iletişime geçilmesine izin veriyorum.</span>
+                        </label>
                     </div>
                     
                     <div class="booking-summary">
@@ -3147,6 +3185,10 @@
             document.getElementById('modalTime').textContent = selectedTime;
             document.getElementById('modalPrice').textContent = `${selectedService.price || 100} ₺`;
             document.getElementById('bookingModal').classList.add('active');
+            if (typeof ZamanliUX !== 'undefined') {
+                ZamanliUX.autoFillCustomerForm();
+                ZamanliUX.addRememberMeCheckbox();
+            }
         }
         
         function closeBookingModal() {
@@ -3185,6 +3227,9 @@
                     customerName,
                     customerPhone: customerPhone.slice(-10),
                     customerNote,
+                    consentKvkk: !!document.getElementById('consentKvkk')?.checked,
+                    consentGizlilik: !!document.getElementById('consentGizlilik')?.checked,
+                    consentIletisim: !!document.getElementById('consentIletisim')?.checked,
                     service: selectedService.name,
                     servicePrice: selectedService.price || 100,
                     serviceDuration: selectedService.duration || 30,

@@ -75,7 +75,8 @@ const ZamanliUX = {
         if (!phoneInput) return;
         
         const formGroup = phoneInput.closest('.form-group');
-        if (!formGroup || formGroup.querySelector('.remember-me')) return;
+        if (!formGroup) return;
+        if (formGroup.querySelector('.remember-me')) return;
         
         const info = this.getCustomerInfo();
         const isChecked = info.phone ? 'checked' : '';

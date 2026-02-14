@@ -625,6 +625,22 @@
                 <h2 class="form-section-title">💬 Eklemek İstedikleriniz</h2>
                 <textarea class="form-textarea" id="note" placeholder="Varsa notlarınız..."></textarea>
             </div>
+            <div class="form-card">
+                <h2 class="form-section-title">📋 Yasal Onaylar</h2>
+                <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 1rem;">Başvuruyu göndermek için aşağıdaki onayları vermeniz gerekmektedir.</p>
+                <label class="consent-label" style="display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.85rem; margin-bottom: 0.75rem; cursor: pointer;">
+                    <input type="checkbox" id="kayitConsentKvkk" required style="margin-top: 0.2rem;">
+                    <span><a href="/kvkk/" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum ve kişisel verilerimin işlenmesine onay veriyorum.</span>
+                </label>
+                <label class="consent-label" style="display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.85rem; margin-bottom: 0.75rem; cursor: pointer;">
+                    <input type="checkbox" id="kayitConsentGizlilik" required style="margin-top: 0.2rem;">
+                    <span><a href="/gizlilik/" target="_blank">Gizlilik Politikası</a>'nı okudum ve kabul ediyorum.</span>
+                </label>
+                <label class="consent-label" style="display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.85rem; margin-bottom: 0.75rem; cursor: pointer;">
+                    <input type="checkbox" id="kayitConsentKullanim" required style="margin-top: 0.2rem;">
+                    <span><a href="/kullanim-kosullari/" target="_blank">Kullanım Koşulları</a>'nı okudum ve kabul ediyorum.</span>
+                </label>
+            </div>
             <div class="btn-group">
                 <button class="btn btn-outline" onclick="goToStep(3)">← Geri</button>
                 <button class="btn btn-primary" onclick="submitApplication()" id="submitBtn">✓ Başvuruyu Gönder</button>
@@ -1309,6 +1325,10 @@
         
         async function submitApplication() {
             if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
+            if (!document.getElementById('kayitConsentKvkk')?.checked || !document.getElementById('kayitConsentGizlilik')?.checked || !document.getElementById('kayitConsentKullanim')?.checked) {
+                showToast('Lütfen tüm yasal onayları verin.', 'error');
+                return;
+            }
             const btn = document.getElementById('submitBtn');
             btn.disabled = true; btn.innerHTML = '⏳ Gönderiliyor...';
             try {
@@ -1353,6 +1373,7 @@
                     services,
                     note: d.note, rating: 5.0, reviewCount: 0, active: false, status: 'pending',
                     workingHours: APP_CONFIG.workingHours.default, createdAt: new Date().toISOString(),
+                    consentKvkk: true, consentGizlilik: true, consentKullanim: true,
                     // Varsayılan gelişmiş ayarlar
                     advancedSettings: {
                         autoApprove: false,
