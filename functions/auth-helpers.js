@@ -830,6 +830,87 @@ exports.changeAdminPin = functions
         }
     });
 
+/**
+ * Süper Admin: Tüm kullanıcılara (salon sahipleri + personel) toplu bildirim gönder
+ * Yenilik, güncelleme, bilgilendirme vb. için kullanılır
+ */
+async function verifyAdminPin(pin) {
+    if (!pin || typeof pin !== 'string') return false;
+    const configRef = db.collection('admin').doc('superAdminConfig');
+    const configDoc = await configRef.get();
+    if (!configDoc.exists || !configDoc.data().pinHash) return false;
+    return await bcrypt.compare(pin, configDoc.data().pinHash);
+}
+
+exports.adminBroadcastNotification = functions
+    .region('europe-west1')
+    .https.onCall(async (data, context) => {
+        const { pin, title, body } = data;
+        
+        if (!pin || !title || !body) {
+            throw new functions.https.HttpsError('invalid-argument', 'PIN, başlık ve mesaj gerekli');
+        }
+        
+        const isValid = await verifyAdminPin(pin);
+        if (!isValid) {
+            throw new functions.https.HttpsError('unauthenticated', 'Yetkisiz. Lütfen süper admin şifrenizi girin.');
+        }
+        
+        try {
+            const tokensSnap = await db.collection('push_tokens').get();
+            const tokens = [];
+            tokensSnap.forEach(doc => {
+                const d = doc.data();
+                if (d.token && d.token.length > 10) tokens.push(d.token);
+            });
+            
+            if (tokens.length === 0) {
+                return { success: true, sent: 0, message: 'Kayıtlı cihaz bulunamadı' };
+            }
+            
+            const messaging = admin.messaging();
+            const BATCH_SIZE = 500;
+            let totalSent = 0;
+            
+            for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
+                const batch = tokens.slice(i, i + BATCH_SIZE);
+                const message = {
+                    notification: {
+                        title: title,
+                        body: body
+                    },
+                    data: {
+                        type: 'admin_broadcast',
+                        url: 'https://zamanli.com/berber/'
+                    },
+                    tokens: batch,
+                    webpush: {
+                        fcmOptions: { link: 'https://zamanli.com/berber/' }
+                    }
+                };
+                
+                try {
+                    const resp = await messaging.sendEachForMulticast(message);
+                    totalSent += resp.successCount;
+                    resp.responses.forEach((r, idx) => {
+                        if (!r.success && r.error?.code === 'messaging/invalid-registration-token') {
+                            // Geçersiz token'ı sil (opsiyonel - batch delete karmaşık)
+                        }
+                    });
+                } catch (e) {
+                    console.error('[Broadcast] Batch hatası:', e);
+                }
+            }
+            
+            console.log('[Broadcast] Gönderilen:', totalSent, '/', tokens.length);
+            return { success: true, sent: totalSent, total: tokens.length };
+        } catch (error) {
+            console.error('[Broadcast] Hata:', error);
+            if (error instanceof functions.https.HttpsError) throw error;
+            throw new functions.https.HttpsError('internal', 'Bildirim gönderilemedi');
+        }
+    });
+
 // Export helper functions
 exports.hashPin = hashPin;
 exports.verifyPin = verifyPin;

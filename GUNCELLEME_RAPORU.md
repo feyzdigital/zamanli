@@ -6,6 +6,28 @@
 
 ---
 
+## TEST KONTROL LİSTESİ (Teker Teker Test İçin)
+
+Aşağıdaki maddeleri sırayla test edebilirsiniz. Her madde için: ✅ Geçti / ❌ Hata
+
+| # | Test | Sonuç |
+|---|------|-------|
+| 1 | [Bildirim](#1-bildirim-sistemi) Tek randevuda tek bildirim | |
+| 2 | [Bildirim](#1-bildirim-sistemi) Panel açılışında eski bildirim yok | |
+| 3 | [Akıllı Öneri](#2-akıllı-öneri-sistemi) Her tıklamada numara soruyor | |
+| 4 | [WhatsApp](#3-whatsapp-ve-hatırlatma-bildirimleri) Mesajlar doğru zamanda | |
+| 5 | [PDF Rapor](#10-raporlar-ve-pdf) İndirilebilir, müşteri listesi yok | |
+| 6 | [Salon/Sahip No](#11-salon-ve-salon-sahibi-numarası-ayrımı) Ara butonu salon numarası | |
+| 7 | [Değerlendirme](#12-değerlendirme-yorum-sistemi) Numara, hizmet, puan, yorum | |
+| 8 | [Personel Şifreleri](#6-süper-admin-paneli) Süper admin ve salon sahibi PIN görüyor | |
+| 9 | [Operatör](#operatör-yetkileri) Tüm randevular, müşteriler, manuel ekleme | |
+| 10 | [Operatör](#operatör-yetkileri) Personel filtresi (sahip dahil) | |
+| 11 | [Operatör](#operatör-yetkileri) Kendine randevu oluşturamaz | |
+| 12 | [Google](#google-maps-entegrasyonu) Yorumlar salon sayfasında | |
+| 13 | [Google](#google-maps-entegrasyonu) Puan butonu ve salon değerlendirme butonu | |
+
+---
+
 ## 1. Bildirim Sistemi
 
 ### Tek Randevuda Tek Bildirim
@@ -22,13 +44,10 @@
 
 ## 2. Akıllı Öneri Sistemi
 
-### Veri ve Mantık Düzeltmeleri
-- **Sorun:** Akıllı öneri sistemi doğru çalışmıyordu.
-- **Çözüm:**
-  - `allAppointments` salon randevularından doğru şekilde yükleniyor.
-  - `salonId` filtresi eklendi.
-  - `findNextWorkingDay` ve `findBestSlot` salon `workingHours` yapısına göre güncellendi.
-- **Sonuç:** Geçmiş verilere dayalı, salon çalışma saatlerine uygun öneriler üretiliyor.
+- **Her seferinde numara sor:** Tıklanınca otomatik analiz yapılmıyor; her defasında telefon numarası prompt ile soruluyor.
+- **Veri:** `allAppointments`, `salonId` filtresi, `workingHours` yapısına uygun öneriler.
+
+**Test:** Randevu sayfası → Akıllı Öneri tıkla → Numara prompt'u çıkmalı.
 
 ---
 
@@ -70,38 +89,20 @@
 
 ---
 
+
+---
+
 ## 6. Süper Admin Paneli
 
-### Personel PIN Güvenliği ve Düzenleme
+### Personel PIN Görüntüleme ve Düzenleme
 
-#### Sorunlar
-- Personel şifreleri (PIN) bazen hash (`$2a$10$...`), bazen düz metin (`999999`) görünüyordu.
-- Düzenleme yapılırken hata alınıyordu.
-- PIN güvenliği zayıftı.
+- **Süper admin:** Personel tablosunda `pinPlain` varsa PIN görünüyor; yoksa "••••••" (Düzenle'den yeni PIN belirleyerek görüntülenir).
+- **Admin sekmesi:** Salon sayfasında Admin sekmesine geçildiğinde veri yeniden çekiliyor; giriş bilgileri güncel.
+- **Salon sahibi paneli:** Personel kartında `pinPlain` veya düz PIN gösteriliyor; hashliyse "••••••".
+- **Cloud Functions:** `adminAddStaff` ve `adminSetStaffPin` `pinPlain` alanını da kaydediyor.
+- **Salon sahibi kayıt:** `saveStaff` ve `resetStaffPin` `pinPlain` alanını güncelliyor.
 
-#### Çözümler
-
-**A) Görüntüleme**
-- Personel tablosunda PIN artık **hiç gösterilmiyor**; sadece `••••••` gösteriliyor.
-- Güvenlik nedeniyle gerçek PIN değeri gizlendi.
-
-**B) Düzenleme Formu**
-- PIN alanı **boş** bırakılıyor.
-- Placeholder: *"Değiştirmek için 4-6 hane girin (boş bırakırsanız değişmez)"*.
-- Alan `type="password"` olarak ayarlandı.
-
-**C) Yeni Cloud Functions**
-| Fonksiyon | Açıklama |
-|-----------|----------|
-| `adminAddStaff` | Yeni personel eklerken PIN'i sunucuda bcrypt ile hashleyerek kaydeder. |
-| `adminSetStaffPin` | Personel bilgilerini (ad, rol, telefon, aktiflik, PIN) günceller. PIN değiştirilecekse hashlenerek saklanır; boş bırakılırsa mevcut PIN korunur. |
-
-**D) Admin Panel Entegrasyonu**
-- `addStaff()` → `adminAddStaff` Cloud Function kullanıyor.
-- `updateStaff()` → `adminSetStaffPin` Cloud Function kullanıyor.
-- Doğrudan Firestore yazımı kaldırıldı; tüm PIN işlemleri sunucu tarafında güvenli şekilde yapılıyor.
-
-**Sonuç:** Personel PIN'leri güvenli, tutarlı ve düzenleme hatasız çalışıyor.
+**Test:** Süper admin → Salon → Personel: PIN görünmeli. Salon sahibi → Personel: PIN görünmeli. Düzenle ile PIN değiştirilebilmeli.
 
 ---
 
@@ -134,14 +135,17 @@
 
 ## 10. Raporlar ve PDF İndirme
 
-### PDF Rapor İndirme
-- **Sorun:** Raporlar yeni sekmede açılıyordu, doğrudan indirilemiyordu.
-- **Çözüm:** `html2pdf.js` CDN eklendi; `exportReportPDF` artık raporu doğrudan PDF olarak indiriyor.
-- **Sonuç:** "PDF İndir" butonuna tıklanınca dosya otomatik indiriliyor (`zamanli_rapor_[SalonAdı]_[Tarih].pdf`).
+### PDF Rapor
+- **İndirme:** `html2pdf.js` ile doğrudan PDF indiriliyor (`zamanli_rapor_[SalonAdı]_[Tarih].pdf`).
+- **Kurumsal kimlik:** Logo, mağaza adı, Zamanli markası header'da.
+- **Müşteri listesi yok:** PDF'de müşteri adları/telefonları gösterilmiyor (gizlilik).
+- **İçerik:** Özet istatistikler, personel performansı, hizmet dağılımı.
+- **Sayfa düzeni:** `page-break-inside: avoid` ile bölümler düzgün sayfalanıyor.
 
 ### CSV Raporları Kaldırıldı
 - "Randevu CSV" ve "Müşteri CSV" butonları kaldırıldı.
-- `exportAppointmentsCSV` ve `exportCustomersCSV` fonksiyonları silindi.
+
+**Test:** Yönetim paneli → Raporlar → PDF İndir. Müşteri listesi olmamalı, logo ve mağaza adı görünmeli.
 
 ---
 
@@ -160,11 +164,45 @@
 
 ## 12. Değerlendirme (Yorum) Sistemi
 
-### Düzeltmeler
 - **Numara ile hizmet listesi:** Telefon doğrulandığında müşterinin aldığı **tüm hizmetler** listeleniyor.
-- **Yorum ve puan:** Yıldız puanı ve yorum alanı doğru çalışıyor.
-- **Salon sayfası:** Son 50 değerlendirme gösteriliyor.
-- **Telefon formatı:** 10 haneli normalize format ile tekrar yorum kontrolü yapılıyor; farklı formatlarda kayıtlı randevular bulunabiliyor.
+- **Yorum ve puan:** Yıldız puanı ve yorum alanı.
+- **Salon sayfası:** Son 50 değerlendirme.
+- **Telefon formatı:** 0 ile/olmadan, 90 ile başlayan formatlar kabul ediliyor.
+
+**Test:** Salon sayfası → Değerlendirme Yap → Numara gir (05XX veya 5XX) → Hizmetler listelenmeli, puan ve yorum gönderilebilmeli.
+
+---
+
+## Operatör Yetkileri
+
+### Manuel Randevu
+- **Tüm müşteriler:** Operatör salonun tüm müşterilerini görebiliyor.
+- **Yeni müşteri:** "Yeni Müşteri" ile kayıt eklenebiliyor.
+- **Personel seçimi:** Tüm personel (sahip dahil) seçilebiliyor; operatör **kendini seçemez**.
+- **Personel zorunlu:** Operatör için personel seçimi zorunlu.
+
+### Takvim ve Randevular
+- **Tüm randevular:** Operatör tüm randevuları görüyor (personel filtresi yok).
+- **Personel filtresi:** Takvimde ve listede personel filtresi (sahip dahil) kullanılabiliyor.
+- **Düzenleme:** Randevu düzenleyebiliyor. Onay/iptal yetkisi yok.
+
+**Test:** Operatör ile giriş → Manuel randevu ekle → Tüm müşteriler listelenmeli, yeni müşteri eklenebilmeli, personel seçilebilmeli (operatör kendisi hariç). Takvimde personel filtresi çalışmalı.
+
+---
+
+## Google Maps Entegrasyonu
+
+### Yorumlar
+- **fetchGoogleReviews:** Salon sayfası yüklendiğinde çağrılıyor.
+- **Place ID:** `googleBusinessUrl` kaydedilirken URL'den çıkarılıp `googlePlaceId` olarak saklanıyor.
+- **Cache:** 24 saat TTL ile cache'leniyor.
+
+### Butonlar (Salon Sayfası)
+- **"Google'da Değerlendir" kaldırıldı.**
+- **Google puanı butonu:** Örn. "4.8 Google" – tıklanınca Google sayfasına gidiyor.
+- **Salon değerlendirme butonu:** Örn. "4.5" – tıklanınca değerlendirme bölümüne scroll.
+
+**Test:** Google entegrasyonu olan salon → Yorumlar sayfanın altında görünmeli. Google puanı ve salon puanı butonları görünmeli.
 
 ---
 
@@ -172,38 +210,36 @@
 
 | Dosya | Değişiklik |
 |-------|------------|
-| `admin/admin-app.js` | Personel PIN gösterimi, düzenleme, Cloud Function entegrasyonu, mobil menü |
-| `admin/admin-styles.css` | Mobil hamburger menü, dokunmatik dostu stiller |
-| `functions/auth-helpers.js` | `adminAddStaff`, `adminSetStaffPin` Cloud Functions |
-| `functions/index.js` | Yeni fonksiyon export'ları |
-| `index.html` | Demo İncele butonu kaldırıldı |
-| `berber/salon/yonetim/index.html` | Session yönetimi, PDF indirme, CSV kaldırma, salon/sahip numarası ayarları |
-| `berber/salon/index.html` | Ara butonu salon numarası, değerlendirme hizmet listesi, yorum limiti |
-| `berber/kayit/index.html` | Salon/Sahip numarası alan etiketleri |
-| `ai-recommendation.js` | Akıllı öneri mantığı |
-| `functions/whatsapp-automation.js` | Tarih ve reminder mantığı |
+| `admin/admin-app.js` | Personel PIN (pinPlain) gösterimi, Admin sekmesi refresh |
+| `admin/admin-styles.css` | Mobil hamburger menü |
+| `functions/auth-helpers.js` | `adminAddStaff`, `adminSetStaffPin` + pinPlain |
+| `functions/index.js` | fetchGoogleReviews (rating, placeId URL'den) |
+| `berber/salon/yonetim/index.html` | Raporlar (müşteri listesi yok), operatör yetkileri, personel şifreleri, loadCustomers operatör, populateStaffForManual |
+| `berber/salon/index.html` | Google puanı/salon butonları, loadReviews fetchGoogleReviews çağrısı |
+| `berber/kayit/index.html` | Salon/Sahip numarası alanları |
 
 ---
 
 ## 14. Deploy Durumu
 
 - **Hosting:** Güncel
-- **Functions:** `adminAddStaff`, `adminSetStaffPin` dahil tüm fonksiyonlar deploy edildi
-- **Firestore Rules:** Değişiklik yok
+- **Functions:** `firebase deploy --only functions` gerekli (fetchGoogleReviews, adminAddStaff, adminSetStaffPin)
+- **Google Places API:** `functions.config().google.places_api_key` tanımlı olmalı
 
 ---
 
-## 15. Kullanıcı Tarafında Kontrol Listesi
+## 15. Test Adımları (Teker Teker)
 
-1. **Admin Paneli:** Salon sayfasına girip personel ekleme/düzenleme test edilmeli.
-2. **Yönetim Paneli:** 7 gün oturum süresi ve sayfa yenileme sonrası oturum korunması test edilmeli.
-3. **Akıllı Öneri:** Randevu alırken önerilen saatlerin mantıklı olduğu kontrol edilmeli.
-4. **WhatsApp/Hatırlatma:** Randevu onayı ve hatırlatma mesajlarının doğru zamanda geldiği doğrulanmalı.
-5. **Mobil:** Admin paneli mobil cihazda hamburger menü ve dokunmatik kullanım test edilmeli.
-6. **PDF Rapor:** Yönetim paneli Raporlar sekmesinde "PDF İndir" ile doğrudan indirme test edilmeli.
-7. **Salon/Sahip Numarası:** Ayarlardan salon numarası girildiğinde "Ara" butonunun bu numarayı kullandığı kontrol edilmeli.
-8. **Değerlendirme:** Salon sayfasında "Değerlendirme Yap" ile numara girildiğinde hizmet listesi, puan ve yorum alanlarının çalıştığı doğrulanmalı.
+1. **Bildirim:** Tek randevu talebi → Tek bildirim. Panel açılışı → Eski bildirim yok.
+2. **Akıllı Öneri:** Randevu sayfası → Akıllı Öneri tıkla → Her seferinde numara sorulmalı.
+3. **WhatsApp:** Randevu onayı ve hatırlatma mesajları doğru zamanda.
+4. **PDF Rapor:** Yönetim → Raporlar → PDF İndir → İndirilebilmeli, müşteri listesi olmamalı.
+5. **Salon/Sahip No:** Ayarlar → Salon Numarası gir → Salon sayfasında Ara bu numarayı kullanmalı.
+6. **Değerlendirme:** Salon sayfası → Değerlendirme Yap → Numara (05XX veya 5XX) → Hizmetler, puan, yorum.
+7. **Personel Şifreleri:** Süper admin + Salon sahibi → Personel sekmesi → PIN görünmeli, düzenlenebilmeli.
+8. **Operatör:** Operatör girişi → Manuel randevu → Tüm müşteriler, yeni müşteri, personel seçimi (kendisi hariç). Takvimde personel filtresi.
+9. **Google:** Google entegrasyonu olan salon → Yorumlar görünmeli. Google puanı + Salon puanı butonları.
 
 ---
 
-*Bu rapor Zamanli projesi güncellemelerini özetlemektedir.*
+*Bu rapor Zamanli projesi güncellemelerini özetlemektedir. Teker teker test için yukarıdaki kontrol listesini kullanın.*

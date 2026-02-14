@@ -786,7 +786,31 @@ function filterCustomers(query) {
 }
 
 function renderSettings() {
-    return '<div class="view-header"><h1>Ayarlar</h1></div><div class="detail-grid"><div class="card"><h3>🔐 Güvenlik</h3><p style="color:var(--slate-500);font-size:0.9rem;margin-bottom:1rem;">Süper admin şifresi güvenlik nedeniyle gizlidir.</p><button onclick="showChangePasswordModal()" class="btn btn-outline">🔑 Şifre Değiştir</button></div><div class="card"><h3>🔧 Sistem</h3><div class="info-list"><div class="info-row"><span class="info-label">Firebase Project</span><span class="info-value">' + ADMIN_CONFIG.firebase.projectId + '</span></div><div class="info-row"><span class="info-label">Oturum Süresi</span><span class="info-value">24 saat</span></div></div></div><div class="card"><h3>📊 Veri</h3><button onclick="exportAllData()" class="btn btn-outline">📥 Verileri İndir</button><button onclick="clearLocalCache()" class="btn btn-outline" style="margin-left:1rem">🗑️ Cache Temizle</button></div></div>';
+    return '<div class="view-header"><h1>Ayarlar</h1></div><div class="detail-grid"><div class="card"><h3>🔐 Güvenlik</h3><p style="color:var(--slate-500);font-size:0.9rem;margin-bottom:1rem;">Süper admin şifresi güvenlik nedeniyle gizlidir.</p><button onclick="showChangePasswordModal()" class="btn btn-outline">🔑 Şifre Değiştir</button></div><div class="card"><h3>📢 Toplu Bildirim</h3><p style="color:var(--slate-500);font-size:0.9rem;margin-bottom:1rem;">Yenilik, güncelleme veya bilgilendirme için tüm salon sahiplerine ve personele bildirim gönderin.</p><button onclick="showBroadcastModal()" class="btn btn-primary">📤 Bildirim Gönder</button></div><div class="card"><h3>🔧 Sistem</h3><div class="info-list"><div class="info-row"><span class="info-label">Firebase Project</span><span class="info-value">' + ADMIN_CONFIG.firebase.projectId + '</span></div><div class="info-row"><span class="info-label">Oturum Süresi</span><span class="info-value">24 saat</span></div></div></div><div class="card"><h3>📊 Veri</h3><button onclick="exportAllData()" class="btn btn-outline">📥 Verileri İndir</button><button onclick="clearLocalCache()" class="btn btn-outline" style="margin-left:1rem">🗑️ Cache Temizle</button></div></div>';
+}
+
+function showBroadcastModal() {
+    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>📢 Toplu Bildirim Gönder</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><p style="color:var(--slate-500);font-size:0.9rem;margin-bottom:1rem;">Tüm kayıtlı kullanıcılara (salon sahipleri ve personel) bildirim gönderilir.</p><div class="form-group"><label class="form-label">Başlık *</label><input type="text" id="broadcastTitle" class="form-input" placeholder="Örn: Yeni Özellik!" value="Zamanli"></div><div class="form-group"><label class="form-label">Mesaj *</label><textarea id="broadcastBody" class="form-input" rows="3" placeholder="Bildirim mesajı..."></textarea></div><div class="form-group"><label class="form-label">Admin Şifresi *</label><input type="password" id="broadcastPin" class="form-input" placeholder="Doğrulama için şifrenizi girin"></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="sendBroadcast()" class="btn btn-primary">Gönder</button></div></div></div>';
+}
+
+async function sendBroadcast() {
+    const title = document.getElementById('broadcastTitle').value.trim();
+    const body = document.getElementById('broadcastBody').value.trim();
+    const pin = document.getElementById('broadcastPin').value;
+    if (!title || !body) { showToast('Başlık ve mesaj gerekli', 'error'); return; }
+    if (!pin) { showToast('Doğrulama için şifre girin', 'error'); return; }
+    const btn = document.querySelector('#modal button[onclick="sendBroadcast()"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Gönderiliyor...'; }
+    try {
+        const fn = firebase.app().functions('europe-west1').httpsCallable('adminBroadcastNotification');
+        const result = await fn({ pin, title, body });
+        closeModal();
+        showToast('Bildirim gönderildi! ' + (result.data.sent || 0) + ' cihaza ulaştı.', 'success');
+    } catch (e) {
+        showToast(getTurkishErrorMsg(e) || 'Gönderim hatası', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Gönder'; }
+    }
 }
 
 function showChangePasswordModal() {
@@ -1233,7 +1257,10 @@ function showAddStaffModal() {
 function showEditStaffModal(staffId) {
     const st = AdminState.salonStaff.find(s => s.id === staffId); if (!st) return;
     var currentRole = st.staffRole || 'staff';
-    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Personel Düzenle</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Ad Soyad</label><input type="text" id="staffName" class="form-input" value="' + esc(st.name) + '"></div><div class="form-group"><label class="form-label">Rol</label><select id="staffRole" class="form-select"><option value="staff"' + (currentRole === 'staff' ? ' selected' : '') + '>Personel</option><option value="operator"' + (currentRole === 'operator' ? ' selected' : '') + '>Operatör</option></select></div><div class="form-group"><label class="form-label">Telefon</label><input type="tel" id="staffPhone" class="form-input" value="' + (st.phone || '') + '"></div><div class="form-group"><label class="form-label">Yeni PIN</label><input type="password" id="staffPin" class="form-input" placeholder="Değiştirmek için 4-6 hane girin (boş bırakırsanız değişmez)" maxlength="6" autocomplete="new-password"></div><div class="form-group"><label class="form-label"><input type="checkbox" id="staffActive"' + (st.active !== false ? ' checked' : '') + '> Aktif</label></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="updateStaff(\'' + staffId + '\')" class="btn btn-primary">Kaydet</button></div></div></div>';
+    var mevcutPinHtml = '';
+    var pinVal = (st.pinPlain && st.pinPlain.length >= 4) ? st.pinPlain : ((st.pin && !String(st.pin).startsWith('$2a$')) ? st.pin : '');
+    if (pinVal) mevcutPinHtml = '<div class="form-group"><label class="form-label">Mevcut PIN</label><code class="pin-visible" style="padding:0.35rem 0.5rem;background:#f1f5f9;border-radius:6px;font-size:1rem;">' + esc(pinVal) + '</code></div>';
+    document.getElementById('modal').innerHTML = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><h2>Personel Düzenle</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Ad Soyad</label><input type="text" id="staffName" class="form-input" value="' + esc(st.name) + '"></div><div class="form-group"><label class="form-label">Rol</label><select id="staffRole" class="form-select"><option value="staff"' + (currentRole === 'staff' ? ' selected' : '') + '>Personel</option><option value="operator"' + (currentRole === 'operator' ? ' selected' : '') + '>Operatör</option></select></div><div class="form-group"><label class="form-label">Telefon</label><input type="tel" id="staffPhone" class="form-input" value="' + (st.phone || '') + '"></div>' + mevcutPinHtml + '<div class="form-group"><label class="form-label">Yeni PIN</label><input type="password" id="staffPin" class="form-input" placeholder="Değiştirmek için 4-6 hane girin (boş bırakırsanız değişmez)" maxlength="6" autocomplete="new-password"></div><div class="form-group"><label class="form-label"><input type="checkbox" id="staffActive"' + (st.active !== false ? ' checked' : '') + '> Aktif</label></div></div><div class="modal-footer"><button onclick="closeModal()" class="btn btn-outline">İptal</button><button onclick="updateStaff(\'' + staffId + '\')" class="btn btn-primary">Kaydet</button></div></div></div>';
 }
 
 function showAddServiceModal() {

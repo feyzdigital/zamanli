@@ -41,6 +41,7 @@ exports.adminSetStaffPin = authHelpers.adminSetStaffPin;
 exports.verifyAdminAuth = authHelpers.verifyAdminAuth;
 exports.changeAdminPin = authHelpers.changeAdminPin;
 exports.migrateSalonPins = authHelpers.migrateSalonPins;
+exports.adminBroadcastNotification = authHelpers.adminBroadcastNotification;
 
 // === Email Notification Functions ===
 exports.sendAppointmentConfirmationEmail = emailNotifications.sendAppointmentConfirmationEmail;

@@ -2651,12 +2651,12 @@
             document.getElementById('salonRatingShort').textContent = (salon.rating || 5).toFixed(1);
             document.getElementById('salonReviewsBtn').style.display = 'inline-flex';
             
-            // Google puanı butonu (entegrasyon varsa - loadReviews'da güncellenir)
+            // Google puanı butonu (entegrasyon varsa - loadReviews'da puan güncellenir)
             if (salon.googleBusinessUrl) {
                 const gBtn = document.getElementById('googleRatingBtn');
                 gBtn.href = salon.googleBusinessUrl;
                 gBtn.style.display = 'inline-flex';
-                gBtn.querySelector('#googleRatingText').textContent = '⭐ Google';
+                gBtn.querySelector('#googleRatingText').textContent = '⭐ ... Google';
             }
             
             // Galeri (varsa göster)
@@ -2809,11 +2809,15 @@
                 
                 const allReviews = [...zamanliReviews, ...googleReviews]; // Zamanli üstte, Google en altta
                 
-                // Google puanı varsa butonu güncelle
-                if (googleRating != null && salon.googleBusinessUrl) {
+                // Google puanı varsa butonu güncelle (API'den veya yorumlardan hesapla)
+                let displayRating = googleRating;
+                if (displayRating == null && googleReviews.length > 0) {
+                    displayRating = googleReviews.reduce((s, r) => s + (r.rating || 5), 0) / googleReviews.length;
+                }
+                if (displayRating != null && (salon.googleBusinessUrl || salon.googlePlaceId)) {
                     const gBtn = document.getElementById('googleRatingBtn');
                     if (gBtn) {
-                        gBtn.querySelector('#googleRatingText').textContent = `⭐ ${Number(googleRating).toFixed(1)} Google`;
+                        gBtn.querySelector('#googleRatingText').textContent = `⭐ ${Number(displayRating).toFixed(1)} Google`;
                     }
                 }
                 
