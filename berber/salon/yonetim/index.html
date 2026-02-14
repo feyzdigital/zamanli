@@ -3589,6 +3589,7 @@
     
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <!-- Loading -->
@@ -3941,8 +3942,6 @@
                                 <button class="period-btn" data-period="year" onclick="changeReportPeriod('year')">Bu Yıl</button>
                             </div>
                             <div id="exportButtons" style="display:flex;gap:0.25rem;flex-wrap:wrap;">
-                                <button onclick="exportAppointmentsCSV()" class="btn btn-outline btn-sm" title="Randevuları CSV olarak indir" id="btnExportCSV">📥 Randevu CSV</button>
-                                <button onclick="exportCustomersCSV()" class="btn btn-outline btn-sm" title="Müşterileri CSV olarak indir" id="btnExportCustomerCSV">📥 Müşteri CSV</button>
                                 <button onclick="exportReportPDF()" class="btn btn-outline btn-sm" title="Rapor PDF olarak indir" id="btnExportPDF">📄 PDF İndir</button>
                             </div>
                         </div>
@@ -4096,9 +4095,17 @@
                             <label class="form-label">Adres</label>
                             <input type="text" id="settingAddress" class="form-input">
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Telefon</label>
-                            <input type="tel" id="settingPhone" class="form-input" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Salon Sahibi GSM</label>
+                                <input type="tel" id="settingPhone" class="form-input" required placeholder="05XX XXX XX XX">
+                                <p class="form-hint">Bildirimler bu numaraya gider</p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Salon Numarası (Ara için)</label>
+                                <input type="tel" id="settingLandlinePhone" class="form-input" placeholder="0XXX XXX XX XX (opsiyonel)">
+                                <p class="form-hint">Müşteriler "Ara" butonunda bunu görür</p>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">E-posta</label>
@@ -8416,6 +8423,7 @@ Panel: ${window.location.href}`);
             document.getElementById('settingDistrict').value = salon.district || '';
             document.getElementById('settingAddress').value = salon.address || '';
             document.getElementById('settingPhone').value = salon.phone || '';
+            document.getElementById('settingLandlinePhone').value = salon.landlinePhone || '';
             document.getElementById('settingEmail').value = salon.email || '';
             document.getElementById('settingGoogleBusiness').value = salon.googleBusinessUrl || '';
             
@@ -9089,7 +9097,8 @@ Panel: ${window.location.href}`);
                 city: document.getElementById('settingCity').value,
                 district: document.getElementById('settingDistrict').value,
                 address: document.getElementById('settingAddress').value,
-                phone: document.getElementById('settingPhone').value,
+                phone: document.getElementById('settingPhone').value.trim(),
+                landlinePhone: document.getElementById('settingLandlinePhone').value.replace(/\D/g, '') || null,
                 email: document.getElementById('settingEmail').value,
                 category: selectedCategory ? selectedCategory.value : (salon.category || 'berber'),
                 updatedAt: new Date().toISOString()
@@ -10934,93 +10943,7 @@ END:VEVENT
         let currentReportPeriod = 'week';
         
         // ========== EXPORT FONKSİYONLARI ==========
-        function exportAppointmentsCSV() {
-            const pkg = (salon?.package || 'free').toLowerCase();
-            if (pkg === 'free') {
-                showToast('CSV export Pro pakette kullanılabilir. Paket yükseltmek için Fiyatlandırma sayfasını ziyaret edin.', 'warning');
-                return;
-            }
-            
-            try {
-                const thisMonth = new Date().toISOString().slice(0, 7);
-                const data = (appointments || []).filter(a => a.date && a.date >= (new Date(Date.now() - 365 * 24 * 3600 * 1000)).toISOString().split('T')[0]);
-                
-                if (data.length === 0) { showToast('Dışa aktarılacak randevu yok', 'warning'); return; }
-                
-                // CSV Header - Operatör modunda fiyat gizle
-                const isOp = currentStaffRole === 'operator';
-                const headers = isOp
-                    ? ['Tarih', 'Saat', 'Müşteri', 'Telefon', 'Hizmet', 'Personel', 'Durum']
-                    : ['Tarih', 'Saat', 'Müşteri', 'Telefon', 'Hizmet', 'Personel', 'Durum', 'Fiyat'];
-                const statusMap = { pending: 'Bekliyor', confirmed: 'Onaylı', completed: 'Tamamlandı', cancelled: 'İptal' };
-                
-                const rows = data.map(a => {
-                    const row = [
-                        a.date || '',
-                        a.time || '',
-                        (a.customerName || '').replace(/,/g, ' '),
-                        (a.customerPhone || '').replace(/,/g, ' '),
-                        (a.serviceName || '').replace(/,/g, ' '),
-                        (a.staffName || '').replace(/,/g, ' '),
-                        statusMap[a.status] || a.status || ''
-                    ];
-                    if (!isOp) row.push(a.servicePrice || 0);
-                    return row;
-                });
-                
-                // BOM + CSV
-                const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `zamanli_randevular_${new Date().toISOString().split('T')[0]}.csv`;
-                link.click();
-                URL.revokeObjectURL(url);
-                
-                showToast('CSV dosyası indiriliyor...', 'success');
-            } catch (e) {
-                showToast('Export hatası: ' + e.message, 'error');
-            }
-        }
-        
-        function exportCustomersCSV() {
-            const pkg = (salon?.package || 'free').toLowerCase();
-            if (pkg === 'free') {
-                showToast('CSV export Pro pakette kullanılabilir', 'warning');
-                return;
-            }
-            
-            try {
-                const customers = allCustomers || [];
-                if (customers.length === 0) { showToast('Dışa aktarılacak müşteri yok', 'warning'); return; }
-                
-                const headers = ['İsim', 'Telefon', 'Randevu Sayısı', 'Son Randevu'];
-                const rows = customers.map(c => [
-                    (c.name || 'İsimsiz').replace(/,/g, ' '),
-                    c.phone || '',
-                    c.appointmentCount || 0,
-                    c.lastAppointment || ''
-                ]);
-                
-                const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `zamanli_musteriler_${new Date().toISOString().split('T')[0]}.csv`;
-                link.click();
-                URL.revokeObjectURL(url);
-                
-                showToast('Müşteri CSV indiriliyor...', 'success');
-            } catch (e) {
-                showToast('Export hatası: ' + e.message, 'error');
-            }
-        }
-        
-        function exportReportPDF() {
+        async function exportReportPDF() {
             const pkg = (salon?.package || 'free').toLowerCase();
             if (pkg === 'free') {
                 showToast('Rapor dışa aktarma Pro pakette kullanılabilir', 'warning');
@@ -11198,15 +11121,35 @@ END:VEVENT
 </body>
 </html>`;
                 
-                const reportWindow = window.open('', '_blank');
-                if (!reportWindow) {
-                    showToast('Popup engelleyici aktif. Lütfen izin verin.', 'error');
-                    return;
+                // PDF olarak indir (html2pdf.js)
+                if (typeof html2pdf !== 'undefined') {
+                    showToast('PDF hazırlanıyor...', 'info');
+                    const opt = {
+                        margin: 10,
+                        filename: `zamanli_rapor_${salonName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2 },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlContent, 'text/html');
+                    const el = doc.querySelector('.report-wrapper') || doc.body;
+                    el.style.width = '210mm';
+                    document.body.appendChild(el);
+                    await html2pdf().set(opt).from(el).save();
+                    document.body.removeChild(el);
+                    showToast('PDF indirildi!', 'success');
+                } else {
+                    // Fallback: yeni pencerede aç
+                    const reportWindow = window.open('', '_blank');
+                    if (!reportWindow) {
+                        showToast('Popup engelleyici aktif. Lütfen izin verin.', 'error');
+                        return;
+                    }
+                    reportWindow.document.write(htmlContent);
+                    reportWindow.document.close();
+                    showToast('Rapor hazırlandı! "PDF Olarak Kaydet" butonuna tıklayın.', 'success');
                 }
-                reportWindow.document.write(htmlContent);
-                reportWindow.document.close();
-                
-                showToast('Rapor hazırlandı! "PDF Olarak Kaydet" butonuna tıklayın.', 'success');
             } catch (e) {
                 showToast('Rapor oluşturma hatası: ' + e.message, 'error');
             }
@@ -11215,26 +11158,14 @@ END:VEVENT
         // Export butonlarını paket bazlı etkinleştir/devre dışı bırak
         function updateExportButtons() {
             const pkg = (salon?.package || 'free').toLowerCase();
-            const csvBtn = document.getElementById('btnExportCSV');
-            const customerCsvBtn = document.getElementById('btnExportCustomerCSV');
             const pdfBtn = document.getElementById('btnExportPDF');
-            
-            if (csvBtn) {
-                if (pkg === 'free') {
-                    csvBtn.style.opacity = '0.5';
-                    csvBtn.title = 'Pro pakete geçerek CSV export kullanabilirsiniz';
-                }
-            }
-            if (customerCsvBtn) {
-                if (pkg === 'free') {
-                    customerCsvBtn.style.opacity = '0.5';
-                    customerCsvBtn.title = 'Pro pakete geçerek CSV export kullanabilirsiniz';
-                }
-            }
             if (pdfBtn) {
                 if (pkg === 'free') {
                     pdfBtn.style.opacity = '0.5';
                     pdfBtn.title = 'Pro pakete geçerek rapor export kullanabilirsiniz';
+                } else {
+                    pdfBtn.style.opacity = '1';
+                    pdfBtn.title = 'Rapor PDF olarak indir';
                 }
             }
         }

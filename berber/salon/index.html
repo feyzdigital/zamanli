@@ -2607,7 +2607,9 @@
             
             document.getElementById('salonName').textContent = salon.name;
             document.getElementById('salonLocation').textContent = `${salon.district || ''}, ${salon.city || ''}`;
-            document.getElementById('salonPhone').textContent = salon.phone || '';
+            // Ara butonu için salon numarası (sabit hat varsa o, yoksa sahip GSM)
+            const displayPhone = salon.landlinePhone || salon.phone || '';
+            document.getElementById('salonPhone').textContent = displayPhone || '-';
             document.getElementById('salonRating').textContent = (salon.rating || 5).toFixed(1);
             
             // Kategori badge ekle (sayfa başlığına)
@@ -2764,7 +2766,7 @@
                 // 1. Zamanli yorumları (öncelikli - üstte)
                 const snap = await db.collection('salons').doc(salon.id).collection('reviews')
                     .orderBy('createdAt', 'desc')
-                    .limit(10)
+                    .limit(50)
                     .get();
                 
                 const zamanliReviews = snap.docs.map(d => ({ id: d.id, ...d.data(), source: 'zamanli' }));
@@ -2845,10 +2847,11 @@
             }
         }
         
-        // Telefon arama
+        // Telefon arama - salon numarası (sabit hat) varsa onu ara, yoksa sahip GSM
         function callSalon() {
-            if (salon.phone) {
-                window.location.href = `tel:${salon.phone}`;
+            const callPhone = salon.landlinePhone || salon.phone;
+            if (callPhone) {
+                window.location.href = `tel:${callPhone}`;
             }
         }
         
@@ -3429,12 +3432,14 @@ Onayınızı bekliyorum. Teşekkürler!`;
         // ==================== YORUM SİSTEMİ ====================
         let reviewRating = 0;
         let verifiedAppointment = null;
+        let verifiedAllAppointments = [];
         
         function openReviewModal() {
             document.getElementById('reviewModal').classList.add('active');
             // Reset
             reviewRating = 0;
             verifiedAppointment = null;
+            verifiedAllAppointments = [];
             document.getElementById('reviewVerifySection').style.display = 'block';
             document.getElementById('reviewVerifiedInfo').style.display = 'none';
             document.getElementById('reviewFormSection').style.display = 'none';
@@ -3490,6 +3495,8 @@ Onayınızı bekliyorum. Teşekkürler!`;
                         if (validApts.length > 0) {
                             foundAppointment = validApts[0].data();
                             foundDocId = validApts[0].id;
+                            // Tüm randevuları topla (hizmet listesi için)
+                            verifiedAllAppointments = validApts.map(d => ({ id: d.id, ...d.data() }));
                             break;
                         }
                     }
@@ -3501,10 +3508,11 @@ Onayınızı bekliyorum. Teşekkürler!`;
                     return;
                 }
                 
-                // Zaten yorum yapılmış mı kontrol et
+                // Zaten yorum yapılmış mı kontrol et (10 haneli normalize)
+                const phoneNorm = phone.slice(-10);
                 const existingReview = await db.collection('salons').doc(salon.id)
                     .collection('reviews')
-                    .where('customerPhone', '==', phone)
+                    .where('customerPhone', '==', phoneNorm)
                     .get();
                 
                 if (!existingReview.empty) {
@@ -3531,7 +3539,11 @@ Onayınızı bekliyorum. Teşekkürler!`;
                 }).join(' ');
                 
                 document.getElementById('verifiedName').textContent = displayName;
-                document.getElementById('verifiedService').textContent = `${foundAppointment.service} - ${foundAppointment.date}`;
+                // Aldığı tüm hizmetleri listele
+                const servicesList = verifiedAllAppointments.length > 0
+                    ? verifiedAllAppointments.map(a => `${a.serviceName || a.service} (${a.date})`).join(', ')
+                    : `${foundAppointment.serviceName || foundAppointment.service} - ${foundAppointment.date}`;
+                document.getElementById('verifiedService').innerHTML = `<strong>Aldığınız hizmetler:</strong><br>${servicesList}`;
                 
             } catch (error) {
                 console.error('Verify error:', error);
@@ -3573,11 +3585,14 @@ Onayınızı bekliyorum. Teşekkürler!`;
                     return part.charAt(0) + '.'; // Soyadın baş harfi
                 }).join(' ');
                 
+                const allServices = verifiedAllAppointments.length > 0
+                    ? verifiedAllAppointments.map(a => a.serviceName || a.service).filter(Boolean).join(', ')
+                    : (verifiedAppointment.serviceName || verifiedAppointment.service);
                 const review = {
                     appointmentId: verifiedAppointment.id,
                     customerName: displayName, // Gizlilik için sadece ilk isim + soyadın baş harfi
-                    customerPhone: verifiedAppointment.customerPhone?.slice(-10), // Normalize phone
-                    serviceName: verifiedAppointment.service,
+                    customerPhone: (verifiedAppointment.customerPhone || '').replace(/\D/g, '').slice(-10), // Normalize phone
+                    serviceName: allServices,
                     rating: reviewRating,
                     comment: comment,
                     verified: true,
