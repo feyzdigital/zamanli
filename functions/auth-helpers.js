@@ -511,6 +511,110 @@ exports.changePinAuth = functions
     });
 
 /**
+ * Admin: Yeni personel ekle (PIN hashlenerek)
+ */
+exports.adminAddStaff = functions
+    .region('europe-west1')
+    .https.onCall(async (data, context) => {
+        const { salonId, name, staffRole, phone, pin } = data;
+        if (!salonId || !name) {
+            throw new functions.https.HttpsError('invalid-argument', 'Salon ve ad gerekli');
+        }
+        const pinVal = (pin && String(pin).trim()) ? String(pin).trim() : '000000';
+        if (pinVal.length < 4 || pinVal.length > 6) {
+            throw new functions.https.HttpsError('invalid-argument', 'PIN 4-6 haneli olmalı');
+        }
+        try {
+            const salonRef = db.collection('salons').doc(salonId);
+            const salonSnap = await salonRef.get();
+            if (!salonSnap.exists) {
+                throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
+            }
+            const salonData = salonSnap.data();
+            const staffArray = salonData.staff || [];
+            const roleLabel = staffRole === 'operator' ? 'Operatör' : 'Personel';
+            const hashedPin = await hashPin(pinVal);
+            const newStaff = {
+                id: 'staff-' + Date.now(),
+                name: String(name).trim(),
+                staffRole: staffRole || 'staff',
+                role: roleLabel,
+                title: roleLabel,
+                phone: (phone != null) ? String(phone).replace(/\D/g, '').slice(-10) : '',
+                pin: hashedPin,
+                active: true,
+                createdAt: new Date().toISOString()
+            };
+            staffArray.push(newStaff);
+            await salonRef.update({ staff: staffArray });
+            return { success: true };
+        } catch (error) {
+            if (error instanceof functions.https.HttpsError) throw error;
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
+ * Admin: Personel bilgilerini güncelle (PIN dahil, hashlenerek)
+ * Süper admin panelinden personel düzenleme için kullanılır.
+ * - PIN asla düz metin saklanmaz
+ * - newPin boşsa mevcut PIN korunur
+ */
+exports.adminSetStaffPin = functions
+    .region('europe-west1')
+    .https.onCall(async (data, context) => {
+        const { salonId, staffId, newPin, name, staffRole, phone, active } = data;
+        
+        if (!salonId || !staffId) {
+            throw new functions.https.HttpsError('invalid-argument', 'Salon ve personel ID gerekli');
+        }
+        
+        try {
+            const salonRef = db.collection('salons').doc(salonId);
+            const salonSnap = await salonRef.get();
+            if (!salonSnap.exists) {
+                throw new functions.https.HttpsError('not-found', 'Salon bulunamadı');
+            }
+            
+            const salonData = salonSnap.data();
+            const staffArray = salonData.staff || [];
+            const staffIndex = staffArray.findIndex(s => s.id === staffId || s.name === staffId);
+            if (staffIndex === -1) {
+                throw new functions.https.HttpsError('not-found', 'Personel bulunamadı');
+            }
+            
+            const current = staffArray[staffIndex];
+            const roleLabel = staffRole === 'operator' ? 'Operatör' : 'Personel';
+            
+            let pinToSave = current.pin;
+            if (newPin && String(newPin).trim().length >= 4 && String(newPin).trim().length <= 6) {
+                pinToSave = await hashPin(String(newPin).trim());
+            }
+            
+            const updatedStaff = [...staffArray];
+            updatedStaff[staffIndex] = {
+                ...current,
+                name: (name != null && name !== '') ? String(name).trim() : current.name,
+                staffRole: staffRole || current.staffRole || 'staff',
+                role: roleLabel,
+                title: roleLabel,
+                phone: (phone != null) ? String(phone).replace(/\D/g, '').slice(-10) : (current.phone || ''),
+                pin: pinToSave,
+                active: active !== false,
+                updatedAt: new Date().toISOString()
+            };
+            
+            await salonRef.update({ staff: updatedStaff });
+            console.log('[Auth] Admin personel güncellendi:', staffId);
+            return { success: true };
+        } catch (error) {
+            console.error('[Auth] adminSetStaffPin hatası:', error);
+            if (error instanceof functions.https.HttpsError) throw error;
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
  * Batch PIN Migration - düz metin PIN'leri bcrypt'e çevir
  * HTTPS callable function (admin panelden tetiklenir)
  */

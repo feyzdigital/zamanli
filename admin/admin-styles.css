@@ -547,14 +547,55 @@ code {
 }
 
 @media (max-width: 768px) {
-    .admin-sidebar { display: none; }
-    .admin-main { margin-left: 0; }
+    .admin-main { margin-left: 0; padding-top: 3.5rem; }
+    .admin-sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        z-index: 1000;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+    }
+    .admin-layout.mobile-menu-open .admin-sidebar { transform: translateX(0); }
+    .admin-layout.mobile-menu-open .mobile-menu-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .mobile-menu-btn {
+        display: flex;
+        position: fixed;
+        top: 0.75rem;
+        left: 0.75rem;
+        z-index: 999;
+        width: 44px;
+        height: 44px;
+        align-items: center;
+        justify-content: center;
+        background: var(--brand-deep-forest);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.25rem;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .mobile-menu-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+    }
     .stats-grid { grid-template-columns: 1fr; }
     .detail-grid { grid-template-columns: 1fr; }
     .form-grid { grid-template-columns: 1fr; }
     .form-grid .form-group.full-width { grid-column: span 1; }
     .header-actions { flex-direction: column; }
 }
+
+.mobile-menu-btn { display: none; }
+.mobile-menu-backdrop { display: none; }
 
 /* ==================== V2.0 ADDITIONS ==================== */
 
@@ -1152,11 +1193,13 @@ code {
     color: var(--slate-500);
 }
 
-/* Responsive */
+/* Responsive - tablet/mobile detail tweaks */
 @media (max-width: 768px) {
-    .admin-sidebar { width: 60px; }
-    .sidebar-title, .sidebar-stats, .nav-item span:last-child, .sidebar-badge { display: none; }
-    .admin-main { margin-left: 60px; padding: 1rem; }
+    .admin-main { padding: 1rem; }
     .salon-title h1 { font-size: 1.25rem; }
-    .detail-tabs { overflow-x: auto; }
+    .detail-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .data-table { font-size: 0.875rem; }
+    .data-table th, .data-table td { padding: 0.5rem 0.25rem; }
+    .btn, .btn-icon { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    .tab-btn { min-height: 44px; padding: 0.5rem 1rem; }
 }
