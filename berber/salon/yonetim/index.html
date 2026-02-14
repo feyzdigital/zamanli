@@ -5946,12 +5946,12 @@
             // 2. TÜM DÜZENLEME BUTONLARINI GİZLE
             setTimeout(() => {
                 // Manuel randevu ekleme butonu
+                // Operatör: Manuel randevu ekleyebilir ve düzenleyebilir - butonlar gösterilir
                 document.querySelectorAll('[onclick*="openManualAppointment"]').forEach(btn => {
-                    btn.style.display = 'none';
+                    btn.style.display = '';
                 });
-                // Düzenle butonları
                 document.querySelectorAll('[onclick*="openEditAppointment"]').forEach(btn => {
-                    btn.style.display = 'none';
+                    btn.style.display = '';
                 });
             }, 500);
             
@@ -6859,8 +6859,8 @@
                     ...doc.data()
                 }));
                 
-                // Personel modunda sadece kendi randevularını göster
-                if (isStaffMode && currentStaffId) {
+                // Personel modunda sadece kendi randevularını göster (operatör TÜM randevuları görür)
+                if (isStaffMode && currentStaffId && currentStaffRole !== 'operator') {
                     appointments = appointments.filter(a => a.staffId === currentStaffId || a.staffName === currentStaffName);
                 }
                 
@@ -6891,8 +6891,8 @@
                         return 0;
                     });
                     
-                    // Personel modunda sadece kendi randevularını göster
-                    if (isStaffMode && currentStaffId) {
+                    // Personel modunda sadece kendi randevularını göster (operatör TÜM randevuları görür)
+                    if (isStaffMode && currentStaffId && currentStaffRole !== 'operator') {
                         appointments = appointments.filter(a => a.staffId === currentStaffId || a.staffName === currentStaffName);
                     }
                     
@@ -7971,7 +7971,7 @@ ${salon.name}`;
                         <div class="staff-pin-section">
                             <div style="font-size: 0.75rem; color: var(--slate-500); margin-bottom: 0.25rem;">Giris PIN</div>
                             <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-                                <input type="password" id="staffPin-${index}" value="${person.pin || '------'}" readonly style="width: 70px; text-align: center; border: 1px solid var(--slate-200); border-radius: 4px; padding: 0.25rem; font-family: monospace; font-size: 0.9rem;">
+                                <input type="password" id="staffPin-${index}" value="${(person.pinPlain && person.pinPlain.length >= 4) ? person.pinPlain : ((person.pin && !person.pin.startsWith('$2a$')) ? person.pin : '••••••')}" readonly style="width: 70px; text-align: center; border: 1px solid var(--slate-200); border-radius: 4px; padding: 0.25rem; font-family: monospace; font-size: 0.9rem;">
                                 <button id="pinToggle-${index}" onclick="togglePinVisibility(${index})" class="btn-icon-sm">Goster</button>
                                 ${!person.isOwner ? `<button onclick="resetStaffPin(${index})" class="btn-icon-sm" title="PIN Sifirla">Sifirla</button>` : ''}
                             </div>
@@ -11027,7 +11027,8 @@ END:VEVENT
                     recentRows += `<tr><td>${a.date || '-'}</td><td>${a.time || '-'}</td><td>${a.customerName || '-'}</td><td>${a.serviceName || a.service || '-'}</td><td>${a.staffName || '-'}</td><td>${statusMap[a.status] || a.status || '-'}</td></tr>`;
                 });
                 
-                // HTML rapor oluştur - Marka kimliğine uygun şık şablon
+                // HTML rapor oluştur - Kurumsal kimlik, logo ve mağaza adı
+                const logoUrl = (salon?.logo && salon.logo.startsWith('http')) ? salon.logo : (location.origin + '/icons/logo.png');
                 const htmlContent = `<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -11037,12 +11038,15 @@ END:VEVENT
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; padding: 2rem; color: #1e293b; background: #fafafa; max-width: 900px; margin: 0 auto; }
     .report-wrapper { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(11,43,38,0.08); overflow: hidden; }
-    .header { background: linear-gradient(135deg, #0B2B26 0%, #134a42 100%); color: white; padding: 1.5rem 2rem; }
-    .header-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-    .header-brand .logo { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
-    .header-brand .badge { background: rgba(16,185,129,0.3); padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
-    .header h1 { font-size: 1.5rem; font-weight: 700; }
-    .header p { font-size: 0.85rem; opacity: 0.9; margin-top: 0.35rem; }
+    .header { background: linear-gradient(135deg, #0B2B26 0%, #134a42 100%); color: white; padding: 2rem; }
+    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+    .header-brand { display: flex; align-items: center; gap: 0.75rem; }
+    .header-brand img { height: 40px; width: auto; }
+    .header-brand .logo-text { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
+    .header-badge { background: rgba(16,185,129,0.35); padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .header-store { border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem; }
+    .header-store h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .header-store p { font-size: 0.9rem; opacity: 0.9; }
     .content { padding: 1.5rem 2rem; }
     .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
     .stat-box { background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border: 1px solid #A7F3D0; border-radius: 10px; padding: 1.25rem; text-align: center; }
@@ -11067,9 +11071,17 @@ END:VEVENT
 <body>
     <div class="report-wrapper">
     <div class="header">
-        <div class="header-brand"><span class="logo">Zamanli</span><span class="badge">RAPOR</span></div>
-        <h1>${salonName}</h1>
-        <p>${periodText} Rapor | Oluşturulma: ${dateStr}</p>
+        <div class="header-top">
+            <div class="header-brand">
+                <img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'">
+                <span class="logo-text">Zamanli</span>
+            </div>
+            <span class="header-badge">RAPOR</span>
+        </div>
+        <div class="header-store">
+            <h1>${salonName}</h1>
+            <p>${periodText} Rapor | Oluşturulma: ${dateStr}</p>
+        </div>
     </div>
     <div class="content">
     
@@ -11203,8 +11215,8 @@ END:VEVENT
             const startDateStr = startDate.toISOString().split('T')[0];
             let periodAppointments = appointments.filter(a => a.date >= startDateStr);
             
-            // PERSONEL MODU: Sadece kendi randevularını filtrele
-            if (isStaffMode && currentStaffId) {
+            // PERSONEL MODU: Sadece kendi randevularını filtrele (operatör TÜM randevuları görür)
+            if (isStaffMode && currentStaffId && currentStaffRole !== 'operator') {
                 periodAppointments = periodAppointments.filter(a => 
                     a.staffId === currentStaffId || a.staffName === currentStaffName
                 );

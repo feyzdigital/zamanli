@@ -2771,19 +2771,21 @@
                 
                 const zamanliReviews = snap.docs.map(d => ({ id: d.id, ...d.data(), source: 'zamanli' }));
                 
-                // 2. Google yorumları (cache'den)
+                // 2. Google Maps entegrasyonu varsa - Google yorumları (cache'den, sayfanın en altında)
                 let googleReviews = [];
-                try {
-                    const cacheSnap = await db.collection('salons').doc(salon.id).collection('googleReviewsCache').doc('latest').get();
-                    if (cacheSnap.exists) {
-                        const cacheData = cacheSnap.data();
-                        googleReviews = (cacheData.reviews || []).map(r => ({ ...r, source: 'google' }));
+                if (salon.googleBusinessUrl) {
+                    try {
+                        const cacheSnap = await db.collection('salons').doc(salon.id).collection('googleReviewsCache').doc('latest').get();
+                        if (cacheSnap.exists) {
+                            const cacheData = cacheSnap.data();
+                            googleReviews = (cacheData.reviews || []).map(r => ({ ...r, source: 'google' }));
+                        }
+                    } catch (gErr) {
+                        console.warn('Google yorumları yüklenemedi:', gErr);
                     }
-                } catch (gErr) {
-                    console.warn('Google yorumları yüklenemedi:', gErr);
                 }
                 
-                const allReviews = [...zamanliReviews, ...googleReviews]; // Zamanli üstte
+                const allReviews = [...zamanliReviews, ...googleReviews]; // Zamanli üstte, Google en altta
                 
                 if (allReviews.length === 0) {
                     document.getElementById('reviewsList').innerHTML = '<p class="no-reviews">Henüz değerlendirme yok</p>';
@@ -3459,13 +3461,13 @@ Onayınızı bekliyorum. Teşekkürler!`;
             
             // Farklı formatları normalize et (05XX, 5XX, 905XX hepsi kabul edilsin)
             let phone = rawPhone;
-            if (phone.startsWith('90') && phone.length === 12) {
+            if (phone.startsWith('90') && phone.length >= 12) {
                 phone = phone.slice(2); // 905XXXXXXXXX -> 5XXXXXXXXX
             }
-            if (phone.startsWith('0') && phone.length === 11) {
+            if (phone.startsWith('0') && phone.length >= 11) {
                 phone = phone.slice(1); // 05XXXXXXXXX -> 5XXXXXXXXX
             }
-            phone = phone.slice(-10); // Son 10 hane
+            phone = phone.replace(/\D/g, '').slice(-10); // Sadece rakam, son 10 hane
             
             if (phone.length !== 10) {
                 errorEl.textContent = 'Geçerli bir telefon numarası girin';
@@ -3474,8 +3476,8 @@ Onayınızı bekliyorum. Teşekkürler!`;
             }
             
             try {
-                // Farklı formatlarda arama yap
-                const phoneVariants = [phone, '0' + phone, phone.slice(-10)];
+                // Farklı formatlarda arama yap (0 ile/olmadan, 90 ile)
+                const phoneVariants = [phone, '0' + phone, '90' + phone, phone.slice(-10)];
                 let foundAppointment = null;
                 let foundDocId = null;
                 
@@ -3661,12 +3663,8 @@ Onayınızı bekliyorum. Teşekkürler!`;
         
         // AI Önerisini tetikle
         async function triggerAIRecommendation() {
-            const phoneInput = document.getElementById('customerPhone');
-            const savedPhone = (typeof ZamanliUX !== 'undefined') ? ZamanliUX.getCustomerInfo?.()?.phone : '';
-            const defaultPhone = phoneInput?.value?.trim() || savedPhone || (window.savedCustomerPhone || '');
-            const phone = defaultPhone && defaultPhone.replace(/\D/g, '').length >= 10 
-                ? defaultPhone 
-                : prompt('Telefon numaranızı girin (Daha önce randevu aldıysanız):', defaultPhone || '05');
+            // Her seferinde numara sor - otomatik analiz yapma
+            const phone = prompt('Telefon numaranızı girin (Daha önce randevu aldıysanız):', '05');
             
             if (!phone || phone.length < 10) {
                 if (typeof ZamanliUX !== 'undefined') {

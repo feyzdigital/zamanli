@@ -132,7 +132,43 @@
 
 ---
 
-## 10. Değiştirilen Dosyalar Özeti
+## 10. Raporlar ve PDF İndirme
+
+### PDF Rapor İndirme
+- **Sorun:** Raporlar yeni sekmede açılıyordu, doğrudan indirilemiyordu.
+- **Çözüm:** `html2pdf.js` CDN eklendi; `exportReportPDF` artık raporu doğrudan PDF olarak indiriyor.
+- **Sonuç:** "PDF İndir" butonuna tıklanınca dosya otomatik indiriliyor (`zamanli_rapor_[SalonAdı]_[Tarih].pdf`).
+
+### CSV Raporları Kaldırıldı
+- "Randevu CSV" ve "Müşteri CSV" butonları kaldırıldı.
+- `exportAppointmentsCSV` ve `exportCustomersCSV` fonksiyonları silindi.
+
+---
+
+## 11. Salon ve Salon Sahibi Numarası Ayrımı
+
+### İki Numaralı Yapı
+- **Salon Numarası (Ara için):** Müşterilerin "Ara" butonunda gördüğü ve aradığı numara (sabit hat).
+- **Salon Sahibi GSM:** Randevu bildirimleri ve WhatsApp mesajlarının gittiği numara.
+
+### Uygulama
+- **Salon sayfası:** "Ara" butonu ve gösterilen telefon `landlinePhone` varsa onu, yoksa `phone` kullanıyor.
+- **Kayıt formu:** "Salon Sahibi GSM" ve "Salon Numarası (Ara için)" ayrı alanlar.
+- **Yönetim paneli ayarları:** Her iki numara da ayrı alanlarla düzenlenebiliyor.
+
+---
+
+## 12. Değerlendirme (Yorum) Sistemi
+
+### Düzeltmeler
+- **Numara ile hizmet listesi:** Telefon doğrulandığında müşterinin aldığı **tüm hizmetler** listeleniyor.
+- **Yorum ve puan:** Yıldız puanı ve yorum alanı doğru çalışıyor.
+- **Salon sayfası:** Son 50 değerlendirme gösteriliyor.
+- **Telefon formatı:** 10 haneli normalize format ile tekrar yorum kontrolü yapılıyor; farklı formatlarda kayıtlı randevular bulunabiliyor.
+
+---
+
+## 13. Değiştirilen Dosyalar Özeti
 
 | Dosya | Değişiklik |
 |-------|------------|
@@ -141,13 +177,15 @@
 | `functions/auth-helpers.js` | `adminAddStaff`, `adminSetStaffPin` Cloud Functions |
 | `functions/index.js` | Yeni fonksiyon export'ları |
 | `index.html` | Demo İncele butonu kaldırıldı |
-| `berber/salon/yonetim/index.html` | Session yönetimi |
+| `berber/salon/yonetim/index.html` | Session yönetimi, PDF indirme, CSV kaldırma, salon/sahip numarası ayarları |
+| `berber/salon/index.html` | Ara butonu salon numarası, değerlendirme hizmet listesi, yorum limiti |
+| `berber/kayit/index.html` | Salon/Sahip numarası alan etiketleri |
 | `ai-recommendation.js` | Akıllı öneri mantığı |
 | `functions/whatsapp-automation.js` | Tarih ve reminder mantığı |
 
 ---
 
-## 11. Deploy Durumu
+## 14. Deploy Durumu
 
 - **Hosting:** Güncel
 - **Functions:** `adminAddStaff`, `adminSetStaffPin` dahil tüm fonksiyonlar deploy edildi
@@ -155,13 +193,16 @@
 
 ---
 
-## 12. Kullanıcı Tarafında Kontrol Listesi
+## 15. Kullanıcı Tarafında Kontrol Listesi
 
 1. **Admin Paneli:** Salon sayfasına girip personel ekleme/düzenleme test edilmeli.
 2. **Yönetim Paneli:** 7 gün oturum süresi ve sayfa yenileme sonrası oturum korunması test edilmeli.
 3. **Akıllı Öneri:** Randevu alırken önerilen saatlerin mantıklı olduğu kontrol edilmeli.
 4. **WhatsApp/Hatırlatma:** Randevu onayı ve hatırlatma mesajlarının doğru zamanda geldiği doğrulanmalı.
 5. **Mobil:** Admin paneli mobil cihazda hamburger menü ve dokunmatik kullanım test edilmeli.
+6. **PDF Rapor:** Yönetim paneli Raporlar sekmesinde "PDF İndir" ile doğrudan indirme test edilmeli.
+7. **Salon/Sahip Numarası:** Ayarlardan salon numarası girildiğinde "Ara" butonunun bu numarayı kullandığı kontrol edilmeli.
+8. **Değerlendirme:** Salon sayfasında "Değerlendirme Yap" ile numara girildiğinde hizmet listesi, puan ve yorum alanlarının çalıştığı doğrulanmalı.
 
 ---
 

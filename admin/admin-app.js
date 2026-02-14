@@ -360,7 +360,20 @@ function renderView() {
 function nav(view) { AdminState.currentView = view; AdminState.selectedSalon = null; document.getElementById('adminLayout')?.classList.remove('mobile-menu-open'); document.body.classList.remove('mobile-menu-open'); renderApp(); }
 async function refreshData() { showToast('Yenileniyor...', 'info'); await loadAllData(); showToast('Güncellendi!', 'success'); }
 function switchTab(tab) { AdminState.currentTab = tab; renderApp(); }
-function switchDetailTab(tab) { AdminState.detailTab = tab; renderApp(); }
+async function switchDetailTab(tab) { 
+    AdminState.detailTab = tab; 
+    // Admin sekmesine geçildiğinde güncel veriyi çek (giriş bilgileri doğru görünsün)
+    if (tab === 'admin' && AdminState.selectedSalon?.id) {
+        try {
+            const salonDoc = await db.collection('salons').doc(AdminState.selectedSalon.id).get();
+            if (salonDoc.exists) {
+                AdminState.selectedSalon = { id: salonDoc.id, ...salonDoc.data() };
+                AdminState.salonStaff = (AdminState.selectedSalon.staff || []).map((s, i) => ({ id: s.id || 'staff-' + i, ...s }));
+            }
+        } catch (e) { console.warn('[Admin] Tab refresh:', e); }
+    }
+    renderApp(); 
+}
 
 function renderDashboard() {
     const { totalSalons, activeSalons, pendingSalons, totalAppointments, todayAppointments, totalCustomers } = AdminState.stats;
@@ -486,7 +499,7 @@ function renderSalonStaff() {
         AdminState.salonStaff.forEach(st => {
             var roleLabel = st.staffRole === 'operator' ? 'Operatör' : 'Personel';
             var roleBadge = st.staffRole === 'operator' ? 'badge-warning' : 'badge-info';
-            var pinDisplay = (st.pin && st.pin.startsWith('$2a$')) ? '<code title="Hashlenmiş - Düzenle\'den yeni PIN belirleyebilirsiniz">••••••</code>' : '<code class="pin-visible" title="Mevcut PIN">' + esc(st.pin || '-') + '</code>';
+            var pinDisplay = (st.pinPlain && st.pinPlain.length >= 4) ? '<code class="pin-visible" title="Mevcut PIN">' + esc(st.pinPlain) + '</code>' : ((st.pin && st.pin.startsWith('$2a$')) ? '<code title="Düzenle\'den yeni PIN belirleyerek görüntüleyebilirsiniz">••••••</code>' : '<code class="pin-visible">' + esc(st.pin || '-') + '</code>');
             h += '<tr><td><strong>' + esc(st.name) + '</strong></td><td><span class="badge ' + roleBadge + '">' + roleLabel + '</span></td><td>' + (st.phone || '-') + '</td><td>' + pinDisplay + '</td><td><span class="status-badge ' + (st.active !== false ? 'active' : 'inactive') + '">' + (st.active !== false ? 'Aktif' : 'Pasif') + '</span></td><td><button onclick="showEditStaffModal(\'' + st.id + '\')" class="btn btn-icon">✏️</button><button onclick="deleteStaff(\'' + st.id + '\')" class="btn btn-icon danger">🗑️</button></td></tr>';
         });
         h += '</tbody></table>';
@@ -703,7 +716,8 @@ function renderWorkingHours(s) {
 
 function renderAdminControls(s) {
     let h = '<div class="card danger-zone"><h3>🔐 Admin Kontrolleri</h3>';
-    h += '<div class="admin-section"><h4>Giriş Bilgileri</h4><div class="info-list"><div class="info-row"><span class="info-label">PIN</span><span class="info-value"><code style="font-size:1.2em">' + (s.pin || 'Yok') + '</code></span></div></div><button onclick="showChangePinModal(\'' + s.id + '\')" class="btn btn-outline btn-sm" style="margin-top:1rem">🔑 PIN Değiştir</button></div>';
+    var salonPinDisplay = (s.pin && s.pin.startsWith('$2a$')) ? '•••••• (hashlenmiş)' : (s.pin || 'Yok');
+    h += '<div class="admin-section"><h4>Giriş Bilgileri</h4><div class="info-list"><div class="info-row"><span class="info-label">PIN</span><span class="info-value"><code style="font-size:1.2em">' + salonPinDisplay + '</code></span></div></div><button onclick="showChangePinModal(\'' + s.id + '\')" class="btn btn-outline btn-sm" style="margin-top:1rem">🔑 PIN Değiştir</button></div>';
     h += '<div class="admin-section"><h4>Durum</h4>' + (s.active ? '<button onclick="toggleSalonStatus(\'' + s.id + '\', false)" class="btn btn-warning">🔴 Pasif Yap</button>' : '<button onclick="toggleSalonStatus(\'' + s.id + '\', true)" class="btn btn-success">🟢 Aktif Yap</button>') + '</div>';
     h += '<div class="admin-section"><h4>Paket</h4><select id="packageSelect" class="form-select" style="max-width:200px">';
     Object.entries(ADMIN_CONFIG.packages).forEach(([k, p]) => { h += '<option value="' + k + '"' + (s.package === k ? ' selected' : '') + '>' + p.name + ' (' + p.price + '₺)</option>'; });

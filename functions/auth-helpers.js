@@ -542,6 +542,7 @@ exports.adminAddStaff = functions
                 title: roleLabel,
                 phone: (phone != null) ? String(phone).replace(/\D/g, '').slice(-10) : '',
                 pin: hashedPin,
+                pinPlain: pinVal, // Süper admin görüntüleme için (admin panelinde gösterilir)
                 active: true,
                 createdAt: new Date().toISOString()
             };
@@ -587,8 +588,11 @@ exports.adminSetStaffPin = functions
             const roleLabel = staffRole === 'operator' ? 'Operatör' : 'Personel';
             
             let pinToSave = current.pin;
+            let pinPlainToSave = current.pinPlain || null;
             if (newPin && String(newPin).trim().length >= 4 && String(newPin).trim().length <= 6) {
-                pinToSave = await hashPin(String(newPin).trim());
+                const plain = String(newPin).trim();
+                pinToSave = await hashPin(plain);
+                pinPlainToSave = plain; // Süper admin görüntüleme için
             }
             
             const updatedStaff = [...staffArray];
@@ -600,6 +604,7 @@ exports.adminSetStaffPin = functions
                 title: roleLabel,
                 phone: (phone != null) ? String(phone).replace(/\D/g, '').slice(-10) : (current.phone || ''),
                 pin: pinToSave,
+                pinPlain: pinPlainToSave,
                 active: active !== false,
                 updatedAt: new Date().toISOString()
             };
