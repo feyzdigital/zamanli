@@ -4960,7 +4960,7 @@
                         const session = JSON.parse(savedStaffSession);
                         console.log('[Init] Kayıtlı staff session bulundu:', session);
                         
-                        // Session süresi kontrolü (90 gün - PWA için uzun session)
+                        // Session süresi kontrolü (7 gün - PWA dahil)
                         if (session.expires && session.expires > Date.now()) {
                             // URL'de slug varsa kontrol et, yoksa session'dan al
                             const targetSlug = slug || session.salonSlug;
@@ -4985,6 +4985,14 @@
                                     } else {
                                         applyStaffModeRestrictions();
                                     }
+                                    return;
+                                } else {
+                                    document.getElementById('loadingOverlay').innerHTML = `
+                                        <div style="text-align:center;color:#64748b;">
+                                            <p style="font-size:1.2rem;margin-bottom:1rem;">⚠️ Salon yüklenemedi</p>
+                                            <button onclick="location.reload()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#10B981;color:white;border:none;border-radius:8px;cursor:pointer;">Yenile</button>
+                                        </div>
+                                    `;
                                     return;
                                 }
                             }
@@ -5025,7 +5033,7 @@
                         staffRole: detectedRole,
                         salonSlug: slug,
                         salonId: salon ? salon.id : null,
-                        expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün (PWA)
+                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün (PWA dahil)
                     };
                     localStorage.setItem('staffSession', JSON.stringify(newSession));
                     
@@ -5084,8 +5092,15 @@
                                     showDashboard();
                                     return;
                                 } else {
-                                    console.log('[Init] ❌ Salon yüklenemedi, session temizleniyor');
-                                    localStorage.removeItem('salonSession');
+                                    console.log('[Init] ❌ Salon geçici yüklenemedi, yeniden deneme gösteriliyor');
+                                    document.getElementById('loadingOverlay').innerHTML = `
+                                        <div style="text-align:center;color:#64748b;">
+                                            <p style="font-size:1.2rem;margin-bottom:1rem;">⚠️ Salon yüklenemedi</p>
+                                            <p>Bağlantıyı kontrol edip tekrar deneyin.</p>
+                                            <button onclick="location.reload()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#10B981;color:white;border:none;border-radius:8px;cursor:pointer;">Yenile</button>
+                                        </div>
+                                    `;
+                                    return;
                                 }
                             }
                         } else {
@@ -6563,7 +6578,7 @@
                             slug: ud.slug,
                             salonId: ud.salonId,
                             phone: inputPhone,
-                            expires: Date.now() + (30 * 24 * 60 * 60 * 1000)
+                            expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
                         }));
                         localStorage.removeItem('staffSession');
                         
@@ -6582,7 +6597,7 @@
                             staffRole: staffRole,
                             salonId: ud.salonId,
                             salonSlug: ud.slug,
-                            expires: Date.now() + (90 * 24 * 60 * 60 * 1000)
+                            expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
                         }));
                         localStorage.removeItem('salonSession');
                         
@@ -6623,7 +6638,7 @@
                 type: 'owner',
                 slug: salonData.slug,
                 salonId: salonId,
-                expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün (PWA)
+                expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün (PWA dahil)
             };
             localStorage.setItem('salonSession', JSON.stringify(session));
             
@@ -6651,7 +6666,7 @@
                 staffRole: staffRole, // staff, operator
                 salonId: salonId,
                 salonSlug: salonData.slug,
-                expires: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30 gün (PWA)
+                expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 gün (PWA dahil)
             };
             localStorage.setItem('staffSession', JSON.stringify(staffSession));
             localStorage.removeItem('salonSession'); // Eski owner session'ı temizle
@@ -7210,11 +7225,10 @@ ${reminderMessage}
                                             (!apt.staffId && !apt.staffName); // Personel atanmamış randevular salon sahibine
                                         
                                         if (shouldNotify && isMyAppointment) {
-                                            console.log('[Sync] 🔔 Bildirim gösteriliyor:', apt.customerName, isStaffMode ? '(Personel modu)' : '(Salon sahibi)');
+                                            console.log('[Sync] 🔔 Tek bildirim gösteriliyor:', apt.customerName, isStaffMode ? '(Personel modu)' : '(Salon sahibi)');
                                             if (NotificationManager?.notifyNewAppointment) {
                                                 NotificationManager.notifyNewAppointment(apt);
                                             }
-                                            showToast(`🔔 Yeni randevu: ${apt.customerName}`, 'info');
                                         } else if (shouldNotify && !isMyAppointment) {
                                             console.log('[Sync] Bildirim atlandı - farklı personele ait:', apt.staffName || apt.staffId);
                                         }

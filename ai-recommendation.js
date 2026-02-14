@@ -199,26 +199,25 @@ const AIRecommendation = {
     
     /**
      * Sonraki çalışma gününü bul
+     * Salon workingHours: { sun: {open, close, closed}, mon: {...}, ... }
      */
     findNextWorkingDay(date, salon) {
-        const workingDays = salon?.workingDays || [1, 2, 3, 4, 5, 6]; // Varsayılan: Pzt-Cmt
+        const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const workingHours = salon?.workingHours || {};
         const maxAttempts = 14;
         
         let currentDate = new Date(date);
         
         for (let i = 0; i < maxAttempts; i++) {
-            const dayOfWeek = currentDate.getDay();
-            // JavaScript: 0=Pazar, 1=Pazartesi...
-            // Sistemimiz: 0=Pazartesi, 1=Salı... olabilir, kontrol et
-            
-            if (workingDays.includes(dayOfWeek) || workingDays.includes(dayOfWeek === 0 ? 6 : dayOfWeek - 1)) {
+            const dayKey = DAY_KEYS[currentDate.getDay()];
+            const hours = workingHours[dayKey];
+            const isOpen = !hours?.closed && (hours?.open || hours?.close);
+            if (isOpen || (!hours || Object.keys(workingHours).length === 0)) {
                 return currentDate;
             }
-            
             currentDate.setDate(currentDate.getDate() + 1);
         }
-        
-        return date; // Bulunamazsa orijinal tarihi döndür
+        return date;
     },
     
     /**
@@ -237,9 +236,24 @@ const AIRecommendation = {
             }))
             .sort((a, b) => a.start - b.start);
         
-        // Çalışma saatleri
-        const dayStart = 9 * 60; // 09:00
-        const dayEnd = 20 * 60; // 20:00
+        // Çalışma saatleri - salon workingHours'tan al
+        const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const dayKey = DAY_KEYS[date.getDay()];
+        const dayHours = salon?.workingHours?.[dayKey];
+        if (dayHours?.closed) {
+            const nextDate = new Date(date);
+            nextDate.setDate(date.getDate() + 1);
+            const adjustedNext = this.findNextWorkingDay(nextDate, salon);
+            return {
+                date: adjustedNext.toISOString().split('T')[0],
+                time: preferredTime,
+                alternative: true
+            };
+        }
+        const [startH, startM] = (dayHours?.open || '09:00').split(':').map(Number);
+        const [endH, endM] = (dayHours?.close || '19:00').split(':').map(Number);
+        const dayStart = startH * 60 + startM;
+        const dayEnd = endH * 60 + endM;
         
         // Tercih edilen saate en yakın boş slotu bul
         const preferredMinutes = preferredHour * 60;
